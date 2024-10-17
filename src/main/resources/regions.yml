@@ -1,0 +1,9 @@
+regions:
+  region1:
+    name: "Spawn Area"
+    min: {world: "world", x: 100, y: 64, z: 100}
+    max: {world: "world", x: 200, y: 64, z: 200}
+    members:
+      "b1308360-7170-41da-b593-db50818e628c":
+        interact: "true"
+        permission2: "false"
