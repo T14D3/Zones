@@ -5,6 +5,7 @@ import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.util.BoundingBox;
 
 import java.io.File;
 import java.io.IOException;
@@ -61,14 +62,12 @@ public class RegionManager {
                         members.put(uuid, permissions);
                     }
                 }
-
                 Region region = new Region(name, min, max, members);
                 regions.put(key, region);
             }
         }
         return regions;
     }
-
     // Save a region to the YAML file
     public void createRegion(String key, Region region) {
         regionsConfig.set("regions." + key + ".name", region.getName());
@@ -83,10 +82,8 @@ public class RegionManager {
                 regionsConfig.set("regions." + key + ".members." + uuid + "." + perm.getKey(), perm.getValue());
             }
         }
-
         saveRegions();
     }
-
     // Load a location from the YAML file
     private Location loadLocation(String path) {
         String world = regionsConfig.getString(path + ".world");
@@ -102,6 +99,63 @@ public class RegionManager {
         regionsConfig.set(path + ".x", loc.getX());
         regionsConfig.set(path + ".y", loc.getY());
         regionsConfig.set(path + ".z", loc.getZ());
+    }
+
+    /*
+     *  Region Utility Methods
+     */
+
+    // Delete existing region
+    public void deleteRegion(String regionKey) {
+        loadRegions().remove(regionKey);
+        saveRegions();
+    }
+
+    // Create Region from Locations
+    public void createNewRegion(String name, Location min, Location max, UUID playerUUID) {
+
+        String regionKey;
+        do {
+            regionKey = UUID.randomUUID().toString().substring(0, 8);
+        } while (loadRegions().containsKey(regionKey));
+
+        // Create an empty map of members (in this case, just add the player UUID)
+        Map<UUID, Map<String, String>> members = new HashMap<>();
+
+        // Create a new region with the given name, min, max, and members
+        Region newRegion = new Region(name, min, max, members);
+        newRegion.setMemberPermission(playerUUID, "owner", "true");
+
+
+        createRegion(regionKey, newRegion);
+
+    }
+
+    public void create2DRegion(String name, Location min, Location max, UUID playerUUID) {
+        min.setY(-63);
+        max.setY(319);
+        createNewRegion(name, min, max, playerUUID);
+    }
+
+    // Check if new region overlaps existing region
+    public boolean overlapsExistingRegion(Region region) {
+        boolean overlap = false;
+        Map<String, Region> regions = loadRegions();
+        for (Map.Entry<String, Region> entry : regions.entrySet()) {
+            Region otherRegion = entry.getValue();
+            BoundingBox otherBox = BoundingBox.of(otherRegion.getMin(), otherRegion.getMax());
+            BoundingBox thisBox = BoundingBox.of(region.getMin(), region.getMax());
+            if (thisBox.overlaps(otherBox)) {
+                overlap = true;
+            } else {
+                return false;
+            }
+        }
+        return overlap;
+    }
+    public boolean overlapsExistingRegion(Location min, Location max) {
+        Region region = new Region(null, min, max, null);
+        return overlapsExistingRegion(region);
     }
 
     // Define the Region inner class
@@ -212,19 +266,8 @@ public class RegionManager {
             this.members.computeIfAbsent(uuid, k -> new HashMap<>()).put(permission, value);
         }
 
-        // Create Region from Locations
-        public void createNewRegion(String regionKey, String name, Location min, Location max, UUID playerUUID) {
-            // Create an empty map of members (in this case, just add the player UUID)
-            Map<UUID, Map<String, String>> members = new HashMap<>();
 
-            // Create a new region with the given name, min, max, and members
-            Region newRegion = new Region(name, min, max, members);
 
-            // Save the new region to the configuration file
-            createRegion(regionKey, newRegion);
 
-            // Optionally, print to console to confirm the region has been created
-            Bukkit.getLogger().info("Created new region: " + name + " with key: " + regionKey);
-        }
     }
 }

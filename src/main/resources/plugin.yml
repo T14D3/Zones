@@ -2,3 +2,11 @@ name: Zones
 version: '1.0-SNAPSHOT'
 main: de.t14d3.zones.Zones
 api-version: '1.21'
+commands:
+  zone:
+    description: Main Command
+    usage: /zone <create|delete|createmanual> <regionName> <minX> <minY> <minZ> <maxX> <maxY> <maxZ>
+permissions:
+  zones.create.overlap:
+    description: Allow players to create regions that overlap existing regions
+    default: op
