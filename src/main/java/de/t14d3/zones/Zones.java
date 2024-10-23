@@ -17,6 +17,7 @@ public final class Zones extends JavaPlugin {
 
     private RegionManager regionManager;
     private PermissionManager permissionManager;
+    private Utils utils;
 
     public Map<UUID, Pair<Location, Location>> selection = new HashMap<>();
 
@@ -25,6 +26,7 @@ public final class Zones extends JavaPlugin {
         // Initialize RegionManager
         this.regionManager = new RegionManager(this);
         this.permissionManager = new PermissionManager(regionManager);
+        this.utils = new Utils(this);
 
         // Load regions from regions.yml
         Map<String, RegionManager.Region> regions = regionManager.loadRegions();
@@ -39,7 +41,7 @@ public final class Zones extends JavaPlugin {
 
         // Register command executor
         this.getCommand("zone").setExecutor(new CommandListener(this , regionManager));
-        this.getCommand("zone").setTabCompleter(new TabCompleteListener());
+        this.getCommand("zone").setTabCompleter(new TabCompleteListener(this, regionManager));
 
     }
 
@@ -54,6 +56,10 @@ public final class Zones extends JavaPlugin {
     // Getter for RegionManager
     public RegionManager getRegionManager() {
         return regionManager;
+    }
+
+    public Utils getUtils() {
+        return utils;
     }
 
 }

@@ -1,6 +1,8 @@
 package de.t14d3.zones;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.entity.Player;
 import org.bukkit.util.BoundingBox;
 
 import java.util.Map;
@@ -35,7 +37,8 @@ public class PermissionManager {
                 }
             }
         }
+        Player player = Bukkit.getPlayer(playerUUID);
         // Default to false if no regions found
-        return false;
+        return player.hasPermission("zones.bypass.unclaimed");
     }
 }

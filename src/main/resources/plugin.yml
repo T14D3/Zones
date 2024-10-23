@@ -10,3 +10,9 @@ permissions:
   zones.create.overlap:
     description: Allow players to create regions that overlap existing regions
     default: op
+  zones.bypass.unclaimed:
+    description: Allow players to interact with unclaimed regions
+    default: op
+  zones.info.other:
+    description: Allow players to view information about other regions
+    default: op

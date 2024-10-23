@@ -1,5 +1,7 @@
 package de.t14d3.zones.listeners;
 
+import de.t14d3.zones.RegionManager;
+import de.t14d3.zones.Zones;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
@@ -7,8 +9,17 @@ import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class TabCompleteListener implements TabCompleter {
+
+    private Zones plugin;
+    private RegionManager regionManager;
+
+    public TabCompleteListener (Zones plugin, RegionManager regionManager) {
+        this.regionManager = regionManager;
+        this.plugin = plugin;
+    }
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
@@ -23,6 +34,7 @@ public class TabCompleteListener implements TabCompleter {
                 completions.add("list");
                 completions.add("info");
                 completions.add("set");
+                completions.add("cancel");
             } else if (args.length >= 2) {
                 if (args[0].equalsIgnoreCase("createmanual")) {
                     if (args.length == 2) {
@@ -50,10 +62,20 @@ public class TabCompleteListener implements TabCompleter {
 
                 } else if (args[0].equalsIgnoreCase("delete")) {
                     completions.add("name");
+                } else if (args[0].equalsIgnoreCase("info")) {
+
+                    Map<String, RegionManager.Region> regions = regionManager.loadRegions();
+
+                    for (Map.Entry<String, RegionManager.Region> entry : regions.entrySet()) {
+                        RegionManager.Region region = entry.getValue();
+                        if (region.hasPermission(player.getUniqueId(), "admin", "true") || player.hasPermission("zones.info.other")) {
+                            completions.add(entry.getKey());
+                        }
+                    }
                 }
             }
-            return completions;
+                return completions;
+            }
+            return null;
         }
-        return null;
     }
-}

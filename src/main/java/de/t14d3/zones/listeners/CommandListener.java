@@ -11,19 +11,24 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.checkerframework.checker.nullness.qual.RequiresNonNull;
 
+import java.util.HashMap;
 import java.util.Map;
 
-import static de.t14d3.zones.Utils.createBeacon;
+import static de.t14d3.zones.Utils.resetBeacon;
+
 
 public class CommandListener implements CommandExecutor {
 
     private Zones plugin;
     private RegionManager regionManager;
+    private Utils utils;
 
     public CommandListener(Zones plugin, RegionManager regionManager) {
         this.plugin = plugin;
         this.regionManager = regionManager;
+        this.utils = plugin.getUtils();
     }
 
     @Override
@@ -118,11 +123,21 @@ public class CommandListener implements CommandExecutor {
 
                     Pair <Location, Location> selectionPair = plugin.selection.get(player.getUniqueId());
                     if (!(selectionPair.first() == null) && !(selectionPair.second() == null)) {
-                        if (regionManager.overlapsExistingRegion(selectionPair.first(), selectionPair.second()) || player.hasPermission("zones.create.overlap")) {
+                        if (regionManager.overlapsExistingRegion(selectionPair.first(), selectionPair.second()) && !player.hasPermission("zones.create.overlap")) {
                             sender.sendMessage("Error: Region overlaps existing region.");
                             return true;
                         }
+
+
+                        Map<String, String> perms = new HashMap<>();
+                        perms.put("owner", "true");
+                        perms.put("break", "true");
+                        perms.put("place", "true");
+                        perms.put("container", "true");
+
                         regionManager.create2DRegion(player.getName(), selectionPair.first(), selectionPair.second(), player.getUniqueId());
+                        resetBeacon(player, selectionPair.first());
+                        resetBeacon(player, selectionPair.second());
                         sender.sendMessage("Region '" + player.getName() + "' created successfully!");
                         plugin.selection.remove(player.getUniqueId());
                         return true;
@@ -130,11 +145,42 @@ public class CommandListener implements CommandExecutor {
 
                 case "cancel":
                     if (plugin.selection.containsKey(player.getUniqueId())) {
+                        Pair<Location, Location> selection = plugin.selection.get(player.getUniqueId());
+                        resetBeacon(player, selection.first());
+                        resetBeacon(player, selection.second());
                         plugin.selection.remove(player.getUniqueId());
                         player.sendMessage("Cancelled");
                     }
+                    return true;
+
+                case "list":
+                    for (Map.Entry<String, RegionManager.Region> entry : regions.entrySet()) {
+                        RegionManager.Region region = entry.getValue();
+                        player.sendMessage(region.getName());
+                    }
+                    return true;
+                case "info":
+                    if (args.length < 2) {
+                        sender.sendMessage("Usage: /zone info <regionKey>");
+                        return true;
+                    }
+
+                    // Extract arguments
+                    regionKey = args[1];
+
+                    // Check if region with the given key exists
+                    if (regions.containsKey(regionKey)) {
+                        RegionManager.Region region = regions.get(regionKey);
+                        player.sendMessage("Region Name: " + region.getName());
+                        player.sendMessage("Min: " + region.getMin());
+                        player.sendMessage("Max: " + region.getMax());
+                        player.sendMessage("Members: " + region.getMembers());
+                        return true;
+                    } else {
+                        sender.sendMessage("Error: Region with key '" + regionKey + "' does not exist.");
+                    }
+                    return true;
                 case "test":
-                    createBeacon(player, player.getLocation(), DyeColor.valueOf(args[1]));
                     return true;
 
             }

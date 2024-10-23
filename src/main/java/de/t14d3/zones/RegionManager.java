@@ -9,6 +9,7 @@ import org.bukkit.util.BoundingBox;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -111,8 +112,16 @@ public class RegionManager {
         saveRegions();
     }
 
-    // Create Region from Locations
-    public void createNewRegion(String name, Location min, Location max, UUID playerUUID) {
+    /**
+     * Creates a new region from two Locations, a UUID for the owner and the owner's permissions
+     *
+     * @param name Name of the new Region
+     * @param min First corner of the region
+     * @param max Second corner of the region
+     * @param playerUUID Region owner's UUID
+     *
+     */
+    public void createNewRegion(String name, Location min, Location max, UUID playerUUID, Map<String, String> ownerPermissions) {
 
         String regionKey;
         do {
@@ -124,10 +133,19 @@ public class RegionManager {
 
         // Create a new region with the given name, min, max, and members
         Region newRegion = new Region(name, min, max, members);
-        newRegion.setMemberPermission(playerUUID, "owner", "true");
+
+        ownerPermissions.forEach((permission, value) -> {
+            newRegion.setMemberPermission(playerUUID, permission, value);
+        });
 
 
         createRegion(regionKey, newRegion);
+
+    }
+    public void createNewRegion(String name, Location min, Location max, UUID playerUUID) {
+        Map<String, String> permissions = new HashMap<>();
+        permissions.put("owner", "true");
+        createNewRegion(name, min, max, playerUUID, permissions);
 
     }
 
@@ -135,6 +153,11 @@ public class RegionManager {
         min.setY(-63);
         max.setY(319);
         createNewRegion(name, min, max, playerUUID);
+    }
+    public void create2DRegion(String name, Location min, Location max, UUID playerUUID, Map<String, String> ownerPermissions) {
+        min.setY(-63);
+        max.setY(319);
+        createNewRegion(name, min, max, playerUUID, ownerPermissions);
     }
 
     // Check if new region overlaps existing region
