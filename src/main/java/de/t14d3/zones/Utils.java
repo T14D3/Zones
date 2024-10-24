@@ -12,7 +12,10 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.monster.Shulker;
 import org.bukkit.*;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.Container;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Powerable;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
@@ -97,5 +100,11 @@ public class Utils {
                 );
             }
         }
+    }
+    public boolean isContainer(BlockState state) {
+        return state instanceof Container;
+    }
+    public boolean isPowerable(BlockData data) {
+        return data instanceof Powerable;
     }
 }

@@ -7,13 +7,16 @@ import de.t14d3.zones.Zones;
 import it.unimi.dsi.fastutil.Pair;
 import org.bukkit.DyeColor;
 import org.bukkit.Location;
+import org.bukkit.block.BlockState;
 import org.bukkit.block.Container;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Powerable;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.meta.BlockStateMeta;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -71,22 +74,89 @@ public class PlayerInteractListener implements Listener {
         String type = "UNKNOWN";
         List<String> requiredPermissions = new ArrayList<>(); // Collect required permissions
 
+
         if (event.getAction() == Action.LEFT_CLICK_BLOCK) {
             type = event.getClickedBlock().getType().name();
             requiredPermissions.add("BREAK");
 
-        } else {
-            if (event.getItem() != null) {
-                type = event.getItem().getType().name();
-                requiredPermissions.add("PLACE");
-            }
-            if ((event.getClickedBlock().getState() instanceof Container container) && !player.isSneaking()) {
+            if (utils.isContainer(event.getClickedBlock().getState())) {
                 requiredPermissions.add("CONTAINER");
             }
-            if (event.getClickedBlock().getBlockData() instanceof Powerable) {
+            if (utils.isPowerable(event.getClickedBlock().getBlockData())) {
                 requiredPermissions.add("REDSTONE");
             }
+        } else {
+
+            // Player is sneaking
+            if (player.isSneaking()) {
+                // Has item in hand
+                if (event.getItem() != null) {
+                    type = event.getItem().getType().name();
+
+                    // Placing a container
+                    if (event.getItem().getItemMeta() instanceof BlockStateMeta meta) {
+                        if (utils.isContainer(meta.getBlockState())) {
+                            requiredPermissions.add("CONTAINER");
+                        }
+                    }
+                    // Placing a redstone component
+                    if (utils.isPowerable(event.getItem().getType().createBlockData())) {
+                        requiredPermissions.add("REDSTONE");
+                    }
+                } else {
+
+                    // Sneakclick without item => normal interaction
+                    type = event.getClickedBlock().getType().name();
+                    requiredPermissions.add("INTERACT");
+                    if (utils.isContainer(event.getClickedBlock().getState())) {
+                        requiredPermissions.add("CONTAINER");
+                    }
+                    if (utils.isPowerable(event.getClickedBlock().getBlockData())) {
+                        requiredPermissions.add("REDSTONE");
+                    }
+                }
+            // Player is NOT sneaking
+            } else {
+                // Interactible block
+                // TODO: Check for other interactable blocks - crafting table, workstations etc
+                if (utils.isContainer(event.getClickedBlock().getState()) || utils.isPowerable(event.getClickedBlock().getBlockData())) {
+                    requiredPermissions.add("INTERACT");
+                    if (utils.isContainer(event.getClickedBlock().getState())) {
+                        requiredPermissions.add("CONTAINER");
+                    }
+                    if (utils.isPowerable(event.getClickedBlock().getBlockData())) {
+                        requiredPermissions.add("REDSTONE");
+                    }
+                // Clicking on non-interactable block => place
+                } else {
+                    if (event.getItem() != null) {
+                        type = event.getItem().getType().name();
+                        // Placing a container
+                        if (event.getItem().getItemMeta() instanceof BlockStateMeta meta) {
+                            if (utils.isContainer(meta.getBlockState())) {
+                                requiredPermissions.add("CONTAINER");
+                            }
+                        }
+                        // Placing a redstone component
+                        if (utils.isPowerable(event.getItem().getType().createBlockData())) {
+                            requiredPermissions.add("REDSTONE");
+                        }
+                        requiredPermissions.add("PLACE");
+
+                    }
+                }
+
+            }
         }
+        /*
+
+        if ((event.getClickedBlock().getState() instanceof Container) && !player.isSneaking()) {
+            requiredPermissions.add("CONTAINER");
+        }
+        if (event.getClickedBlock().getBlockData() instanceof Powerable && !player.isSneaking()) {
+            requiredPermissions.add("REDSTONE");
+        }*/
+
 
         // Debug
         player.sendMessage("Required Permissions: " + String.join(", ", requiredPermissions));
