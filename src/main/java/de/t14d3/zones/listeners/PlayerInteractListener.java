@@ -15,6 +15,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import static de.t14d3.zones.Utils.resetBeacon;
@@ -66,33 +68,39 @@ public class PlayerInteractListener implements Listener {
             return;
         }
 
-
-        String action = "UNKNOWN";
         String type = "UNKNOWN";
+        List<String> requiredPermissions = new ArrayList<>(); // Collect required permissions
+
         if (event.getAction() == Action.LEFT_CLICK_BLOCK) {
             type = event.getClickedBlock().getType().name();
-            action = "BREAK";
+            requiredPermissions.add("BREAK");
 
         } else {
             if (event.getItem() != null) {
                 type = event.getItem().getType().name();
-                action = "PLACE";
+                requiredPermissions.add("PLACE");
             }
             if ((event.getClickedBlock().getState() instanceof Container container) && !player.isSneaking()) {
-                action = "CONTAINER";
-            } else if (event.getClickedBlock().getBlockData() instanceof Powerable powerable) {
-                action = "REDSTONE";
-
+                requiredPermissions.add("CONTAINER");
+            }
+            if (event.getClickedBlock().getBlockData() instanceof Powerable) {
+                requiredPermissions.add("REDSTONE");
             }
         }
-        player.sendMessage("Action: " + action);
+
+        // Debug
+        player.sendMessage("Required Permissions: " + String.join(", ", requiredPermissions));
         player.sendMessage("Type: " + type);
 
-        if (!permissionManager.canInteract(location, playerUUID, action.toLowerCase(), type)) {
-            event.setCancelled(true);
-            event.getClickedBlock().getState().update();
+        // Check all required permissions
+        for (String action : requiredPermissions) {
+            if (!permissionManager.canInteract(location, playerUUID, action, type)) {
+                event.setCancelled(true);
+                event.getClickedBlock().getState().update();
+                break; // Exit early if any permission is denied
+            }
         }
-
     }
+
 
 }

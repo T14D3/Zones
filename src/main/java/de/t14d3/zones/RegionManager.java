@@ -19,8 +19,10 @@ public class RegionManager {
 
     private final File regionsFile;
     private FileConfiguration regionsConfig;
+    private PermissionManager permissionManager;
 
-    public RegionManager(JavaPlugin plugin) {
+    public RegionManager(JavaPlugin plugin, PermissionManager permissionManager) {
+        this.permissionManager = permissionManager;
         // Initialize the regions.yml file
         regionsFile = new File(plugin.getDataFolder(), "regions.yml");
 
@@ -110,6 +112,7 @@ public class RegionManager {
     public void deleteRegion(String regionKey) {
         loadRegions().remove(regionKey);
         saveRegions();
+        permissionManager.invalidateAllCaches();
     }
 
     /**
@@ -139,6 +142,7 @@ public class RegionManager {
         });
 
 
+        permissionManager.invalidateAllCaches();
         createRegion(regionKey, newRegion);
 
     }
@@ -249,11 +253,13 @@ public class RegionManager {
             return this.members.get(uuid);
         }
 
-        
+
 
         // Add or update a member's permission/role
         public void setMemberPermission(UUID uuid, String permission, String value) {
+            permissionManager.invalidateCache(uuid);
             this.members.computeIfAbsent(uuid, k -> new HashMap<>()).put(permission, value);
+
         }
 
 

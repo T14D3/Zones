@@ -24,7 +24,7 @@ public final class Zones extends JavaPlugin {
     @Override
     public void onEnable() {
         // Initialize RegionManager
-        this.regionManager = new RegionManager(this);
+        this.regionManager = new RegionManager(this, permissionManager);
         this.permissionManager = new PermissionManager(regionManager);
         this.utils = new Utils(this);
 
