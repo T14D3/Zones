@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static de.t14d3.zones.PermissionManager.hasPermission;
+
 public class TabCompleteListener implements TabCompleter {
 
     private Zones plugin;
@@ -68,7 +70,7 @@ public class TabCompleteListener implements TabCompleter {
 
                     for (Map.Entry<String, RegionManager.Region> entry : regions.entrySet()) {
                         RegionManager.Region region = entry.getValue();
-                        if (region.hasPermission(player.getUniqueId(), "admin", "true") || player.hasPermission("zones.info.other")) {
+                        if (hasPermission(player.getUniqueId(), "admin", "true", region) || player.hasPermission("zones.info.other")) {
                             completions.add(entry.getKey());
                         }
                     }

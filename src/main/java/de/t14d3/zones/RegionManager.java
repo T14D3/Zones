@@ -249,40 +249,7 @@ public class RegionManager {
             return this.members.get(uuid);
         }
 
-        // Check if member has specific permission
-        public boolean hasPermission(UUID uuid, String permission, String type) {
-            Map<String, String> permissions = this.members.get(uuid);
-            if (permissions != null) {
-                String value = permissions.get(permission);
-
-                // Handle boolean strings
-                if (value != null) {
-                    if ("true".equalsIgnoreCase(value)) {
-                        return true; // Explicitly allowed
-                    } else if ("false".equalsIgnoreCase(value)) {
-                        return false; // Explicitly denied
-                    } else {
-                        // Check for lists or arrays
-                        List<String> permittedValues = List.of(value.split(","));
-
-                        for (String permittedValue : permittedValues) {
-                            if (permittedValue.startsWith("!")) {
-                                // Invert the result if it starts with "!"
-                                if (permittedValue.substring(1).equals(type)) {
-                                    return false; // Inverted result
-                                }
-                            } else {
-                                if (permittedValue.equals(type)) {
-                                    return true; // Standard match
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            // Return false if no permissions found
-            return false;
-        }
+        
 
         // Add or update a member's permission/role
         public void setMemberPermission(UUID uuid, String permission, String value) {

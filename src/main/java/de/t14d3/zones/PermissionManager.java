@@ -5,6 +5,7 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.util.BoundingBox;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -30,15 +31,46 @@ public class PermissionManager {
             // Check if the block is inside this region
             if (box.contains(location.toVector())) {
                 // Check if the player has permission to interact within this region
-                if (region.hasPermission(playerUUID, action, type)) {
-                    return true;  // Allowed to interact
-                } else {
-                    return false; // Not allowed to interact
-                }
+                return hasPermission(playerUUID, action, type, region);
             }
         }
         Player player = Bukkit.getPlayer(playerUUID);
         // Default to false if no regions found
         return player.hasPermission("zones.bypass.unclaimed");
+    }
+
+    // Check if member has specific permission
+    public static boolean hasPermission(UUID uuid, String permission, String type, RegionManager.Region region) {
+        Map<String, String> permissions = region.getMembers().get(uuid);
+        if (permissions != null) {
+            String value = permissions.get(permission);
+
+            // Handle boolean strings
+            if (value != null) {
+                if ("true".equalsIgnoreCase(value)) {
+                    return true; // Explicitly allowed
+                } else if ("false".equalsIgnoreCase(value)) {
+                    return false; // Explicitly denied
+                } else {
+                    // Check for lists or arrays
+                    List<String> permittedValues = List.of(value.split(","));
+
+                    for (String permittedValue : permittedValues) {
+                        if (permittedValue.startsWith("!")) {
+                            // Invert the result if it starts with "!"
+                            if (permittedValue.substring(1).equals(type)) {
+                                return false; // Inverted result
+                            }
+                        } else {
+                            if (permittedValue.equals(type)) {
+                                return true; // Standard match
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // Return false if no permissions found
+        return false;
     }
 }

@@ -16,6 +16,7 @@ import org.checkerframework.checker.nullness.qual.RequiresNonNull;
 import java.util.HashMap;
 import java.util.Map;
 
+import static de.t14d3.zones.PermissionManager.hasPermission;
 import static de.t14d3.zones.Utils.resetBeacon;
 
 
@@ -101,7 +102,7 @@ public class CommandListener implements CommandExecutor {
                     // Check if region with the given key exists
                     if (regions.containsKey(regionKey)) {
                         RegionManager.Region region = regions.get(regionKey);
-                        if (!region.hasPermission(player.getUniqueId(), "owner", "true")) {
+                        if (!hasPermission(player.getUniqueId(), "owner", "true", region)) {
                             sender.sendMessage("Error: You do not have permission to delete this region.");
                             return true;
                         }
