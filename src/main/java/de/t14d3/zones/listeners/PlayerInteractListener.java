@@ -7,14 +7,13 @@ import de.t14d3.zones.Zones;
 import it.unimi.dsi.fastutil.Pair;
 import org.bukkit.DyeColor;
 import org.bukkit.Location;
-import org.bukkit.block.BlockState;
-import org.bukkit.block.Container;
-import org.bukkit.block.data.BlockData;
-import org.bukkit.block.data.Powerable;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.meta.BlockStateMeta;
 
@@ -74,89 +73,19 @@ public class PlayerInteractListener implements Listener {
         String type = "UNKNOWN";
         List<String> requiredPermissions = new ArrayList<>(); // Collect required permissions
 
+        // Interactible block
+        // TODO: Check for other interactable blocks - crafting table, workstations etc
 
-        if (event.getAction() == Action.LEFT_CLICK_BLOCK) {
+        if (utils.isContainer(event.getClickedBlock().getState()) || utils.isPowerable(event.getClickedBlock().getBlockData())) {
+            requiredPermissions.add("INTERACT");
             type = event.getClickedBlock().getType().name();
-            requiredPermissions.add("BREAK");
-
             if (utils.isContainer(event.getClickedBlock().getState())) {
                 requiredPermissions.add("CONTAINER");
             }
             if (utils.isPowerable(event.getClickedBlock().getBlockData())) {
                 requiredPermissions.add("REDSTONE");
             }
-        } else {
-
-            // Player is sneaking
-            if (player.isSneaking()) {
-                // Has item in hand
-                if (event.getItem() != null) {
-                    type = event.getItem().getType().name();
-
-                    // Placing a container
-                    if (event.getItem().getItemMeta() instanceof BlockStateMeta meta) {
-                        if (utils.isContainer(meta.getBlockState())) {
-                            requiredPermissions.add("CONTAINER");
-                        }
-                    }
-                    // Placing a redstone component
-                    if (utils.isPowerable(event.getItem().getType().createBlockData())) {
-                        requiredPermissions.add("REDSTONE");
-                    }
-                } else {
-
-                    // Sneakclick without item => normal interaction
-                    type = event.getClickedBlock().getType().name();
-                    requiredPermissions.add("INTERACT");
-                    if (utils.isContainer(event.getClickedBlock().getState())) {
-                        requiredPermissions.add("CONTAINER");
-                    }
-                    if (utils.isPowerable(event.getClickedBlock().getBlockData())) {
-                        requiredPermissions.add("REDSTONE");
-                    }
-                }
-            // Player is NOT sneaking
-            } else {
-                // Interactible block
-                // TODO: Check for other interactable blocks - crafting table, workstations etc
-                if (utils.isContainer(event.getClickedBlock().getState()) || utils.isPowerable(event.getClickedBlock().getBlockData())) {
-                    requiredPermissions.add("INTERACT");
-                    if (utils.isContainer(event.getClickedBlock().getState())) {
-                        requiredPermissions.add("CONTAINER");
-                    }
-                    if (utils.isPowerable(event.getClickedBlock().getBlockData())) {
-                        requiredPermissions.add("REDSTONE");
-                    }
-                // Clicking on non-interactable block => place
-                } else {
-                    if (event.getItem() != null) {
-                        type = event.getItem().getType().name();
-                        // Placing a container
-                        if (event.getItem().getItemMeta() instanceof BlockStateMeta meta) {
-                            if (utils.isContainer(meta.getBlockState())) {
-                                requiredPermissions.add("CONTAINER");
-                            }
-                        }
-                        // Placing a redstone component
-                        if (utils.isPowerable(event.getItem().getType().createBlockData())) {
-                            requiredPermissions.add("REDSTONE");
-                        }
-                        requiredPermissions.add("PLACE");
-
-                    }
-                }
-
-            }
-        }
-        /*
-
-        if ((event.getClickedBlock().getState() instanceof Container) && !player.isSneaking()) {
-            requiredPermissions.add("CONTAINER");
-        }
-        if (event.getClickedBlock().getBlockData() instanceof Powerable && !player.isSneaking()) {
-            requiredPermissions.add("REDSTONE");
-        }*/
-
+        } else return;
 
         // Debug
         player.sendMessage("Required Permissions: " + String.join(", ", requiredPermissions));
@@ -167,9 +96,56 @@ public class PlayerInteractListener implements Listener {
             if (!permissionManager.canInteract(location, playerUUID, action, type)) {
                 event.setCancelled(true);
                 event.getClickedBlock().getState().update();
-                break; // Exit early if any permission is denied
+                //break; // Exit early if any permission is denied
             }
         }
+    }
+
+    @EventHandler
+    public void onBlockPlace(BlockPlaceEvent event) {
+        Player player = event.getPlayer();
+        String type = event.getBlockPlaced().getType().name();
+        List<String> requiredPermissions = new ArrayList<>();
+        requiredPermissions.add("PLACE");
+        if (utils.isContainer(event.getBlockPlaced().getState())) {
+            requiredPermissions.add("CONTAINER");
+        }
+        if (utils.isPowerable(event.getBlockPlaced().getBlockData())) {
+            requiredPermissions.add("REDSTONE");
+        }
+        // Debug
+        player.sendMessage("Required Permissions: " + String.join(", ", requiredPermissions));
+        player.sendMessage("Type: " + type);
+        for (String action : requiredPermissions) {
+            if (!permissionManager.canInteract(event.getBlockPlaced().getLocation(), player.getUniqueId(), action, type)) {
+                event.setCancelled(true);
+            } else player.sendMessage("You are lacking the permission to " + action + " the block " + type);
+        }
+
+    }
+
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent event) {
+        Player player = event.getPlayer();
+        String type = event.getBlock().getType().name();
+        List<String> requiredPermissions = new ArrayList<>();
+        requiredPermissions.add("BREAK");
+        if (utils.isContainer(event.getBlock().getState())) {
+            requiredPermissions.add("CONTAINER");
+        }
+        if (utils.isPowerable(event.getBlock().getBlockData())) {
+            requiredPermissions.add("REDSTONE");
+        }
+        // Debug
+        player.sendMessage("Required Permissions: " + String.join(", ", requiredPermissions));
+        player.sendMessage("Type: " + type);
+        // Check all required permissions
+        for (String action : requiredPermissions) {
+            if (!permissionManager.canInteract(event.getBlock().getLocation(), player.getUniqueId(), action, type)) {
+                event.setCancelled(true);
+            } else player.sendMessage("You are lacking the permission to " + action + " the block " + type);
+        }
+
     }
 
 
