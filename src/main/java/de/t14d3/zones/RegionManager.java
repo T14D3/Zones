@@ -19,11 +19,10 @@ public class RegionManager {
 
     private final File regionsFile;
     private FileConfiguration regionsConfig;
-    private PermissionManager permissionManager;
+    private final PermissionManager permissionManager;
 
     public RegionManager(JavaPlugin plugin, PermissionManager permissionManager) {
         this.permissionManager = permissionManager;
-        // Initialize the regions.yml file
         regionsFile = new File(plugin.getDataFolder(), "regions.yml");
 
         if (!regionsFile.exists()) {
@@ -31,11 +30,9 @@ public class RegionManager {
             plugin.saveResource("regions.yml", false);
         }
 
-        // Load the YAML configuration
         regionsConfig = YamlConfiguration.loadConfiguration(regionsFile);
     }
 
-    // Save regions to the file
     public void saveRegions() {
         try {
             regionsConfig.save(regionsFile);

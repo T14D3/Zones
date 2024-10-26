@@ -66,7 +66,7 @@ public class Utils {
             }
 
             player.sendBlockChange(world.getBlockAt(x, highestYPoint, z).getLocation(), glassData);
-        }, 10L);
+        }, 1L);
     }
     public static void resetBeacon(Player player, Location location) {
         if (location == null || player == null) {
