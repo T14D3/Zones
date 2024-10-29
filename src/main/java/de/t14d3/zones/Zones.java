@@ -1,9 +1,6 @@
 package de.t14d3.zones;
 
-import de.t14d3.zones.listeners.CommandListener;
-import de.t14d3.zones.listeners.PlayerInteractListener;
-import de.t14d3.zones.listeners.PlayerQuitListener;
-import de.t14d3.zones.listeners.TabCompleteListener;
+import de.t14d3.zones.listeners.*;
 import it.unimi.dsi.fastutil.Pair;
 import org.bukkit.Location;
 import org.bukkit.plugin.java.JavaPlugin;

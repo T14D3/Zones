@@ -10,10 +10,7 @@ import org.bukkit.util.BoundingBox;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Array;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class RegionManager {
 
@@ -135,7 +132,7 @@ public class RegionManager {
         Region newRegion = new Region(name, min, max, members);
 
         ownerPermissions.forEach((permission, value) -> {
-            newRegion.setMemberPermission(playerUUID, permission, value);
+            newRegion.addMemberPermission(playerUUID, permission, value);
         });
 
 
@@ -180,6 +177,32 @@ public class RegionManager {
     public boolean overlapsExistingRegion(Location min, Location max) {
         Region region = new Region(null, min, max, null);
         return overlapsExistingRegion(region);
+    }
+
+    public List<Region> getRegionsAt(Location location) {
+        List<Region> foundRegions = new ArrayList<>();
+        Map<String, Region> regions = loadRegions(); // Load regions from file
+
+        for (Region region : regions.values()) {
+            BoundingBox regionBox = BoundingBox.of(region.getMin(), region.getMax());
+            // Check if the location's bounding box overlaps with the region's bounding box
+            if (regionBox.contains(location.toVector())) {
+                foundRegions.add(region);
+            }
+        }
+
+        return foundRegions;
+    }
+
+    // Helper method to check if a location is within a given region
+    private boolean isLocationInRegion(Location location, Region region) {
+        Location min = region.getMin();
+        Location max = region.getMax();
+
+        return location.getWorld().equals(min.getWorld()) &&
+                location.getX() >= min.getX() && location.getX() <= max.getX() &&
+                location.getY() >= min.getY() && location.getY() <= max.getY() &&
+                location.getZ() >= min.getZ() && location.getZ() <= max.getZ();
     }
 
     // Define the Region inner class
@@ -250,17 +273,10 @@ public class RegionManager {
             return this.members.get(uuid);
         }
 
-
-
         // Add or update a member's permission/role
-        public void setMemberPermission(UUID uuid, String permission, String value) {
+        public void addMemberPermission(UUID uuid, String permission, String value) {
             permissionManager.invalidateCache(uuid);
             this.members.computeIfAbsent(uuid, k -> new HashMap<>()).put(permission, value);
-
         }
-
-
-
-
     }
 }

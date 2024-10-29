@@ -6,6 +6,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.BoundingBox;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -58,38 +59,92 @@ public class PermissionManager {
     public void invalidateCache(UUID playerUUID) {
         permissionCache.remove(playerUUID);
     }
+    public void invalidateCacheForLocation(Location location) {
+        List<RegionManager.Region> regions = regionManager.getRegionsAt(location);
+
+        // Invalidate caches for all players that have permissions in the regions covering the location
+        for (RegionManager.Region region : regions) {
+            for (UUID playerUUID : permissionCache.keySet()) {
+                // Remove the player's cached permissions related to this region
+                permissionCache.get(playerUUID).keySet().removeIf(key -> key.startsWith(getCacheKey(location, "", "")));
+            }
+        }
+    }
 
     public void invalidateAllCaches() {
         permissionCache.clear();
     }
 
+    /**
+     * Checks if a player has a specific permission for a given type in the provided region.
+     *
+     * @param uuid    The UUID of the player whose permission is being checked.
+     * @param permission The permission being checked (e.g., "break", "place").
+     * @param type    The type of object the permission applies to (e.g., "GRASS_BLOCK").
+     * @param region  The region in which the permission is being checked.
+     * @return True if the player has the specified permission for the type, false otherwise.
+     */
     public static boolean hasPermission(UUID uuid, String permission, String type, RegionManager.Region region) {
+        permission = permission.toLowerCase();
         Player player = Bukkit.getPlayer(uuid);
-        if (player != null && player.hasPermission("zones.bypass.claimed")) return true;
 
-        Map<String, String> permissions = region.getMembers().get(uuid);
-        String value = permissions.get(permission);
-
-        if (value != null) {
-            boolean explicitAllow = false;
-            boolean explicitDeny = false;
-
-            for (String permittedValue : value.split(",")) {
-                permittedValue = permittedValue.trim();
-                if (permittedValue.startsWith("!") && permittedValue.substring(1).equalsIgnoreCase(type)) {
-                    explicitDeny = true;
-                } else if ("true".equalsIgnoreCase(permittedValue)) {
-                    explicitAllow = true;
-                } else if ("false".equalsIgnoreCase(permittedValue)) {
-                    explicitDeny = true;
-                } else if (permittedValue.equalsIgnoreCase(type)) {
-                    explicitAllow = true;
-                }
-            }
-
-            return explicitDeny ? false : explicitAllow;
+        // Check if player has a global bypass permission
+        if (player != null && player.hasPermission("zones.bypass.claimed")) {
+            return true;
         }
 
+        // Retrieve the permissions for the player in the specified region
+        Map<UUID, Map<String, String>> members = region.getMembers();
+
+        // Check if the player is a member of the region
+        if (!members.containsKey(uuid)) {
+            return false; // Player is not a member, deny access
+        }
+
+        // Get the permissions for the player
+        Map<String, String> permissions = members.get(uuid);
+        String value = permissions.get(permission);
+        Bukkit.getLogger().info(permissions.toString());
+        if (permissions.get("owner").equalsIgnoreCase("true") && permissions.get(permission) == null) {
+            return true;
+        }
+        // If no permission value is found, deny access
+        if (value == null) {
+            return false;
+        }
+
+        // Analyze permission values
+        boolean explicitAllow = false;
+        boolean explicitDeny = false;
+
+        for (String permittedValue : value.split(",")) {
+            permittedValue = permittedValue.trim(); // Trim whitespace
+
+            // Check for wildcard allow
+            if ("*".equals(permittedValue) || "true".equals(permittedValue)) {
+                explicitAllow = true;
+            }
+            // Check for wildcard deny
+            else if ("! *".equals(permittedValue) || "false".equals(permittedValue)) {
+                explicitDeny = true;
+            }
+            // Check for specific type allow
+            else if (permittedValue.equalsIgnoreCase(type)) {
+                explicitAllow = true;
+            }
+            // Check for specific type deny
+            else if (permittedValue.equalsIgnoreCase("!" + type)) {
+                explicitDeny = true;
+            }
+        }
+
+        // Determine final access based on explicit allow/deny flags
+        if (explicitDeny) {
+            return false;
+        } else if (explicitAllow) {
+            return true;
+        }
+        // Deny by default
         return false;
     }
 }
