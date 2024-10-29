@@ -18,7 +18,7 @@ public class TabCompleteListener implements TabCompleter {
     private Zones plugin;
     private RegionManager regionManager;
 
-    public TabCompleteListener (Zones plugin, RegionManager regionManager) {
+    public TabCompleteListener(Zones plugin, RegionManager regionManager) {
         this.regionManager = regionManager;
         this.plugin = plugin;
     }

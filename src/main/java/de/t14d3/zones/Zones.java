@@ -1,6 +1,8 @@
 package de.t14d3.zones;
 
 import de.t14d3.zones.listeners.*;
+import de.t14d3.zones.utils.BeaconUtils;
+import de.t14d3.zones.utils.Utils;
 import it.unimi.dsi.fastutil.Pair;
 import org.bukkit.Location;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -15,6 +17,7 @@ public final class Zones extends JavaPlugin {
     private RegionManager regionManager;
     private PermissionManager permissionManager;
     private Utils utils;
+    private BeaconUtils beaconUtils;
     public Map<UUID, Pair<Location, Location>> selection = new HashMap<>();
 
     @Override
@@ -30,6 +33,7 @@ public final class Zones extends JavaPlugin {
 
         // Initialize utilities
         this.utils = new Utils(this);
+        this.beaconUtils = new BeaconUtils(this);
 
         // Load regions from regions.yml
         Map<String, RegionManager.Region> regions = regionManager.loadRegions();
@@ -55,5 +59,7 @@ public final class Zones extends JavaPlugin {
 
     // Getters
     public RegionManager getRegionManager() { return regionManager; }
+    public PermissionManager getPermissionManager() {return permissionManager; }
     public Utils getUtils() { return utils; }
+    public BeaconUtils getBeaconUtils() { return beaconUtils; }
 }

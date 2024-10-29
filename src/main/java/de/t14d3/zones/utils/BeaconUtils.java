@@ -1,38 +1,28 @@
-package de.t14d3.zones;
+package de.t14d3.zones.utils;
 
-
-import net.minecraft.core.BlockPos;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.PacketUtils;
-import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
-import net.minecraft.network.protocol.game.DebugPackets;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.monster.Shulker;
-import org.bukkit.*;
-import org.bukkit.block.BlockState;
-import org.bukkit.block.Container;
+import de.t14d3.zones.Zones;
+import org.bukkit.Bukkit;
+import org.bukkit.DyeColor;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.block.data.Powerable;
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 
-import java.lang.reflect.Constructor;
+public class BeaconUtils {
 
+    private final Zones plugin;
 
-public class Utils {
-
-
-    private Zones plugin;
-
-    public Utils(Zones plugin) {
+    public BeaconUtils(Zones plugin) {
         this.plugin = plugin;
     }
 
+    /**
+     * Creates a beacon at the given location with the given color.
+     * @param player The player to display the beacon to.
+     * @param location The location where the beacon should be created.
+     * @param color The color of the beacon.
+     */
     public void createBeacon(Player player, Location location, DyeColor color) {
         if (location == null || player == null) {
             return;
@@ -68,6 +58,12 @@ public class Utils {
             player.sendBlockChange(world.getBlockAt(x, highestYPoint, z).getLocation(), glassData);
         }, 1L);
     }
+
+    /**
+     * Resets the beacon at the given location.
+     * @param player The player to remove the beacon from.
+     * @param location The location where the beacon should be reset.
+     */
     public static void resetBeacon(Player player, Location location) {
         if (location == null || player == null) {
             return;
@@ -100,11 +96,5 @@ public class Utils {
                 );
             }
         }
-    }
-    public boolean isContainer(BlockState state) {
-        return state instanceof Container;
-    }
-    public boolean isPowerable(BlockData data) {
-        return data instanceof Powerable;
     }
 }

@@ -2,13 +2,15 @@ package de.t14d3.zones.listeners;
 
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.PermissionManager;
-import de.t14d3.zones.Utils;
+import de.t14d3.zones.utils.Utils;
+import de.t14d3.zones.utils.BeaconUtils;
 import de.t14d3.zones.Zones;
+import de.t14d3.zones.utils.Actions;
 import it.unimi.dsi.fastutil.Pair;
 import org.bukkit.DyeColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.block.data.type.Candle;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -16,7 +18,6 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityPlaceEvent;
 import org.bukkit.event.hanging.HangingPlaceEvent;
 import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
@@ -27,7 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static de.t14d3.zones.Utils.resetBeacon;
+import static de.t14d3.zones.utils.BeaconUtils.resetBeacon;
 
 public class PlayerInteractListener implements Listener {
 
@@ -35,12 +36,14 @@ public class PlayerInteractListener implements Listener {
     private final PermissionManager permissionManager;
     private final Zones plugin;
     private final Utils utils;
+    private final BeaconUtils beaconUtils;
 
     public PlayerInteractListener(RegionManager regionManager, PermissionManager permissionManager, Zones plugin) {
         this.plugin = plugin;
         this.regionManager = regionManager;
         this.permissionManager = permissionManager;
         this.utils = plugin.getUtils();
+        this.beaconUtils = plugin.getBeaconUtils();
 
     }
     @EventHandler
@@ -63,12 +66,12 @@ public class PlayerInteractListener implements Listener {
             if (event.getAction() == Action.LEFT_CLICK_BLOCK) {
                 resetBeacon(player, min);
                 min = location;
-                utils.createBeacon(player, min, DyeColor.GREEN);
+                beaconUtils.createBeacon(player, min, DyeColor.GREEN);
                 player.sendMessage("First Location set to " + location);
             } else if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
                 resetBeacon(player, max);
                 max = location;
-                utils.createBeacon(player, max, DyeColor.RED);
+                beaconUtils.createBeacon(player, max, DyeColor.RED);
                 player.sendMessage("Second Location set to " + location);
             }
 
@@ -76,28 +79,23 @@ public class PlayerInteractListener implements Listener {
             return;
         }
 
-        String type;
-        List<String> requiredPermissions = new ArrayList<>(); // Collect required permissions
+        List<Actions> requiredPermissions = new ArrayList<>(); // Collect required permissions
 
         // Interactible blocks
         if ((utils.isContainer(event.getClickedBlock().getState()) || utils.isPowerable(event.getClickedBlock().getBlockData())) && event.getAction() == Action.RIGHT_CLICK_BLOCK) {
-            requiredPermissions.add("INTERACT");
-            type = event.getClickedBlock().getType().name();
+            requiredPermissions.add(Actions.INTERACT);
             if (utils.isContainer(event.getClickedBlock().getState())) {
-                requiredPermissions.add("CONTAINER");
+                requiredPermissions.add(Actions.CONTAINER);
             }
             if (utils.isPowerable(event.getClickedBlock().getBlockData())) {
-                requiredPermissions.add("REDSTONE");
-            }
-            if (event.getClickedBlock().getType() == Material.TNT || event.getClickedBlock() instanceof Candle) {
-                requiredPermissions.add("IGNITE");
+                requiredPermissions.add(Actions.REDSTONE);
             }
         } else return;
-        for (String action : requiredPermissions) {
-            if (!permissionManager.canInteract(location, playerUUID, action, type)) {
+        for (Actions action : requiredPermissions) {
+            if (!permissionManager.canInteract(location, playerUUID, action.name(), event.getClickedBlock().getType().name())) {
                 event.setCancelled(true);
                 event.getClickedBlock().getState().update();
-                player.sendMessage("You are lacking the permission to " + action + " the block " + type);
+                player.sendMessage("You are lacking the permission to " + action.name() + " the block " + event.getClickedBlock().getType().name());
             }
         }
     }
@@ -106,18 +104,18 @@ public class PlayerInteractListener implements Listener {
     public void onBlockPlace(BlockPlaceEvent event) {
         Player player = event.getPlayer();
         String type = event.getBlockPlaced().getType().name();
-        List<String> requiredPermissions = new ArrayList<>();
-        requiredPermissions.add("PLACE");
+        List<Actions> requiredPermissions = new ArrayList<>();
+        requiredPermissions.add(Actions.PLACE);
         if (utils.isContainer(event.getBlockPlaced().getState())) {
-            requiredPermissions.add("CONTAINER");
+            requiredPermissions.add(Actions.CONTAINER);
         }
         if (utils.isPowerable(event.getBlockPlaced().getBlockData())) {
-            requiredPermissions.add("REDSTONE");
+            requiredPermissions.add(Actions.REDSTONE);
         }
-        for (String action : requiredPermissions) {
-            if (!permissionManager.canInteract(event.getBlockPlaced().getLocation(), player.getUniqueId(), action, type)) {
+        for (Actions action : requiredPermissions) {
+            if (!permissionManager.canInteract(event.getBlockPlaced().getLocation(), player.getUniqueId(), action.name(), type)) {
                 event.setCancelled(true);
-                player.sendMessage("You are lacking the permission to " + action + " the block " + type);
+                player.sendMessage("You are lacking the permission to " + action.name() + " the block " + type);
             }
         }
 
@@ -127,18 +125,18 @@ public class PlayerInteractListener implements Listener {
     public void onBlockBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
         String type = event.getBlock().getType().name();
-        List<String> requiredPermissions = new ArrayList<>();
-        requiredPermissions.add("BREAK");
+        List<Actions> requiredPermissions = new ArrayList<>();
+        requiredPermissions.add(Actions.BREAK);
         if (utils.isContainer(event.getBlock().getState())) {
-            requiredPermissions.add("CONTAINER");
+            requiredPermissions.add(Actions.CONTAINER);
         }
         if (utils.isPowerable(event.getBlock().getBlockData())) {
-            requiredPermissions.add("REDSTONE");
+            requiredPermissions.add(Actions.REDSTONE);
         }
-        for (String action : requiredPermissions) {
-            if (!permissionManager.canInteract(event.getBlock().getLocation(), player.getUniqueId(), action, type)) {
+        for (Actions action : requiredPermissions) {
+            if (!permissionManager.canInteract(event.getBlock().getLocation(), player.getUniqueId(), action.name(), type)) {
                 event.setCancelled(true);
-                player.sendMessage("You are lacking the permission to " + action + " the block " + type);
+                player.sendMessage("You are lacking the permission to " + action.name() + " the block " + type);
             }
         }
 
@@ -149,13 +147,13 @@ public class PlayerInteractListener implements Listener {
     public void onEntityInteract(PlayerInteractEntityEvent event) {
         Player player = event.getPlayer();
         Location location = event.getRightClicked().getLocation();
-        List<String> requiredPermissions = new ArrayList<>();
-        requiredPermissions.add("ENTITY");
+        List<Actions> requiredPermissions = new ArrayList<>();
+        requiredPermissions.add(Actions.ENTITY);
         String type = event.getRightClicked().getType().name();
-        for (String action : requiredPermissions) {
-            if (!permissionManager.canInteract(location, player.getUniqueId(), action, type)) {
+        for (Actions action : requiredPermissions) {
+            if (!permissionManager.canInteract(location, player.getUniqueId(), action.name(), type)) {
                 event.setCancelled(true);
-                player.sendMessage("You are lacking the permission " + action + " for the entity " + type);
+                player.sendMessage("You are lacking the permission " + action.name() + " for the entity " + type);
             }
         }
     }
@@ -164,13 +162,13 @@ public class PlayerInteractListener implements Listener {
     public void onEntityDamage(EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof Player player) {
             Location location = event.getEntity().getLocation();
-            List<String> requiredPermissions = new ArrayList<>();
-            requiredPermissions.add("DAMAGE");
+            List<Actions> requiredPermissions = new ArrayList<>();
+            requiredPermissions.add(Actions.DAMAGE);
             String type = event.getEntity().getType().name();
-            for (String action : requiredPermissions) {
-                if (!permissionManager.canInteract(location, player.getUniqueId(), action, type)) {
+            for (Actions action : requiredPermissions) {
+                if (!permissionManager.canInteract(location, player.getUniqueId(), action.name(), type)) {
                     event.setCancelled(true);
-                    player.sendMessage("You are lacking the permission to " + action + " the entity " + type);
+                    player.sendMessage("You are lacking the permission to " + action.name() + " the entity " + type);
                 }
             }
         }
@@ -180,13 +178,13 @@ public class PlayerInteractListener implements Listener {
     public void onVehicleDamage(VehicleDamageEvent event) {
         if (event.getAttacker() instanceof Player player) {
             Location location = event.getVehicle().getLocation();
-            List<String> requiredPermissions = new ArrayList<>();
-            requiredPermissions.add("DAMAGE");
+            List<Actions> requiredPermissions = new ArrayList<>();
+            requiredPermissions.add(Actions.DAMAGE);
             String type = event.getVehicle().getType().name();
-            for (String action : requiredPermissions) {
-                if (!permissionManager.canInteract(location, player.getUniqueId(), action, type)) {
+            for (Actions action : requiredPermissions) {
+                if (!permissionManager.canInteract(location, player.getUniqueId(), action.name(), type)) {
                     event.setCancelled(true);
-                    player.sendMessage("You are lacking the permission to " + action + " the vehicle " + type);
+                    player.sendMessage("You are lacking the permission to " + action.name() + " the vehicle " + type);
                 }
             }
         }
@@ -196,32 +194,14 @@ public class PlayerInteractListener implements Listener {
     public void onArmorStandManipulate(PlayerArmorStandManipulateEvent event) {
         Player player = event.getPlayer();
         Location location = event.getRightClicked().getLocation();
-        List<String> requiredPermissions = new ArrayList<>();
-        requiredPermissions.add("ENTITY");
+        List<Actions> requiredPermissions = new ArrayList<>();
+        requiredPermissions.add(Actions.ENTITY);
         String type = event.getRightClicked().getType().name();
-        requiredPermissions.add("CONTAINER");
-        for (String action : requiredPermissions) {
-            if (!permissionManager.canInteract(location, player.getUniqueId(), action, type)) {
+        requiredPermissions.add(Actions.CONTAINER);
+        for (Actions action : requiredPermissions) {
+            if (!permissionManager.canInteract(location, player.getUniqueId(), action.name(), type)) {
                 event.setCancelled(true);
-                player.sendMessage("You are lacking the permission " + action + " for the entity " + type);
-            }
-        }
-    }
-
-    @EventHandler
-    public void onEntityPlace(EntityPlaceEvent event) {
-        if (event.getPlayer() == null) {
-            return;
-        }
-        Player player = event.getPlayer();
-        Location location = event.getEntity().getLocation();
-        List<String> requiredPermissions = new ArrayList<>();
-        requiredPermissions.add("PLACE");
-        String type = event.getEntity().getType().name();
-        for (String action : requiredPermissions) {
-            if (!permissionManager.canInteract(location, player.getUniqueId(), action, type)) {
-                event.setCancelled(true);
-                player.sendMessage("You are lacking the permission to " + action + " the entity " + type);
+                player.sendMessage("You are lacking the permission " + action.name() + " for the entity " + type);
             }
         }
     }
@@ -233,13 +213,13 @@ public class PlayerInteractListener implements Listener {
         }
         Player player = event.getPlayer();
         Location location = event.getEntity().getLocation();
-        List<String> requiredPermissions = new ArrayList<>();
-        requiredPermissions.add("PLACE");
+        List<Actions> requiredPermissions = new ArrayList<>();
+        requiredPermissions.add(Actions.PLACE);
         String type = event.getEntity().getType().name();
-        for (String action : requiredPermissions) {
-            if (!permissionManager.canInteract(location, player.getUniqueId(), action, type)) {
+        for (Actions action : requiredPermissions) {
+            if (!permissionManager.canInteract(location, player.getUniqueId(), action.name(), type)) {
                 event.setCancelled(true);
-                player.sendMessage("You are lacking the permission to " + action + " the entity " + type);
+                player.sendMessage("You are lacking the permission to " + action.name() + " the entity " + type);
             }
         }
     }

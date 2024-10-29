@@ -24,6 +24,14 @@ public class PermissionManager {
         this.regionManager = regionManager;
     }
 
+    /**
+     * Checks if a player can interact with a region.
+     * @param location The location of the interaction.
+     * @param playerUUID The UUID of the player.
+     * @param action The action the player wants to perform.
+     * @param type The type of the block or entity the interaction happened with.
+     * @return True if the player can interact with the region, false otherwise.
+     */
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean canInteract(Location location, UUID playerUUID, String action, String type) {
         Map<String, Boolean> playerCache = permissionCache.getOrDefault(playerUUID, new HashMap<>());

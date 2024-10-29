@@ -15,7 +15,8 @@ public class PlayerQuitListener implements Listener {
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        zones.selection.remove(event.getPlayer().getUniqueId());
-
+        java.util.UUID uuid = event.getPlayer().getUniqueId();
+        zones.selection.remove(uuid);
+        zones.getPermissionManager().invalidateCache(uuid);
     }
 }

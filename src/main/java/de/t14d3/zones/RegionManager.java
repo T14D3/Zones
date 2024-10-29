@@ -4,18 +4,22 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.BoundingBox;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Array;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class RegionManager {
 
     private final File regionsFile;
-    private FileConfiguration regionsConfig;
+    private final FileConfiguration regionsConfig;
     private final PermissionManager permissionManager;
 
     public RegionManager(JavaPlugin plugin, PermissionManager permissionManager) {
@@ -98,11 +102,10 @@ public class RegionManager {
         regionsConfig.set(path + ".z", loc.getZ());
     }
 
-    /*
-     *  Region Utility Methods
+    /**
+     * Deletes an existing region
+     * @param regionKey
      */
-
-    // Delete existing region
     public void deleteRegion(String regionKey) {
         loadRegions().remove(regionKey);
         saveRegions();
@@ -160,19 +163,15 @@ public class RegionManager {
 
     // Check if new region overlaps existing region
     public boolean overlapsExistingRegion(Region region) {
-        boolean overlap = false;
         Map<String, Region> regions = loadRegions();
-        for (Map.Entry<String, Region> entry : regions.entrySet()) {
-            Region otherRegion = entry.getValue();
+        for (Region otherRegion : regions.values()) {
             BoundingBox otherBox = BoundingBox.of(otherRegion.getMin(), otherRegion.getMax());
             BoundingBox thisBox = BoundingBox.of(region.getMin(), region.getMax());
             if (thisBox.overlaps(otherBox)) {
-                overlap = true;
-            } else {
-                return false;
+                return true; // Found an overlap
             }
         }
-        return overlap;
+        return false; // No overlaps found
     }
     public boolean overlapsExistingRegion(Location min, Location max) {
         Region region = new Region(null, min, max, null);
@@ -194,15 +193,11 @@ public class RegionManager {
         return foundRegions;
     }
 
-    // Helper method to check if a location is within a given region
-    private boolean isLocationInRegion(Location location, Region region) {
-        Location min = region.getMin();
-        Location max = region.getMax();
-
-        return location.getWorld().equals(min.getWorld()) &&
-                location.getX() >= min.getX() && location.getX() <= max.getX() &&
-                location.getY() >= min.getY() && location.getY() <= max.getY() &&
-                location.getZ() >= min.getZ() && location.getZ() <= max.getZ();
+    public Map<String, String> getMemberPermissions(Player player, Region region) {
+        return region.getMemberPermissions(player.getUniqueId());
+    }
+    public Map<String, String> getMemberPermissions(UUID uuid, Region region) {
+        return region.getMemberPermissions(uuid);
     }
 
     // Define the Region inner class
