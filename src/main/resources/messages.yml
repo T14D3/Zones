@@ -1,0 +1,21 @@
+messages:
+  command_only_player: "<red>This command can only be executed by a player."
+  region_deleted: "<green>Region '{regionKey}' deleted successfully!"
+  region_not_exist: "<red>Error: Region with key '{regionKey}' does not exist."
+  usage_delete: "<red>Usage: /zone delete <regionKey>"
+  invalid_subcommand: "<red>Invalid subcommand. Use /zone <create|delete|list|info|cancel>"
+  region_created: "<green>Region created successfully!"
+  selection_cancelled: "<yellow>Selection cancelled."
+  no_selection: "<red>No selection to cancel."
+  no_regions: "<red>No regions available."
+  available_regions: "<green>Available regions:"
+  click_two_corners: "<yellow>Click two corners to select the region."
+  usage_info: "<red>Usage: /zone info <regionKey>"
+  region:
+    info:
+      name: "<green>Region Name: {regionName}\n"
+      min: "<white>Min: {min}\n"
+      max: "<white>Max: {max}\n"
+      members:
+        header: "<white>Members:\n"
+        member: "<white>{playerName}: {permissions}\n"

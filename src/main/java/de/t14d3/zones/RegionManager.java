@@ -243,6 +243,25 @@ public class RegionManager {
         public Map<UUID, Map<String, String>> getMembers() {
             return members;
         }
+        public String getFormattedMembers() {
+            StringBuilder formattedMembers = new StringBuilder();
+            for (Map.Entry<UUID, Map<String, String>> entry : members.entrySet()) {
+                UUID uuid = entry.getKey();
+                String playerName = Bukkit.getPlayer(uuid) != null ? Bukkit.getPlayer(uuid).getName() : uuid.toString(); // Get player name or UUID if offline
+                Map<String, String> permissions = entry.getValue();
+
+                formattedMembers.append(playerName).append(": ");
+                permissions.forEach((perm, value) -> {
+                    formattedMembers.append(perm).append("=").append(value).append(", ");
+                });
+                // Remove the last comma and space
+                if (formattedMembers.length() > 2) {
+                    formattedMembers.setLength(formattedMembers.length() - 2);
+                }
+                formattedMembers.append("\n"); // New line for each member
+            }
+            return formattedMembers.toString();
+        }
 
         public void setMembers(Map<UUID, Map<String, String>> members) {
             this.members = members;

@@ -5,8 +5,13 @@ import de.t14d3.zones.utils.BeaconUtils;
 import de.t14d3.zones.utils.Utils;
 import it.unimi.dsi.fastutil.Pair;
 import org.bukkit.Location;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.yaml.snakeyaml.Yaml;
 
+import java.io.File;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -19,6 +24,7 @@ public final class Zones extends JavaPlugin {
     private Utils utils;
     private BeaconUtils beaconUtils;
     public Map<UUID, Pair<Location, Location>> selection = new HashMap<>();
+    private Map<String, String> messages;
 
     @Override
     public void onEnable() {
@@ -40,6 +46,22 @@ public final class Zones extends JavaPlugin {
 
         this.saveDefaultConfig();
 
+        // Load messages from messages.yml
+        File messagesFile = new File(getDataFolder(), "messages.yml");
+        if (!messagesFile.exists()) {
+            saveResource("messages.yml", false); // Copy default messages.yml from jar
+        }
+
+        FileConfiguration messagesConfig = YamlConfiguration.loadConfiguration(messagesFile);
+        Map<String, Object> rawMessages = messagesConfig.getConfigurationSection("messages").getValues(true); // Get raw messages as Map<String, Object>
+        messages = new HashMap<>();
+
+        // Convert to Map<String, String>
+        for (Map.Entry<String, Object> entry : rawMessages.entrySet()) {
+            messages.put(entry.getKey(), entry.getValue().toString()); // Convert each value to String
+        }
+
+
         // Register listeners
         this.getServer().getPluginManager().registerEvents(new PlayerInteractListener(regionManager, permissionManager, this), this);
         this.getServer().getPluginManager().registerEvents(new PlayerQuitListener(this), this);
@@ -60,6 +82,7 @@ public final class Zones extends JavaPlugin {
     // Getters
     public RegionManager getRegionManager() { return regionManager; }
     public PermissionManager getPermissionManager() {return permissionManager; }
+    public Map<String, String> getMessages() { return messages; }
     public Utils getUtils() { return utils; }
     public BeaconUtils getBeaconUtils() { return beaconUtils; }
 }
