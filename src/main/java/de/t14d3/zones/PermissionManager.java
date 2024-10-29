@@ -112,8 +112,8 @@ public class PermissionManager {
         // Get the permissions for the player
         Map<String, String> permissions = members.get(uuid);
         String value = permissions.get(permission);
-        Bukkit.getLogger().info(permissions.toString());
-        if (permissions.get("owner").equalsIgnoreCase("true") && permissions.get(permission) == null) {
+        String ownerValue = permissions.get("owner");
+        if ("true".equalsIgnoreCase(ownerValue) && permissions.get(permission) == null) {
             return true;
         }
         // If no permission value is found, deny access
