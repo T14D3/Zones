@@ -10,11 +10,7 @@ import org.bukkit.util.BoundingBox;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class RegionManager {
 
@@ -56,7 +52,7 @@ public class RegionManager {
                 if (regionsConfig.contains("regions." + key + ".members")) {
                     for (String uuidStr : regionsConfig.getConfigurationSection("regions." + key + ".members").getKeys(false)) {
                         UUID uuid = UUID.fromString(uuidStr);
-                        Map<String, String> permissions = new HashMap<>();
+                        Map<String, String> permissions = new TreeMap<>(String.CASE_INSENSITIVE_ORDER); // Case-insensitive map
                         for (String perm : regionsConfig.getConfigurationSection("regions." + key + ".members." + uuidStr).getKeys(false)) {
                             permissions.put(perm, regionsConfig.getString("regions." + key + ".members." + uuidStr + "." + perm));
                         }
@@ -290,7 +286,7 @@ public class RegionManager {
         // Add or update a member's permission/role
         public void addMemberPermission(UUID uuid, String permission, String value) {
             permissionManager.invalidateCache(uuid);
-            this.members.computeIfAbsent(uuid, k -> new HashMap<>()).put(permission, value);
+            this.members.computeIfAbsent(uuid, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)).put(permission, value);
         }
     }
 }
