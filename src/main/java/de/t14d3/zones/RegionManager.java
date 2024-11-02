@@ -1,5 +1,10 @@
 package de.t14d3.zones;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.ComponentBuilder;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -17,9 +22,15 @@ public class RegionManager {
     private final File regionsFile;
     private final FileConfiguration regionsConfig;
     private final PermissionManager permissionManager;
+    private final Zones plugin;
+    private final MiniMessage miniMessage = MiniMessage.miniMessage();
+    private final Map<String, String> messages;
 
-    public RegionManager(JavaPlugin plugin, PermissionManager permissionManager) {
+    public RegionManager(Zones plugin, PermissionManager permissionManager) {
         this.permissionManager = permissionManager;
+        this.plugin = plugin;
+        this.messages = plugin.getMessages();
+
         regionsFile = new File(plugin.getDataFolder(), "regions.yml");
 
         if (!regionsFile.exists()) {
@@ -223,6 +234,9 @@ public class RegionManager {
         public Location getMin() {
             return min;
         }
+        public String getMinString() {
+            return min.getBlockX() + "," + min.getBlockY() + "," + min.getBlockZ();
+        }
 
         public void setMin(Location min) {
             this.min = min;
@@ -230,6 +244,9 @@ public class RegionManager {
 
         public Location getMax() {
             return max;
+        }
+        public String getMaxString() {
+            return max.getBlockX() + "," + max.getBlockY() + "," + max.getBlockZ();
         }
 
         public void setMax(Location max) {
@@ -239,24 +256,23 @@ public class RegionManager {
         public Map<UUID, Map<String, String>> getMembers() {
             return members;
         }
-        public String getFormattedMembers() {
-            StringBuilder formattedMembers = new StringBuilder();
-            for (Map.Entry<UUID, Map<String, String>> entry : members.entrySet()) {
-                UUID uuid = entry.getKey();
-                String playerName = Bukkit.getPlayer(uuid) != null ? Bukkit.getPlayer(uuid).getName() : uuid.toString(); // Get player name or UUID if offline
-                Map<String, String> permissions = entry.getValue();
 
-                formattedMembers.append(playerName).append(": ");
-                permissions.forEach((perm, value) -> {
-                    formattedMembers.append(perm).append("=").append(value).append(", ");
-                });
-                // Remove the last comma and space
-                if (formattedMembers.length() > 2) {
-                    formattedMembers.setLength(formattedMembers.length() - 2);
+        public JsonObject getAsJson() {
+            JsonObject json = new JsonObject();
+            json.addProperty("name", getName());
+            JsonObject members = new JsonObject();
+            for (Map.Entry<UUID, Map<String, String>> member : getMembers().entrySet()) {
+                JsonObject memberJson = new JsonObject();
+                memberJson.addProperty("player", Bukkit.getPlayer(member.getKey()) != null ? Bukkit.getPlayer(member.getKey()).getName() : member.getKey().toString());
+                JsonObject permissions = new JsonObject();
+                for (Map.Entry<String, String> perm : member.getValue().entrySet()) {
+                    permissions.addProperty(perm.getKey(), perm.getValue());
                 }
-                formattedMembers.append("\n"); // New line for each member
+                memberJson.add("permissions", permissions);
+                members.add(member.getKey().toString(), memberJson);
             }
-            return formattedMembers.toString();
+            json.add("members", members);
+            return json;
         }
 
         public void setMembers(Map<UUID, Map<String, String>> members) {

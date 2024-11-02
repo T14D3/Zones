@@ -3,15 +3,17 @@ package de.t14d3.zones;
 import de.t14d3.zones.listeners.*;
 import de.t14d3.zones.utils.BeaconUtils;
 import de.t14d3.zones.utils.Utils;
+import io.papermc.paper.command.brigadier.Commands;
+import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import it.unimi.dsi.fastutil.Pair;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -68,8 +70,13 @@ public final class Zones extends JavaPlugin {
         getLogger().info("Zones plugin has been enabled and regions are loaded.");
 
         // Register command executor and tab completer
-        Objects.requireNonNull(this.getCommand("zone")).setExecutor(new CommandListener(this, regionManager));
-        Objects.requireNonNull(this.getCommand("zone")).setTabCompleter(new TabCompleteListener(this, regionManager));
+        LifecycleEventManager<Plugin> manager = this.getLifecycleManager();
+        manager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
+            final Commands commands = event.registrar();
+            commands.register("zone", new CommandListener(this, regionManager));
+        });
+        //Objects.requireNonNull(this.getCommand("zone")).setExecutor(new CommandListener(this, regionManager));
+        //Objects.requireNonNull(this.getCommand("zone")).setTabCompleter(new TabCompleteListener(this, regionManager));
     }
 
     @Override
