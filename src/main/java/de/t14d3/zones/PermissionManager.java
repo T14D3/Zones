@@ -157,6 +157,6 @@ public class PermissionManager {
     }
 
     public static boolean isAdmin(UUID uuid, RegionManager.Region region) {
-        return hasPermission(uuid, "admin", "true", region) || hasPermission(uuid, "owner", "true", region);
+        return hasPermission(uuid, "role", "owner", region) || hasPermission(uuid, "role", "admin", region);
     }
 }

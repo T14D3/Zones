@@ -38,31 +38,7 @@ public class TabCompleteListener implements TabCompleter {
                 completions.add("set");
                 completions.add("cancel");
             } else if (args.length >= 2) {
-                if (args[0].equalsIgnoreCase("createmanual")) {
-                    if (args.length == 2) {
-                        completions.add("name");
-                    }
-                    if (args.length == 3) {
-                        completions.add(player.getLocation().getBlockX() + "");
-                    }
-                    if (args.length == 4) {
-                        completions.add(player.getLocation().getBlockY() + "");
-                    }
-                    if (args.length == 5) {
-                        completions.add(player.getLocation().getBlockZ() + "");
-                    }
-                    if (args.length == 6) {
-                        completions.add(player.getLocation().getBlockX() + "");
-                    }
-                    if (args.length == 7) {
-                        completions.add(player.getLocation().getBlockY() + "");
-                    }
-                    if (args.length == 8) {
-                        completions.add(player.getLocation().getBlockZ() + "");
-                    }
-
-
-                } else if (args[0].equalsIgnoreCase("delete")) {
+                if (args[0].equalsIgnoreCase("delete")) {
                     completions.add("name");
                 } else if (args[0].equalsIgnoreCase("info")) {
 
@@ -73,6 +49,19 @@ public class TabCompleteListener implements TabCompleter {
                         if (hasPermission(player.getUniqueId(), "admin", "true", region) || player.hasPermission("zones.info.other")) {
                             completions.add(entry.getKey());
                         }
+                    }
+                } else if (args[0].equalsIgnoreCase("set")) {
+                    String regionKey = args[1];
+                    RegionManager.Region region = regionManager.loadRegions().get(regionKey);
+                    if (region == null) {
+                        return null;
+                    }
+                    if (hasPermission(player.getUniqueId(), "role", "owner", region)) {
+                        completions.add("role");
+                        completions.add("name");
+                        completions.add("min");
+                        completions.add("max");
+                        completions.add("members");
                     }
                 }
             }

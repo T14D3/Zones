@@ -71,6 +71,9 @@ public class CommandListener implements BasicCommand {
             case "list":
                 handleListCommand(player, regionManager.loadRegions());
                 break;
+            case "set":
+                handleSetCommand(player, args);
+                break;
             default:
                 player.sendMessage(miniMessage.deserialize(messages.get("invalidCommand")));
                 break;
@@ -79,8 +82,9 @@ public class CommandListener implements BasicCommand {
 
     @Override
     public Collection<String> suggest(CommandSourceStack stack, String[] args) {
+        Player player = (Player) stack.getSender();
         if (args.length <= 1) {
-            return List.of("info", "delete", "create", "cancel", "list");
+            return List.of("info", "delete", "create", "cancel", "list", "set");
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("info") || args[0].equalsIgnoreCase("delete"))) {
             List<String> builder = new ArrayList<>();
@@ -91,6 +95,28 @@ public class CommandListener implements BasicCommand {
             });
             return builder;
         }
+        if (args[0].equalsIgnoreCase("set")) {
+            if (args.length == 2) {
+                List<String> builder = new ArrayList<>();
+                regionManager.loadRegions().forEach((regionKey, region) -> {
+                    if (hasPermission(player.getUniqueId(), "role", "owner", region)) {
+                        builder.add(regionKey);
+                    }
+                });
+                return builder;
+            } else if (args.length == 3) {
+                String regionKey = args[1];
+                RegionManager.Region region = regionManager.loadRegions().get(regionKey);
+                if (region == null) {
+                    return null;
+                }
+                if (hasPermission(player.getUniqueId(), "role", "owner", region)) {
+                    return List.of("role", "name", "min", "max", "members");
+                }
+            }
+        }
+
+
         return List.of();
     }
 
@@ -185,6 +211,28 @@ public class CommandListener implements BasicCommand {
         Component comp = regionInfo(player, regions.entrySet().stream().filter(entry -> entry.getKey().equals(regionKey)).findFirst().get(), true);
         player.sendMessage(comp);
 
+    }
+
+    private void handleSetCommand(Player player, String[] args) {
+        if (args.length < 3) {
+            player.sendMessage(miniMessage.deserialize(messages.get("invalidCommand")));
+            return;
+        }
+        String regionKey = args[1];
+        RegionManager.Region region = regionManager.loadRegions().get(regionKey);
+        if (region == null) {
+            player.sendMessage(miniMessage.deserialize(messages.get("region_not_exist"), parsed("key", regionKey)));
+            return;
+        }
+        if (!hasPermission(player.getUniqueId(), "role", "owner", region)) {
+            player.sendMessage(miniMessage.deserialize(messages.get("region_not_exist"), parsed("key", regionKey)));
+            return;
+        }
+        String permission = args[2];
+        String value = args[3];
+        regionManager.addMemberPermission(player.getUniqueId(), permission, value, regionManager, regionKey);
+        regionManager.saveRegions();
+        player.sendMessage(miniMessage.deserialize(messages.get("set.success"), parsed("permission", permission), parsed("value", value), parsed("region", regionKey)));
     }
 
     public Component regionInfo(Player player, Map.Entry<String, RegionManager.Region> entry, boolean showMembers) {

@@ -1,6 +1,7 @@
 messages:
   region:
     none-found: "<red>No regions found!"
+    no-interact-permission: "<red>You are lacking the permission <aqua><actions> <red>for type <yellow><type> <red>in region(s) <gold><region>"
     info:
       name: "<gold><name> <dark_gray><italic>(#<key>)"
       min: "<gray><min>"
@@ -34,3 +35,5 @@ messages:
     overlap: "<red>Error: Region overlaps existing region."
     click_two_corners: "<yellow>Click two corners to select the region."
     region_created: "<green>Region created successfully!"
+  set:
+    success: "<green>Permission '<permission>' set to '<value>' for region '<region>'"

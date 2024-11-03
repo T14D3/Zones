@@ -1,16 +1,12 @@
 package de.t14d3.zones;
 
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.ComponentBuilder;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.BoundingBox;
 
 import java.io.File;
@@ -55,43 +51,51 @@ public class RegionManager {
         if (regionsConfig.contains("regions")) {
             for (String key : regionsConfig.getConfigurationSection("regions").getKeys(false)) {
                 String name = regionsConfig.getString("regions." + key + ".name");
-
                 Location min = loadLocation("regions." + key + ".min");
                 Location max = loadLocation("regions." + key + ".max");
 
-                Map<UUID, Map<String, String>> members = new HashMap<>();
-                if (regionsConfig.contains("regions." + key + ".members")) {
-                    for (String uuidStr : regionsConfig.getConfigurationSection("regions." + key + ".members").getKeys(false)) {
-                        UUID uuid = UUID.fromString(uuidStr);
-                        Map<String, String> permissions = new TreeMap<>(String.CASE_INSENSITIVE_ORDER); // Case-insensitive map
-                        for (String perm : regionsConfig.getConfigurationSection("regions." + key + ".members." + uuidStr).getKeys(false)) {
-                            permissions.put(perm, regionsConfig.getString("regions." + key + ".members." + uuidStr + "." + perm));
-                        }
-                        members.put(uuid, permissions);
-                    }
-                }
+                Map<UUID, Map<String, String>> members = loadMembers(key);
                 Region region = new Region(name, min, max, members);
                 regions.put(key, region);
             }
         }
         return regions;
     }
+
+    private Map<UUID, Map<String, String>> loadMembers(String key) {
+        Map<UUID, Map<String, String>> members = new HashMap<>();
+        if (regionsConfig.contains("regions." + key + ".members")) {
+            for (String uuidStr : regionsConfig.getConfigurationSection("regions." + key + ".members").getKeys(false)) {
+                UUID uuid = UUID.fromString(uuidStr);
+                Map<String, String> permissions = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+                for (String perm : regionsConfig.getConfigurationSection("regions." + key + ".members." + uuidStr).getKeys(false)) {
+                    permissions.put(perm, regionsConfig.getString("regions." + key + ".members." + uuidStr + "." + perm));
+                }
+                members.put(uuid, permissions);
+            }
+        }
+        return members;
+    }
+
     // Save a region to the YAML file
     public void createRegion(String key, Region region) {
         regionsConfig.set("regions." + key + ".name", region.getName());
-
         saveLocation("regions." + key + ".min", region.getMin());
         saveLocation("regions." + key + ".max", region.getMax());
 
-        Map<UUID, Map<String, String>> members = region.getMembers();
+        saveMembers(key, region.getMembers());
+        saveRegions();
+    }
+
+    private void saveMembers(String key, Map<UUID, Map<String, String>> members) {
         for (Map.Entry<UUID, Map<String, String>> entry : members.entrySet()) {
             String uuid = entry.getKey().toString();
             for (Map.Entry<String, String> perm : entry.getValue().entrySet()) {
                 regionsConfig.set("regions." + key + ".members." + uuid + "." + perm.getKey(), perm.getValue());
             }
         }
-        saveRegions();
     }
+
     // Load a location from the YAML file
     private Location loadLocation(String path) {
         String world = regionsConfig.getString(path + ".world");
@@ -130,32 +134,27 @@ public class RegionManager {
      *
      */
     public void createNewRegion(String name, Location min, Location max, UUID playerUUID, Map<String, String> ownerPermissions) {
-
         String regionKey;
         do {
             regionKey = UUID.randomUUID().toString().substring(0, 8);
         } while (loadRegions().containsKey(regionKey));
 
-        // Create an empty map of members (in this case, just add the player UUID)
         Map<UUID, Map<String, String>> members = new HashMap<>();
-
-        // Create a new region with the given name, min, max, and members
         Region newRegion = new Region(name, min, max, members);
 
+        String finalRegionKey = regionKey;
         ownerPermissions.forEach((permission, value) -> {
-            newRegion.addMemberPermission(playerUUID, permission, value);
+            newRegion.addMemberPermission(playerUUID, permission, value, this, finalRegionKey);
         });
-
 
         permissionManager.invalidateAllCaches();
         createRegion(regionKey, newRegion);
-
     }
+
     public void createNewRegion(String name, Location min, Location max, UUID playerUUID) {
         Map<String, String> permissions = new HashMap<>();
         permissions.put("role", "owner");
         createNewRegion(name, min, max, playerUUID, permissions);
-
     }
 
     public void create2DRegion(String name, Location min, Location max, UUID playerUUID) {
@@ -163,10 +162,18 @@ public class RegionManager {
         max.setY(319);
         createNewRegion(name, min, max, playerUUID);
     }
+
     public void create2DRegion(String name, Location min, Location max, UUID playerUUID, Map<String, String> ownerPermissions) {
         min.setY(-63);
         max.setY(319);
         createNewRegion(name, min, max, playerUUID, ownerPermissions);
+    }
+
+    public void addMemberPermission(UUID uuid, String permission, String value, RegionManager regionManager, String key) {
+        permissionManager.invalidateCache(uuid);
+        RegionManager.Region region = regionManager.loadRegions().get(key);
+        region.members.computeIfAbsent(uuid, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)).put(permission, value);
+        regionManager.createRegion(key, region); // Ensure changes are saved
     }
 
     // Check if new region overlaps existing region
@@ -181,6 +188,7 @@ public class RegionManager {
         }
         return false; // No overlaps found
     }
+
     public boolean overlapsExistingRegion(Location min, Location max) {
         Region region = new Region(null, min, max, null);
         return overlapsExistingRegion(region);
@@ -204,6 +212,7 @@ public class RegionManager {
     public Map<String, String> getMemberPermissions(Player player, Region region) {
         return region.getMemberPermissions(player.getUniqueId());
     }
+
     public Map<String, String> getMemberPermissions(UUID uuid, Region region) {
         return region.getMemberPermissions(uuid);
     }
@@ -228,8 +237,9 @@ public class RegionManager {
             return name;
         }
 
-        public void setName(String name) {
+        public void setName(String name, RegionManager regionManager, String key) {
             this.name = name;
+            regionManager.createRegion(key, this); // Ensure changes are saved
         }
 
         public Location getMin() {
@@ -239,8 +249,9 @@ public class RegionManager {
             return min.getBlockX() + "," + min.getBlockY() + "," + min.getBlockZ();
         }
 
-        public void setMin(Location min) {
+        public void setMin(Location min, RegionManager regionManager, String key) {
             this.min = min;
+            regionManager.createRegion(key, this); // Ensure changes are saved
         }
 
         public Location getMax() {
@@ -250,18 +261,49 @@ public class RegionManager {
             return max.getBlockX() + "," + max.getBlockY() + "," + max.getBlockZ();
         }
 
-        public void setMax(Location max) {
+        public void setMax(Location max, RegionManager regionManager, String key) {
             this.max = max;
+            regionManager.createRegion(key, this); // Ensure changes are saved
         }
 
         public Map<UUID, Map<String, String>> getMembers() {
             return members;
         }
 
+        public void setMembers(Map<UUID, Map<String, String>> members, RegionManager regionManager, String key) {
+            this.members = members;
+            regionManager.createRegion(key, this); // Ensure changes are saved
+        }
+
+        public void addMember(UUID uuid, Map<String, String> permissions, RegionManager regionManager, String key) {
+            this.members.put(uuid, permissions);
+            regionManager.createRegion(key, this); // Ensure changes are saved
+        }
+
+        public void removeMember(UUID uuid, RegionManager regionManager, String key) {
+            this.members.remove(uuid);
+            regionManager.createRegion(key, this); // Ensure changes are saved
+        }
+
+        public boolean isMember(UUID uuid) {
+            return this.members.containsKey(uuid);
+        }
+
+        public Map<String, String> getMemberPermissions(UUID uuid) {
+            return this.members.get(uuid);
+        }
+
+        public void addMemberPermission(UUID uuid, String permission, String value, RegionManager regionManager, String key) {
+            permissionManager.invalidateCache(uuid);
+            RegionManager.Region region = regionManager.loadRegions().get(key);
+            region.members.computeIfAbsent(uuid, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)).put(permission, value);
+            regionManager.createRegion(key, region); // Ensure changes are saved
+        }
+
         public JsonObject getAsJson() {
             JsonObject json = new JsonObject();
             json.addProperty("name", getName());
-            JsonObject members = new JsonObject();
+            JsonObject membersJson = new JsonObject();
             for (Map.Entry<UUID, Map<String, String>> member : getMembers().entrySet()) {
                 JsonObject memberJson = new JsonObject();
                 memberJson.addProperty("player", Bukkit.getPlayer(member.getKey()) != null ? Bukkit.getPlayer(member.getKey()).getName() : member.getKey().toString());
@@ -270,40 +312,10 @@ public class RegionManager {
                     permissions.addProperty(perm.getKey(), perm.getValue());
                 }
                 memberJson.add("permissions", permissions);
-                members.add(member.getKey().toString(), memberJson);
+                membersJson.add(member.getKey().toString(), memberJson);
             }
-            json.add("members", members);
+            json.add("members", membersJson);
             return json;
-        }
-
-        public void setMembers(Map<UUID, Map<String, String>> members) {
-            this.members = members;
-        }
-
-        // Add a member with permissions or roles
-        public void addMember(UUID uuid, Map<String, String> permissions) {
-            this.members.put(uuid, permissions);
-        }
-
-        // Remove a member
-        public void removeMember(UUID uuid) {
-            this.members.remove(uuid);
-        }
-
-        // Check if a user is a member
-        public boolean isMember(UUID uuid) {
-            return this.members.containsKey(uuid);
-        }
-
-        // Get a member's permissions or roles
-        public Map<String, String> getMemberPermissions(UUID uuid) {
-            return this.members.get(uuid);
-        }
-
-        // Add or update a member's permission/role
-        public void addMemberPermission(UUID uuid, String permission, String value) {
-            permissionManager.invalidateCache(uuid);
-            this.members.computeIfAbsent(uuid, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)).put(permission, value);
         }
     }
 }
