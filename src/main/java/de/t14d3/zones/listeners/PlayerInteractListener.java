@@ -7,10 +7,12 @@ import de.t14d3.zones.utils.BeaconUtils;
 import de.t14d3.zones.Zones;
 import de.t14d3.zones.utils.Actions;
 import it.unimi.dsi.fastutil.Pair;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.DyeColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -18,6 +20,9 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityPlaceEvent;
+import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 import org.bukkit.event.hanging.HangingPlaceEvent;
 import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
@@ -26,9 +31,12 @@ import org.bukkit.event.vehicle.VehicleDamageEvent;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static de.t14d3.zones.utils.BeaconUtils.resetBeacon;
+import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
 
 public class PlayerInteractListener implements Listener {
 
@@ -37,6 +45,8 @@ public class PlayerInteractListener implements Listener {
     private final Zones plugin;
     private final Utils utils;
     private final BeaconUtils beaconUtils;
+    private final MiniMessage miniMessage = MiniMessage.miniMessage();
+    private final Map<String, String> messages;
 
     public PlayerInteractListener(RegionManager regionManager, PermissionManager permissionManager, Zones plugin) {
         this.plugin = plugin;
@@ -44,6 +54,7 @@ public class PlayerInteractListener implements Listener {
         this.permissionManager = permissionManager;
         this.utils = plugin.getUtils();
         this.beaconUtils = plugin.getBeaconUtils();
+        this.messages = plugin.getMessages();
 
     }
     @EventHandler
@@ -90,12 +101,15 @@ public class PlayerInteractListener implements Listener {
             if (utils.isPowerable(event.getClickedBlock().getBlockData())) {
                 requiredPermissions.add(Actions.REDSTONE);
             }
-        } else return;
+            if (event.getClickedBlock().getType() == Material.TNT) {
+                requiredPermissions.add(Actions.IGNITE);
+            }
+        }
+        else return;
         for (Actions action : requiredPermissions) {
             if (!permissionManager.canInteract(location, playerUUID, action.name(), event.getClickedBlock().getType().name())) {
                 event.setCancelled(true);
-                event.getClickedBlock().getState().update();
-                player.sendMessage("You are lacking the permission to " + action.name() + " the block " + event.getClickedBlock().getType().name());
+                actionBar(player, location, requiredPermissions, event.getClickedBlock().getType().name());
             }
         }
     }
@@ -104,6 +118,7 @@ public class PlayerInteractListener implements Listener {
     public void onBlockPlace(BlockPlaceEvent event) {
         Player player = event.getPlayer();
         String type = event.getBlockPlaced().getType().name();
+        Location location = event.getBlockPlaced().getLocation();
         List<Actions> requiredPermissions = new ArrayList<>();
         requiredPermissions.add(Actions.PLACE);
         if (utils.isContainer(event.getBlockPlaced().getState())) {
@@ -115,7 +130,7 @@ public class PlayerInteractListener implements Listener {
         for (Actions action : requiredPermissions) {
             if (!permissionManager.canInteract(event.getBlockPlaced().getLocation(), player.getUniqueId(), action.name(), type)) {
                 event.setCancelled(true);
-                player.sendMessage("You are lacking the permission to " + action.name() + " the block " + type);
+                actionBar(player, location, requiredPermissions, type);
             }
         }
 
@@ -125,6 +140,7 @@ public class PlayerInteractListener implements Listener {
     public void onBlockBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
         String type = event.getBlock().getType().name();
+        Location location = event.getBlock().getLocation();
         List<Actions> requiredPermissions = new ArrayList<>();
         requiredPermissions.add(Actions.BREAK);
         if (utils.isContainer(event.getBlock().getState())) {
@@ -136,7 +152,7 @@ public class PlayerInteractListener implements Listener {
         for (Actions action : requiredPermissions) {
             if (!permissionManager.canInteract(event.getBlock().getLocation(), player.getUniqueId(), action.name(), type)) {
                 event.setCancelled(true);
-                player.sendMessage("You are lacking the permission to " + action.name() + " the block " + type);
+                actionBar(player, location, requiredPermissions, type);
             }
         }
 
@@ -148,12 +164,13 @@ public class PlayerInteractListener implements Listener {
         Player player = event.getPlayer();
         Location location = event.getRightClicked().getLocation();
         List<Actions> requiredPermissions = new ArrayList<>();
+        requiredPermissions.add(Actions.INTERACT);
         requiredPermissions.add(Actions.ENTITY);
         String type = event.getRightClicked().getType().name();
         for (Actions action : requiredPermissions) {
             if (!permissionManager.canInteract(location, player.getUniqueId(), action.name(), type)) {
                 event.setCancelled(true);
-                player.sendMessage("You are lacking the permission " + action.name() + " for the entity " + type);
+                actionBar(player, location, requiredPermissions, type);
             }
         }
     }
@@ -168,7 +185,7 @@ public class PlayerInteractListener implements Listener {
             for (Actions action : requiredPermissions) {
                 if (!permissionManager.canInteract(location, player.getUniqueId(), action.name(), type)) {
                     event.setCancelled(true);
-                    player.sendMessage("You are lacking the permission to " + action.name() + " the entity " + type);
+                    actionBar(player, location, requiredPermissions, type);
                 }
             }
         }
@@ -184,7 +201,7 @@ public class PlayerInteractListener implements Listener {
             for (Actions action : requiredPermissions) {
                 if (!permissionManager.canInteract(location, player.getUniqueId(), action.name(), type)) {
                     event.setCancelled(true);
-                    player.sendMessage("You are lacking the permission to " + action.name() + " the vehicle " + type);
+                    actionBar(player, location, requiredPermissions, type);
                 }
             }
         }
@@ -201,7 +218,7 @@ public class PlayerInteractListener implements Listener {
         for (Actions action : requiredPermissions) {
             if (!permissionManager.canInteract(location, player.getUniqueId(), action.name(), type)) {
                 event.setCancelled(true);
-                player.sendMessage("You are lacking the permission " + action.name() + " for the entity " + type);
+                actionBar(player, location, requiredPermissions, type);
             }
         }
     }
@@ -219,8 +236,61 @@ public class PlayerInteractListener implements Listener {
         for (Actions action : requiredPermissions) {
             if (!permissionManager.canInteract(location, player.getUniqueId(), action.name(), type)) {
                 event.setCancelled(true);
-                player.sendMessage("You are lacking the permission to " + action.name() + " the entity " + type);
+                actionBar(player, location, requiredPermissions, type);
             }
         }
+    }
+
+    @EventHandler
+    public void onHangingBreak(HangingBreakByEntityEvent event) {
+        Player player = (Player) event.getRemover();
+        Location location = event.getEntity().getLocation();
+        List<Actions> requiredPermissions = new ArrayList<>();
+        requiredPermissions.add(Actions.BREAK);
+        requiredPermissions.add(Actions.ENTITY);
+        String type = event.getEntity().getType().name();
+        for (Actions action : requiredPermissions) {
+            if (!permissionManager.canInteract(location, player.getUniqueId(), action.name(), type)) {
+                event.setCancelled(true);
+                actionBar(player, location, requiredPermissions, type);
+            }
+        }
+    }
+
+    @EventHandler
+    public void onEntityPlace(EntityPlaceEvent event) {
+        if (event.getPlayer() == null) {
+            return;
+        }
+        Player player = event.getPlayer();
+        Location location = event.getEntity().getLocation();
+        List<Actions> requiredPermissions = new ArrayList<>();
+        requiredPermissions.add(Actions.PLACE);
+        requiredPermissions.add(Actions.ENTITY);
+        String type = event.getEntity().getType().name();
+        for (Actions action : requiredPermissions) {
+            if (!permissionManager.canInteract(location, player.getUniqueId(), action.name(), type)) {
+                event.setCancelled(true);
+                actionBar(player, location, requiredPermissions, type);
+            }
+        }
+    }
+
+    // Small util for message
+    private void actionBar(Player player, Location location, List<Actions> actions, String type) {
+        List<RegionManager.Region> regions = regionManager.getRegionsAt(location);
+        String regionNames = regions.stream().map(RegionManager.Region::getName).collect(Collectors.joining(", "));
+
+        StringBuilder permissionsString = new StringBuilder();
+        for (Actions action : actions) {
+            permissionsString.append(action.name()).append(", ");
+        }
+        permissionsString.deleteCharAt(permissionsString.length() - 2); // Remove trailing ", "
+        permissionsString.deleteCharAt(permissionsString.length() - 1); // Remove trailing ", "
+
+        player.sendActionBar(miniMessage.deserialize(messages.get("region.no-interact-permission"),
+                parsed("region", regionNames),
+                parsed("actions", permissionsString.toString()),
+                parsed("type", type)));
     }
 }

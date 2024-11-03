@@ -126,6 +126,7 @@ public class RegionManager {
      * @param min First corner of the region
      * @param max Second corner of the region
      * @param playerUUID Region owner's UUID
+     * @param ownerPermissions Owner's permissions map
      *
      */
     public void createNewRegion(String name, Location min, Location max, UUID playerUUID, Map<String, String> ownerPermissions) {
@@ -152,7 +153,7 @@ public class RegionManager {
     }
     public void createNewRegion(String name, Location min, Location max, UUID playerUUID) {
         Map<String, String> permissions = new HashMap<>();
-        permissions.put("owner", "true");
+        permissions.put("role", "owner");
         createNewRegion(name, min, max, playerUUID, permissions);
 
     }

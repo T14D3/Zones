@@ -18,6 +18,7 @@ import org.bukkit.entity.Player;
 import java.util.*;
 
 import static de.t14d3.zones.PermissionManager.hasPermission;
+import static de.t14d3.zones.PermissionManager.isAdmin;
 import static de.t14d3.zones.utils.BeaconUtils.resetBeacon;
 import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
 
@@ -85,7 +86,7 @@ public class CommandListener implements BasicCommand {
             List<String> builder = new ArrayList<>();
             regionManager.loadRegions().forEach((regionKey, region) -> {
                     region.getMembers().keySet().stream()
-                            .filter(uuid -> hasPermission(uuid, "owner", "true", region))
+                            .filter(uuid -> hasPermission(uuid, "role", "owner", region) || hasPermission(uuid, "role", "admin", region))
                             .forEach(uuid -> builder.add(regionKey));
             });
             return builder;
@@ -100,7 +101,7 @@ public class CommandListener implements BasicCommand {
         }
 
         RegionManager.Region region = regions.get(regionKey);
-        if (!hasPermission(player.getUniqueId(), "owner", "true", region)) {
+        if (!hasPermission(player.getUniqueId(), "role", "owner", region)) {
             player.sendMessage(miniMessage.deserialize(messages.get("region_not_exist").replace("{regionKey}", regionKey)));
             return; // Failure
         }
@@ -124,8 +125,7 @@ public class CommandListener implements BasicCommand {
             }
 
             Map<String, String> perms = new HashMap<>();
-            perms.put("owner", "true");
-
+            perms.put("role", "owner");
 
             regionManager.create2DRegion(player.getName(), selectionPair.first(), selectionPair.second(), player.getUniqueId(), perms);
             resetBeacon(player, selectionPair.first());
@@ -156,18 +156,44 @@ public class CommandListener implements BasicCommand {
             return;
         }
         for (Map.Entry<String, RegionManager.Region> entry : regions.entrySet()) {
-            if (!entry.getValue().isMember(player.getUniqueId())) {
+            if (!entry.getValue().isMember(player.getUniqueId()) || player.hasPermission("zones.info.other")) {
                 continue;
             }
-
+            Component hoverText = regionInfo(
+                    player, entry,
+                    isAdmin(player.getUniqueId(), regions.get(entry.getKey()))
+                            || player.hasPermission("zones.info.other"));
             var mm = MiniMessage.miniMessage();
 
-            Component comp = mm.deserialize(messages.getOrDefault("region.info.name","<gold><name> <dark_gray><italic>(#<key>)"), parsed("name", entry.getValue().getName()), parsed("key", entry.getKey()));
+            Component comp = mm.deserialize(messages.getOrDefault("region.info.name", "<gold><name> <dark_gray><italic>(#<key>)"), parsed("name", entry.getValue().getName()), parsed("key", entry.getKey()));
+            HoverEvent<Component> hover = hoverText.asHoverEvent();
+            ClickEvent click = ClickEvent.runCommand("/zone info " + entry.getKey());
+            comp = comp.hoverEvent(hover);
+            comp = comp.clickEvent(click);
+            player.sendMessage(comp);
+        }
+    }
+    private void handleInfoCommand(Player player, String regionKey, Map<String, RegionManager.Region> regions) {
+        if (!regions.containsKey(regionKey)) {
+            player.sendMessage(miniMessage.deserialize(messages.get("region_not_exist").replace("{regionKey}", regionKey)));
+            return;
+        }
+        if (!isAdmin(player.getUniqueId(), regions.get(regionKey)) && !player.hasPermission("zones.info.other")) {
+            player.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission"), parsed("region", regionKey)));
+            return;
+        }
+        Component comp = regionInfo(player, regions.entrySet().stream().filter(entry -> entry.getKey().equals(regionKey)).findFirst().get(), true);
+        player.sendMessage(comp);
 
-            Component hoverText = mm.deserialize(messages.get("region.info.min"), parsed("min", entry.getValue().getMinString()));
-            hoverText = hoverText.appendNewline();
-            hoverText = hoverText.append(mm.deserialize(messages.get("region.info.max"), parsed("max", entry.getValue().getMaxString())));
+    }
 
+    public Component regionInfo(Player player, Map.Entry<String, RegionManager.Region> entry, boolean showMembers) {
+        var mm = MiniMessage.miniMessage();
+        Component comp = mm.deserialize(messages.get("region.info.min"), parsed("min", entry.getValue().getMinString()));
+        comp = comp.appendNewline();
+        comp = comp.append(mm.deserialize(messages.get("region.info.max"), parsed("max", entry.getValue().getMaxString())));
+
+        if (showMembers) {
             // Iterate over members to format permissions
             for (Map.Entry<UUID, Map<String, String>> member : entry.getValue().getMembers().entrySet()) {
                 String playerName = Bukkit.getPlayer(member.getKey()) != null ? Bukkit.getPlayer(member.getKey()).getName() : member.getKey().toString();
@@ -197,7 +223,6 @@ public class CommandListener implements BasicCommand {
                         }
                         formattedComponents.add(formattedValue);
                     }
-
                     // Combine all formatted components into one line
                     Component permLine = mm.deserialize(messages.get("region.info.members.permission"), parsed("permission", permKey));
 
@@ -208,42 +233,17 @@ public class CommandListener implements BasicCommand {
                             permLine = permLine.append(Component.text(", ").color(NamedTextColor.GRAY));
                         }
                     }
-
                     // Append the permission line and a newline
                     permissionsComponent = permissionsComponent.append(permLine).append(Component.newline());
                 }
-
                 // Append the player component and their permissions to hover text
-                hoverText = hoverText.appendNewline()
+                comp = comp.appendNewline()
                         .append(playerComponent)
                         .append(permissionsComponent);
             }
-            hoverText = hoverText.append(mm.deserialize(messages.get("region.info.key"), parsed("key", entry.getKey())));
-
-
-            HoverEvent<Component> hover = hoverText.asHoverEvent();
-            ClickEvent click = ClickEvent.runCommand("/zone info " + entry.getKey());
-            comp = comp.hoverEvent(hover);
-            comp = comp.clickEvent(click);
-            player.sendMessage(comp);
         }
-    }
+        comp = comp.append(mm.deserialize(messages.get("region.info.key"), parsed("key", entry.getKey())));
 
-    private void handleInfoCommand(Player player, String regionKey, Map<String, RegionManager.Region> regions) {
-        if (!regions.containsKey(regionKey)) {
-            player.sendMessage(miniMessage.deserialize(messages.get("region_not_exist").replace("{regionKey}", regionKey)));
-            return; // Failure
-        }
-
-        RegionManager.Region region = regions.get(regionKey);
-        player.sendMessage(miniMessage.deserialize(messages.get("region.info.name").replace("{regionName}", region.getName())));
-        player.sendMessage(miniMessage.deserialize(messages.get("region.info.min").replace("{min}", region.getMin().toString())));
-        player.sendMessage(miniMessage.deserialize(messages.get("region.info.max").replace("{max}", region.getMax().toString())));
-        player.sendMessage(miniMessage.deserialize(messages.get("region.info.members.header")));
-        region.getMembers().forEach((uuid, permissions) -> {
-            player.sendMessage(miniMessage.deserialize(messages.get("region.info.members.member")
-                    .replace("{playerName}", Bukkit.getPlayer(uuid) != null ? Bukkit.getPlayer(uuid).getName() : uuid.toString())
-                    .replace("{permissions}", permissions.toString())));
-        });
+        return comp;
     }
 }
