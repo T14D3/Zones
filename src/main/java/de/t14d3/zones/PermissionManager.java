@@ -1,5 +1,6 @@
 package de.t14d3.zones;
 
+import de.t14d3.zones.utils.Actions;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -33,7 +34,7 @@ public class PermissionManager {
      * @return True if the player can interact with the region, false otherwise.
      */
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    public boolean canInteract(Location location, UUID playerUUID, String action, String type) {
+    public boolean canInteract(Location location, UUID playerUUID, Actions action, String type) {
         Map<String, Boolean> playerCache = permissionCache.getOrDefault(playerUUID, new HashMap<>());
         String cacheKey = getCacheKey(location, action, type);
 
@@ -46,7 +47,7 @@ public class PermissionManager {
             BoundingBox box = BoundingBox.of(region.getMin(), region.getMax());
 
             if (box.contains(location.toVector())) {
-                boolean hasPermission = hasPermission(playerUUID, action, type, region);
+                boolean hasPermission = hasPermission(playerUUID, action.name(), type, region);
 
                 // Cache the result for this region
                 playerCache.put(cacheKey, hasPermission);
@@ -60,8 +61,8 @@ public class PermissionManager {
         return player != null && player.hasPermission("zones.bypass.unclaimed");
     }
 
-    private String getCacheKey(Location location, String action, String type) {
-        return location.toString() + "|" + action + "|" + type;
+    private String getCacheKey(Location location, Actions action, String type) {
+        return location.toString() + "|" + action.name() + "|" + type;
     }
 
     public void invalidateCache(UUID playerUUID) {
@@ -74,7 +75,7 @@ public class PermissionManager {
         for (RegionManager.Region region : regions) {
             for (UUID playerUUID : permissionCache.keySet()) {
                 // Remove the player's cached permissions related to this region
-                permissionCache.get(playerUUID).keySet().removeIf(key -> key.startsWith(getCacheKey(location, "", "")));
+                permissionCache.get(playerUUID).keySet().removeIf(key -> key.startsWith(getCacheKey(location, Actions.valueOf(""), "")));
             }
         }
     }

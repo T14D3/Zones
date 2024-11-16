@@ -107,7 +107,7 @@ public class PlayerInteractListener implements Listener {
         }
         else return;
         for (Actions action : requiredPermissions) {
-            if (!permissionManager.canInteract(location, playerUUID, action.name(), event.getClickedBlock().getType().name())) {
+            if (!permissionManager.canInteract(location, playerUUID, action, event.getClickedBlock().getType().name())) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, event.getClickedBlock().getType().name());
             }
@@ -128,7 +128,7 @@ public class PlayerInteractListener implements Listener {
             requiredPermissions.add(Actions.REDSTONE);
         }
         for (Actions action : requiredPermissions) {
-            if (!permissionManager.canInteract(event.getBlockPlaced().getLocation(), player.getUniqueId(), action.name(), type)) {
+            if (!permissionManager.canInteract(event.getBlockPlaced().getLocation(), player.getUniqueId(), action, type)) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, type);
             }
@@ -150,7 +150,7 @@ public class PlayerInteractListener implements Listener {
             requiredPermissions.add(Actions.REDSTONE);
         }
         for (Actions action : requiredPermissions) {
-            if (!permissionManager.canInteract(event.getBlock().getLocation(), player.getUniqueId(), action.name(), type)) {
+            if (!permissionManager.canInteract(event.getBlock().getLocation(), player.getUniqueId(), action, type)) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, type);
             }
@@ -168,7 +168,7 @@ public class PlayerInteractListener implements Listener {
         requiredPermissions.add(Actions.ENTITY);
         String type = event.getRightClicked().getType().name();
         for (Actions action : requiredPermissions) {
-            if (!permissionManager.canInteract(location, player.getUniqueId(), action.name(), type)) {
+            if (!permissionManager.canInteract(location, player.getUniqueId(), action, type)) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, type);
             }
@@ -183,7 +183,7 @@ public class PlayerInteractListener implements Listener {
             requiredPermissions.add(Actions.DAMAGE);
             String type = event.getEntity().getType().name();
             for (Actions action : requiredPermissions) {
-                if (!permissionManager.canInteract(location, player.getUniqueId(), action.name(), type)) {
+                if (!permissionManager.canInteract(location, player.getUniqueId(), action, type)) {
                     event.setCancelled(true);
                     actionBar(player, location, requiredPermissions, type);
                 }
@@ -199,7 +199,7 @@ public class PlayerInteractListener implements Listener {
             requiredPermissions.add(Actions.DAMAGE);
             String type = event.getVehicle().getType().name();
             for (Actions action : requiredPermissions) {
-                if (!permissionManager.canInteract(location, player.getUniqueId(), action.name(), type)) {
+                if (!permissionManager.canInteract(location, player.getUniqueId(), action, type)) {
                     event.setCancelled(true);
                     actionBar(player, location, requiredPermissions, type);
                 }
@@ -216,7 +216,7 @@ public class PlayerInteractListener implements Listener {
         String type = event.getRightClicked().getType().name();
         requiredPermissions.add(Actions.CONTAINER);
         for (Actions action : requiredPermissions) {
-            if (!permissionManager.canInteract(location, player.getUniqueId(), action.name(), type)) {
+            if (!permissionManager.canInteract(location, player.getUniqueId(), action, type)) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, type);
             }
@@ -234,7 +234,7 @@ public class PlayerInteractListener implements Listener {
         requiredPermissions.add(Actions.PLACE);
         String type = event.getEntity().getType().name();
         for (Actions action : requiredPermissions) {
-            if (!permissionManager.canInteract(location, player.getUniqueId(), action.name(), type)) {
+            if (!permissionManager.canInteract(location, player.getUniqueId(), action, type)) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, type);
             }
@@ -250,7 +250,7 @@ public class PlayerInteractListener implements Listener {
         requiredPermissions.add(Actions.ENTITY);
         String type = event.getEntity().getType().name();
         for (Actions action : requiredPermissions) {
-            if (!permissionManager.canInteract(location, player.getUniqueId(), action.name(), type)) {
+            if (!permissionManager.canInteract(location, player.getUniqueId(), action, type)) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, type);
             }
@@ -269,7 +269,7 @@ public class PlayerInteractListener implements Listener {
         requiredPermissions.add(Actions.ENTITY);
         String type = event.getEntity().getType().name();
         for (Actions action : requiredPermissions) {
-            if (!permissionManager.canInteract(location, player.getUniqueId(), action.name(), type)) {
+            if (!permissionManager.canInteract(location, player.getUniqueId(), action, type)) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, type);
             }
@@ -283,7 +283,7 @@ public class PlayerInteractListener implements Listener {
 
         StringBuilder permissionsString = new StringBuilder();
         for (Actions action : actions) {
-            permissionsString.append(action.name()).append(", ");
+            permissionsString.append(action).append(", ");
         }
         permissionsString.deleteCharAt(permissionsString.length() - 2); // Remove trailing ", "
         permissionsString.deleteCharAt(permissionsString.length() - 1); // Remove trailing ", "
