@@ -4,13 +4,11 @@ import com.google.gson.JsonObject;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.util.BoundingBox;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.UUID;
+import java.util.*;
 
 
 /**
@@ -137,10 +135,21 @@ public class Region {
         return regionManager.regions().get(parent);
     }
 
+    public List<Region> getChildren(RegionManager regionManager) {
+        List<Region> children = new ArrayList<>();
+        for (Region region : regionManager.regions().values()) {
+            if (region.getParent().equals(key)) {
+                children.add(region);
+            }
+        }
+        return children;
+    }
+
     public String getKey() {
         return key;
     }
 
+    @ApiStatus.Internal
     public void setKey(String key, RegionManager regionManager) {
         this.key = key;
         regionManager.saveRegion(key, this); // Ensure changes are saved

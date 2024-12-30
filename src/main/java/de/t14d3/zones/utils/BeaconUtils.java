@@ -1,11 +1,7 @@
 package de.t14d3.zones.utils;
 
 import de.t14d3.zones.Zones;
-import org.bukkit.Bukkit;
-import org.bukkit.DyeColor;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 
@@ -29,6 +25,7 @@ public class BeaconUtils {
         }
 
         Material glassMaterial = Material.getMaterial(color.name() + "_STAINED_GLASS");
+        assert glassMaterial != null;
         BlockData glassData = Bukkit.createBlockData(glassMaterial);
 
         int x = location.getBlockX();

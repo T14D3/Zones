@@ -187,6 +187,15 @@ public class RegionManager {
         saveRegion(regionKey, newRegion);
     }
 
+    /**
+     * Creates a new region with the given name and minimum and maximum locations
+     * The region will be owned by the given player
+     *
+     * @param name       The name of the new region.
+     * @param min        The minimum location of the new region.
+     * @param max        The maximum location of the new region.
+     * @param playerUUID The UUID of the player who will own the new region.
+     */
     public void createNewRegion(String name, Location min, Location max, UUID playerUUID) {
         Map<String, String> permissions = new HashMap<>();
         permissions.put("role", "owner");
@@ -205,13 +214,19 @@ public class RegionManager {
         createNewRegion(name, min, max, playerUUID, ownerPermissions);
     }
 
-    public void addMemberPermission(UUID uuid, String permission, String value, RegionManager regionManager, String key) {
+    public void addMemberPermission(UUID uuid, String permission, String value, String key) {
         permissionManager.invalidateCache(uuid);
-        Region region = regionManager.regions().get(key);
-        region.addMemberPermission(uuid, permission, value, regionManager, key);
+        Region region = this.regions().get(key);
+        region.addMemberPermission(uuid, permission, value, this, key);
     }
 
-    // Check if new region overlaps existing region
+    /**
+     * Checks if a region overlaps with any existing regions.
+     *
+     * @param region The region to check for overlaps.
+     * @return True if the region overlaps with any existing regions, false otherwise.
+     * @see #overlapsExistingRegion(Location, Location)
+     */
     public boolean overlapsExistingRegion(Region region) {
         Map<String, Region> regions = regions();
         for (Region otherRegion : regions.values()) {
@@ -224,14 +239,28 @@ public class RegionManager {
         return false; // No overlaps found
     }
 
+    /**
+     * Checks if a region overlaps with any existing regions.
+     *
+     * @param min The minimum location of the region.
+     * @param max The maximum location of the region.
+     * @return True if the region overlaps with any existing regions, false otherwise.
+     * @see #overlapsExistingRegion(Region)
+     */
     public boolean overlapsExistingRegion(Location min, Location max) {
         Region region = new Region(null, min, max, null, null);
         return overlapsExistingRegion(region);
     }
 
+    /**
+     * Gets a list of regions that overlap with the given location.
+     *
+     * @param location The location to check for overlaps.
+     * @return A list of regions that overlap with the given location.
+     */
     public List<Region> getRegionsAt(Location location) {
         List<Region> foundRegions = new ArrayList<>();
-        Map<String, Region> regions = regions(); // Load regions from file
+        Map<String, Region> regions = regions();
 
         for (Region region : regions.values()) {
             BoundingBox regionBox = BoundingBox.of(region.getMin(), region.getMax());
