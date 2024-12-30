@@ -1,5 +1,6 @@
 package de.t14d3.zones.listeners;
 
+import de.t14d3.zones.PermissionManager;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.Zones;
 import de.t14d3.zones.utils.Utils;
@@ -16,9 +17,6 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 import java.util.*;
-
-import static de.t14d3.zones.PermissionManager.hasPermission;
-import static de.t14d3.zones.PermissionManager.isAdmin;
 import static de.t14d3.zones.utils.BeaconUtils.resetBeacon;
 import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
 
@@ -30,12 +28,14 @@ public class CommandListener implements BasicCommand {
     private final Utils utils;
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
     private final Map<String, String> messages;
+    private final PermissionManager pm;
 
     public CommandListener(Zones plugin, RegionManager regionManager) {
         this.plugin = plugin;
         this.regionManager = regionManager;
         this.utils = plugin.getUtils();
         this.messages = plugin.getMessages();
+        this.pm = plugin.getPermissionManager();
     }
 
     @Override
@@ -50,7 +50,12 @@ public class CommandListener implements BasicCommand {
         switch (command) {
             case "info":
                 if (args.length < 2) {
-                    player.sendMessage(miniMessage.deserialize(messages.get("regionKeyRequired")));
+                    if (stack.getSender() instanceof Player) {
+                        regionManager.getRegionsAt(player.getLocation()).forEach(region ->
+                                handleInfoCommand(player, region.getName(), regionManager.loadRegions()));
+                    } else {
+                        player.sendMessage(miniMessage.deserialize(messages.get("regionKeyRequired")));
+                    }
                 } else {
                     handleInfoCommand(player, args[1], regionManager.loadRegions());
                 }
@@ -90,7 +95,7 @@ public class CommandListener implements BasicCommand {
             List<String> builder = new ArrayList<>();
             regionManager.loadRegions().forEach((regionKey, region) -> {
                     region.getMembers().keySet().stream()
-                            .filter(uuid -> hasPermission(uuid, "role", "owner", region) || hasPermission(uuid, "role", "admin", region))
+                            .filter(uuid -> pm.hasPermission(uuid, "role", "owner", region) || pm.hasPermission(uuid, "role", "admin", region))
                             .forEach(uuid -> builder.add(regionKey));
             });
             return builder;
@@ -99,7 +104,7 @@ public class CommandListener implements BasicCommand {
             if (args.length == 2) {
                 List<String> builder = new ArrayList<>();
                 regionManager.loadRegions().forEach((regionKey, region) -> {
-                    if (hasPermission(player.getUniqueId(), "role", "owner", region)) {
+                    if (pm.hasPermission(player.getUniqueId(), "role", "owner", region)) {
                         builder.add(regionKey);
                     }
                 });
@@ -110,7 +115,7 @@ public class CommandListener implements BasicCommand {
                 if (region == null) {
                     return null;
                 }
-                if (hasPermission(player.getUniqueId(), "role", "owner", region)) {
+                if (pm.hasPermission(player.getUniqueId(), "role", "owner", region)) {
                     return List.of("role", "name", "min", "max", "members");
                 }
             }
@@ -127,7 +132,7 @@ public class CommandListener implements BasicCommand {
         }
 
         RegionManager.Region region = regions.get(regionKey);
-        if (!hasPermission(player.getUniqueId(), "role", "owner", region)) {
+        if (!pm.hasPermission(player.getUniqueId(), "role", "owner", region)) {
             player.sendMessage(miniMessage.deserialize(messages.get("region_not_exist").replace("{regionKey}", regionKey)));
             return; // Failure
         }
@@ -187,7 +192,7 @@ public class CommandListener implements BasicCommand {
             }
             Component hoverText = regionInfo(
                     player, entry,
-                    isAdmin(player.getUniqueId(), regions.get(entry.getKey()))
+                    this.plugin.getPermissionManager().isAdmin(player.getUniqueId(), regions.get(entry.getKey()))
                             || player.hasPermission("zones.info.other"));
             var mm = MiniMessage.miniMessage();
 
@@ -204,7 +209,7 @@ public class CommandListener implements BasicCommand {
             player.sendMessage(miniMessage.deserialize(messages.get("region_not_exist").replace("{regionKey}", regionKey)));
             return;
         }
-        if (!isAdmin(player.getUniqueId(), regions.get(regionKey)) && !player.hasPermission("zones.info.other")) {
+        if (!this.plugin.getPermissionManager().isAdmin(player.getUniqueId(), regions.get(regionKey)) && !player.hasPermission("zones.info.other")) {
             player.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission"), parsed("region", regionKey)));
             return;
         }
@@ -224,7 +229,7 @@ public class CommandListener implements BasicCommand {
             player.sendMessage(miniMessage.deserialize(messages.get("region_not_exist"), parsed("key", regionKey)));
             return;
         }
-        if (!hasPermission(player.getUniqueId(), "role", "owner", region)) {
+        if (!pm.hasPermission(player.getUniqueId(), "role", "owner", region)) {
             player.sendMessage(miniMessage.deserialize(messages.get("region_not_exist"), parsed("key", regionKey)));
             return;
         }
@@ -237,7 +242,13 @@ public class CommandListener implements BasicCommand {
 
     public Component regionInfo(Player player, Map.Entry<String, RegionManager.Region> entry, boolean showMembers) {
         var mm = MiniMessage.miniMessage();
-        Component comp = mm.deserialize(messages.get("region.info.min"), parsed("min", entry.getValue().getMinString()));
+        Component comp = Component.text("");
+        comp = comp.append(mm.deserialize(messages.get("region.info.name"), parsed("name", entry.getValue().getName())));
+        comp = comp.appendNewline();
+        if (entry.getValue().getParent() != null) {
+            comp = comp.append(mm.deserialize(messages.get("region.info.parent"), parsed("parent", entry.getValue().getParent())));
+        }
+        comp = comp.append(mm.deserialize(messages.get("region.info.min"), parsed("min", entry.getValue().getMinString())));
         comp = comp.appendNewline();
         comp = comp.append(mm.deserialize(messages.get("region.info.max"), parsed("max", entry.getValue().getMaxString())));
 

@@ -93,7 +93,7 @@ public class PermissionManager {
      * @param region  The region in which the permission is being checked.
      * @return True if the player has the specified permission for the type, false otherwise.
      */
-    public static boolean hasPermission(UUID uuid, String permission, String type, RegionManager.Region region) {
+    public boolean hasPermission(UUID uuid, String permission, String type, RegionManager.Region region) {
         permission = permission.toLowerCase();
         Player player = Bukkit.getPlayer(uuid);
 
@@ -119,6 +119,9 @@ public class PermissionManager {
         }
         // If no permission value is found, deny access
         if (value == null) {
+            if (region.getParent() != null) {
+                return hasPermission(uuid, permission, type, region.getParentRegion(this.regionManager));
+            }
             return false;
         }
 
@@ -157,7 +160,7 @@ public class PermissionManager {
         return false;
     }
 
-    public static boolean isAdmin(UUID uuid, RegionManager.Region region) {
+    public boolean isAdmin(UUID uuid, RegionManager.Region region) {
         return hasPermission(uuid, "role", "owner", region) || hasPermission(uuid, "role", "admin", region);
     }
 }

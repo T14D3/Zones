@@ -223,13 +223,20 @@ public class RegionManager {
         private Location min;
         private Location max;
         private Map<UUID, Map<String, String>> members;
+        private String parent;
 
         // Constructor
-        public Region(String name, Location min, Location max, Map<UUID, Map<String, String>> members) {
+        public Region(String name, Location min, Location max, Map<UUID, Map<String, String>> members, String parent) {
             this.name = name;
             this.min = min;
             this.max = max;
             this.members = (members != null) ? members : new HashMap<>();
+            this.parent = parent;
+        }
+        // Constructor overload for regions without parent
+        public Region(String name, Location min, Location max, Map<UUID, Map<String, String>> members) {
+            this(name, min, max, members, null);
+
         }
 
         // Getters and Setters
@@ -291,6 +298,18 @@ public class RegionManager {
 
         public Map<String, String> getMemberPermissions(UUID uuid) {
             return this.members.get(uuid);
+        }
+
+        public String getParent() {
+            return this.parent;
+        }
+        public void setParent(String parent, RegionManager regionManager, String key) {
+            this.parent = parent;
+            regionManager.createRegion(key, this); // Ensure changes are saved
+        }
+
+        public Region getParentRegion(RegionManager regionManager) {
+            return regionManager.loadRegions().get(parent);
         }
 
         public void addMemberPermission(UUID uuid, String permission, String value, RegionManager regionManager, String key) {

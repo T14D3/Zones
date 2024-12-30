@@ -3,10 +3,11 @@ messages:
     none-found: "<red>No regions found!"
     no-interact-permission: "<red>You are lacking the permission <aqua><actions> <red>for type <yellow><type> <red>in region(s) <gold><region>"
     info:
-      name: "<gold><name> <dark_gray><italic>(#<key>)"
+      name: "<gold><name>"
       min: "<gray><min>"
       max: "<gray><max>"
       key: "<dark_gray>Region key: #<key>"
+      parent: "<gray>Parent region: <parent>"
       members:
         name: "<aqua><name>"
         permission: "  <gold><permission><white>: "

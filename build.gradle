@@ -1,6 +1,9 @@
+import xyz.jpenilla.runtask.task.AbstractRun
+
 plugins {
     id 'java'
     id 'io.papermc.paperweight.userdev' version '1.7.3'
+    id 'xyz.jpenilla.run-paper' version '2.3.1'
 }
 
 group = 'de.t14d3'
@@ -40,6 +43,13 @@ tasks.withType(JavaCompile).configureEach {
         options.release.set(targetJavaVersion)
     }
 }
+tasks.withType(AbstractRun).configureEach {
+    javaLauncher = javaToolchains.launcherFor {
+        vendor = JvmVendorSpec.JETBRAINS
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+    jvmArgs("-XX:+AllowEnhancedClassRedefinition")
+}
 
 processResources {
     def props = [version: version]
@@ -49,3 +59,10 @@ processResources {
         expand props
     }
 }
+
+tasks {
+    runServer {
+        minecraftVersion('1.21.1')
+    }
+}
+

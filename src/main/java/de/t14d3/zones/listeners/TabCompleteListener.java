@@ -1,5 +1,6 @@
 package de.t14d3.zones.listeners;
 
+import de.t14d3.zones.PermissionManager;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.Zones;
 import org.bukkit.command.Command;
@@ -11,16 +12,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static de.t14d3.zones.PermissionManager.hasPermission;
-
 public class TabCompleteListener implements TabCompleter {
 
     private Zones plugin;
     private RegionManager regionManager;
+    private final PermissionManager pm;
 
     public TabCompleteListener(Zones plugin, RegionManager regionManager) {
         this.regionManager = regionManager;
         this.plugin = plugin;
+        this.pm = plugin.getPermissionManager();
     }
 
     @Override
@@ -46,7 +47,7 @@ public class TabCompleteListener implements TabCompleter {
 
                     for (Map.Entry<String, RegionManager.Region> entry : regions.entrySet()) {
                         RegionManager.Region region = entry.getValue();
-                        if (hasPermission(player.getUniqueId(), "admin", "true", region) || player.hasPermission("zones.info.other")) {
+                        if (pm.hasPermission(player.getUniqueId(), "admin", "true", region) || player.hasPermission("zones.info.other")) {
                             completions.add(entry.getKey());
                         }
                     }
@@ -56,7 +57,7 @@ public class TabCompleteListener implements TabCompleter {
                     if (region == null) {
                         return null;
                     }
-                    if (hasPermission(player.getUniqueId(), "role", "owner", region)) {
+                    if (pm.hasPermission(player.getUniqueId(), "role", "owner", region)) {
                         completions.add("role");
                         completions.add("name");
                         completions.add("min");
