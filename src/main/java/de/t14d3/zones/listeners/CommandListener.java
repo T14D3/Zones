@@ -1,6 +1,7 @@
 package de.t14d3.zones.listeners;
 
 import de.t14d3.zones.PermissionManager;
+import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.Zones;
 import de.t14d3.zones.utils.Utils;
@@ -25,7 +26,6 @@ public class CommandListener implements BasicCommand {
 
     private final Zones plugin;
     private final RegionManager regionManager;
-    private final Utils utils;
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
     private final Map<String, String> messages;
     private final PermissionManager pm;
@@ -33,7 +33,6 @@ public class CommandListener implements BasicCommand {
     public CommandListener(Zones plugin, RegionManager regionManager) {
         this.plugin = plugin;
         this.regionManager = regionManager;
-        this.utils = plugin.getUtils();
         this.messages = plugin.getMessages();
         this.pm = plugin.getPermissionManager();
     }
@@ -52,19 +51,19 @@ public class CommandListener implements BasicCommand {
                 if (args.length < 2) {
                     if (stack.getSender() instanceof Player) {
                         regionManager.getRegionsAt(player.getLocation()).forEach(region ->
-                                handleInfoCommand(player, region.getName(), regionManager.loadRegions()));
+                                handleInfoCommand(player, region.getName(), regionManager.regions()));
                     } else {
                         player.sendMessage(miniMessage.deserialize(messages.get("regionKeyRequired")));
                     }
                 } else {
-                    handleInfoCommand(player, args[1], regionManager.loadRegions());
+                    handleInfoCommand(player, args[1], regionManager.regions());
                 }
                 break;
             case "delete":
                 if (args.length < 2) {
                     player.sendMessage(miniMessage.deserialize(messages.get("regionKeyRequired")));
                 } else {
-                    handleDeleteCommand(player, args[1], regionManager.loadRegions());
+                    handleDeleteCommand(player, args[1], regionManager.regions());
                 }
                 break;
             case "create":
@@ -74,7 +73,7 @@ public class CommandListener implements BasicCommand {
                 handleCancelCommand(player);
                 break;
             case "list":
-                handleListCommand(player, regionManager.loadRegions());
+                handleListCommand(player, regionManager.regions());
                 break;
             case "set":
                 handleSetCommand(player, args);
@@ -93,7 +92,7 @@ public class CommandListener implements BasicCommand {
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("info") || args[0].equalsIgnoreCase("delete"))) {
             List<String> builder = new ArrayList<>();
-            regionManager.loadRegions().forEach((regionKey, region) -> {
+            regionManager.regions().forEach((regionKey, region) -> {
                     region.getMembers().keySet().stream()
                             .filter(uuid -> pm.hasPermission(uuid, "role", "owner", region) || pm.hasPermission(uuid, "role", "admin", region))
                             .forEach(uuid -> builder.add(regionKey));
@@ -103,7 +102,7 @@ public class CommandListener implements BasicCommand {
         if (args[0].equalsIgnoreCase("set")) {
             if (args.length == 2) {
                 List<String> builder = new ArrayList<>();
-                regionManager.loadRegions().forEach((regionKey, region) -> {
+                regionManager.regions().forEach((regionKey, region) -> {
                     if (pm.hasPermission(player.getUniqueId(), "role", "owner", region)) {
                         builder.add(regionKey);
                     }
@@ -111,7 +110,7 @@ public class CommandListener implements BasicCommand {
                 return builder;
             } else if (args.length == 3) {
                 String regionKey = args[1];
-                RegionManager.Region region = regionManager.loadRegions().get(regionKey);
+                Region region = regionManager.regions().get(regionKey);
                 if (region == null) {
                     return null;
                 }
@@ -125,13 +124,13 @@ public class CommandListener implements BasicCommand {
         return List.of();
     }
 
-    private void handleDeleteCommand(Player player, String regionKey, Map<String, RegionManager.Region> regions) {
+    private void handleDeleteCommand(Player player, String regionKey, Map<String, Region> regions) {
         if (!regions.containsKey(regionKey)) {
             player.sendMessage(miniMessage.deserialize(messages.get("region_not_exist").replace("{regionKey}", regionKey)));
             return; // Failure
         }
 
-        RegionManager.Region region = regions.get(regionKey);
+        Region region = regions.get(regionKey);
         if (!pm.hasPermission(player.getUniqueId(), "role", "owner", region)) {
             player.sendMessage(miniMessage.deserialize(messages.get("region_not_exist").replace("{regionKey}", regionKey)));
             return; // Failure
@@ -181,12 +180,12 @@ public class CommandListener implements BasicCommand {
         }
     }
 
-    private void handleListCommand(Player player, Map<String, RegionManager.Region> regions) {
+    private void handleListCommand(Player player, Map<String, Region> regions) {
         if (regions.isEmpty()) {
             player.sendMessage(miniMessage.deserialize(messages.get("region.none-found")));
             return;
         }
-        for (Map.Entry<String, RegionManager.Region> entry : regions.entrySet()) {
+        for (Map.Entry<String, Region> entry : regions.entrySet()) {
             if (!entry.getValue().isMember(player.getUniqueId()) || player.hasPermission("zones.info.other")) {
                 continue;
             }
@@ -204,7 +203,7 @@ public class CommandListener implements BasicCommand {
             player.sendMessage(comp);
         }
     }
-    private void handleInfoCommand(Player player, String regionKey, Map<String, RegionManager.Region> regions) {
+    private void handleInfoCommand(Player player, String regionKey, Map<String, Region> regions) {
         if (!regions.containsKey(regionKey)) {
             player.sendMessage(miniMessage.deserialize(messages.get("region_not_exist").replace("{regionKey}", regionKey)));
             return;
@@ -224,7 +223,7 @@ public class CommandListener implements BasicCommand {
             return;
         }
         String regionKey = args[1];
-        RegionManager.Region region = regionManager.loadRegions().get(regionKey);
+        Region region = regionManager.regions().get(regionKey);
         if (region == null) {
             player.sendMessage(miniMessage.deserialize(messages.get("region_not_exist"), parsed("key", regionKey)));
             return;
@@ -240,7 +239,7 @@ public class CommandListener implements BasicCommand {
         player.sendMessage(miniMessage.deserialize(messages.get("set.success"), parsed("permission", permission), parsed("value", value), parsed("region", regionKey)));
     }
 
-    public Component regionInfo(Player player, Map.Entry<String, RegionManager.Region> entry, boolean showMembers) {
+    public Component regionInfo(Player player, Map.Entry<String, Region> entry, boolean showMembers) {
         var mm = MiniMessage.miniMessage();
         Component comp = Component.text("");
         comp = comp.append(mm.deserialize(messages.get("region.info.name"), parsed("name", entry.getValue().getName())));

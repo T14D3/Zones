@@ -16,7 +16,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 
 public final class Zones extends JavaPlugin {
@@ -44,7 +43,7 @@ public final class Zones extends JavaPlugin {
         this.beaconUtils = new BeaconUtils(this);
 
         // Load regions from regions.yml
-        Map<String, RegionManager.Region> regions = regionManager.loadRegions();
+        Map<String, Region> regions = regionManager.regions();
 
         this.saveDefaultConfig();
 

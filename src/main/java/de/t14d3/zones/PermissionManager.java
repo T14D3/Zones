@@ -42,8 +42,8 @@ public class PermissionManager {
             return playerCache.get(cacheKey); // Return cached result
         }
 
-        for (Map.Entry<String, RegionManager.Region> entry : regionManager.loadRegions().entrySet()) {
-            RegionManager.Region region = entry.getValue();
+        for (Map.Entry<String, Region> entry : regionManager.regions().entrySet()) {
+            Region region = entry.getValue();
             BoundingBox box = BoundingBox.of(region.getMin(), region.getMax());
 
             if (box.contains(location.toVector())) {
@@ -69,10 +69,10 @@ public class PermissionManager {
         permissionCache.remove(playerUUID);
     }
     public void invalidateCacheForLocation(Location location) {
-        List<RegionManager.Region> regions = regionManager.getRegionsAt(location);
+        List<Region> regions = regionManager.getRegionsAt(location);
 
         // Invalidate caches for all players that have permissions in the regions covering the location
-        for (RegionManager.Region region : regions) {
+        for (Region region : regions) {
             for (UUID playerUUID : permissionCache.keySet()) {
                 // Remove the player's cached permissions related to this region
                 permissionCache.get(playerUUID).keySet().removeIf(key -> key.startsWith(getCacheKey(location, Actions.valueOf(""), "")));
@@ -93,7 +93,7 @@ public class PermissionManager {
      * @param region  The region in which the permission is being checked.
      * @return True if the player has the specified permission for the type, false otherwise.
      */
-    public boolean hasPermission(UUID uuid, String permission, String type, RegionManager.Region region) {
+    public boolean hasPermission(UUID uuid, String permission, String type, Region region) {
         permission = permission.toLowerCase();
         Player player = Bukkit.getPlayer(uuid);
 
@@ -160,7 +160,7 @@ public class PermissionManager {
         return false;
     }
 
-    public boolean isAdmin(UUID uuid, RegionManager.Region region) {
+    public boolean isAdmin(UUID uuid, Region region) {
         return hasPermission(uuid, "role", "owner", region) || hasPermission(uuid, "role", "admin", region);
     }
 }

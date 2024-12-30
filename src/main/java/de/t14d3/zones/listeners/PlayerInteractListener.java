@@ -1,5 +1,6 @@
 package de.t14d3.zones.listeners;
 
+import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.PermissionManager;
 import de.t14d3.zones.utils.Utils;
@@ -278,8 +279,8 @@ public class PlayerInteractListener implements Listener {
 
     // Small util for message
     private void actionBar(Player player, Location location, List<Actions> actions, String type) {
-        List<RegionManager.Region> regions = regionManager.getRegionsAt(location);
-        String regionNames = regions.stream().map(RegionManager.Region::getName).collect(Collectors.joining(", "));
+        List<Region> regions = regionManager.getRegionsAt(location);
+        String regionNames = regions.stream().map(Region::getName).collect(Collectors.joining(", "));
 
         StringBuilder permissionsString = new StringBuilder();
         for (Actions action : actions) {
