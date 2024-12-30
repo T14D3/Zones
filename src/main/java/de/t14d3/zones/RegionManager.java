@@ -52,7 +52,7 @@ public class RegionManager {
     public Map<String, Region> regions() {
         Map<String, Region> regions = new HashMap<>();
         if (regionsConfig.contains("regions")) {
-            for (String key : regionsConfig.getConfigurationSection("regions").getKeys(true)) {
+            for (String key : regionsConfig.getConfigurationSection("regions").getKeys(false)) {
                 String name = regionsConfig.getString("regions." + key + ".name");
                 Location min = loadLocation("regions." + key + ".min");
                 Location max = loadLocation("regions." + key + ".max");
