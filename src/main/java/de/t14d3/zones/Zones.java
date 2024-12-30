@@ -1,6 +1,8 @@
 package de.t14d3.zones;
 
-import de.t14d3.zones.listeners.*;
+import de.t14d3.zones.listeners.CommandListener;
+import de.t14d3.zones.listeners.PlayerInteractListener;
+import de.t14d3.zones.listeners.PlayerQuitListener;
 import de.t14d3.zones.utils.BeaconUtils;
 import de.t14d3.zones.utils.Utils;
 import io.papermc.paper.command.brigadier.Commands;
@@ -28,6 +30,7 @@ public final class Zones extends JavaPlugin {
     private Map<String, String> messages;
 
     @Override
+    @SuppressWarnings("UnstableApiUsage")
     public void onEnable() {
         // Initialize PermissionManager first without RegionManager
         this.permissionManager = new PermissionManager();
@@ -74,8 +77,6 @@ public final class Zones extends JavaPlugin {
             final Commands commands = event.registrar();
             commands.register("zone", new CommandListener(this, regionManager));
         });
-        //Objects.requireNonNull(this.getCommand("zone")).setExecutor(new CommandListener(this, regionManager));
-        //Objects.requireNonNull(this.getCommand("zone")).setTabCompleter(new TabCompleteListener(this, regionManager));
     }
 
     @Override

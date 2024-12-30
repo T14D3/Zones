@@ -38,3 +38,7 @@ messages:
     region_created: "<green>Region created successfully!"
   set:
     success: "<green>Permission '<permission>' set to '<value>' for region '<region>'"
+  subcreate:
+    no_parent: "<red>Error: No parent region found."
+    outside_parent: "<red>Error: Selection is outside parent region."
+    region_created: "<green>Sub-region created successfully!"

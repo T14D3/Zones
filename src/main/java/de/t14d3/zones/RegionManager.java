@@ -1,6 +1,5 @@
 package de.t14d3.zones;
 
-import com.google.gson.JsonObject;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -56,9 +55,10 @@ public class RegionManager {
                 String name = regionsConfig.getString("regions." + key + ".name");
                 Location min = loadLocation("regions." + key + ".min");
                 Location max = loadLocation("regions." + key + ".max");
+                String parent = regionsConfig.getString("regions." + key + ".parent");
 
                 Map<UUID, Map<String, String>> members = loadMembers(key);
-                Region region = new Region(name, min, max, members);
+                Region region = new Region(name, min, max, members, key, parent);
                 regions.put(key, region);
             }
         }
@@ -81,10 +81,14 @@ public class RegionManager {
     }
 
     // Save a region to the YAML file
-    public void createRegion(String key, Region region) {
+    public void saveRegion(String key, Region region) {
         regionsConfig.set("regions." + key + ".name", region.getName());
         saveLocation("regions." + key + ".min", region.getMin());
         saveLocation("regions." + key + ".max", region.getMax());
+        if (region.getParent() != null) {
+            regionsConfig.set("regions." + key + ".parent", region.getParent());
+        }
+
 
         saveMembers(key, region.getMembers());
         saveRegions();
@@ -143,7 +147,7 @@ public class RegionManager {
         } while (regions().containsKey(regionKey));
 
         Map<UUID, Map<String, String>> members = new HashMap<>();
-        Region newRegion = new Region(name, min, max, members);
+        Region newRegion = new Region(name, min, max, members, regionKey);
 
         String finalRegionKey = regionKey;
         ownerPermissions.forEach((permission, value) -> {
@@ -151,7 +155,36 @@ public class RegionManager {
         });
 
         permissionManager.invalidateAllCaches();
-        createRegion(regionKey, newRegion);
+        saveRegion(regionKey, newRegion);
+    }
+
+    /**
+     * Creates a new region as a sub-region of the given parent region.
+     * The region will be owned by the given player with the given permissions.
+     *
+     * @param name             The name of the new region.
+     * @param min              The minimum location of the new region.
+     * @param max              The maximum location of the new region.
+     * @param playerUUID       The UUID of the player who will own the new region.
+     * @param ownerPermissions The permissions that the player will have for the new region.
+     * @param parentRegion     The parent region of the new region.
+     */
+    public void createSubRegion(String name, Location min, Location max, UUID playerUUID, Map<String, String> ownerPermissions, Region parentRegion) {
+        String regionKey;
+        do {
+            regionKey = UUID.randomUUID().toString().substring(0, 8);
+        } while (regions().containsKey(regionKey));
+
+        Map<UUID, Map<String, String>> members = new HashMap<>();
+        Region newRegion = new Region(name, min, max, members, regionKey, parentRegion.getKey());
+
+        String finalRegionKey = regionKey;
+        ownerPermissions.forEach((permission, value) -> {
+            newRegion.addMemberPermission(playerUUID, permission, value, this, finalRegionKey);
+        });
+
+        permissionManager.invalidateAllCaches();
+        saveRegion(regionKey, newRegion);
     }
 
     public void createNewRegion(String name, Location min, Location max, UUID playerUUID) {
@@ -192,7 +225,7 @@ public class RegionManager {
     }
 
     public boolean overlapsExistingRegion(Location min, Location max) {
-        Region region = new Region(null, min, max, null);
+        Region region = new Region(null, min, max, null, null);
         return overlapsExistingRegion(region);
     }
 

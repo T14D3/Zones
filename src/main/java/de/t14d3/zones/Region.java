@@ -3,11 +3,14 @@ package de.t14d3.zones;
 import com.google.gson.JsonObject;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.util.BoundingBox;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.TreeMap;
+import java.util.UUID;
 
 
 /**
@@ -19,6 +22,7 @@ public class Region {
     private Location min;
     private Location max;
     private Map<UUID, Map<String, String>> members;
+    private String key;
     private String parent;
 
     // Constructor
@@ -28,15 +32,17 @@ public class Region {
      * @param min The minimum location of the region.
      * @param max The maximum location of the region.
      * @param members The members of the region.
+     * @param key The key of the region.
      * @param parent The parent (if any) of the region.
      *
-     * @see #Region(String, Location, Location, Map)
+     * @see #Region(String, Location, Location, Map, String)
      */
-    public Region(String name, Location min, Location max, Map<UUID, Map<String, String>> members, String parent) {
+    public Region(@NotNull String name, @NotNull Location min, @NotNull Location max, Map<UUID, Map<String, String>> members, @NotNull String key, @Nullable String parent) {
         this.name = name;
         this.min = min;
         this.max = max;
         this.members = (members != null) ? members : new HashMap<>();
+        this.key = key;
         this.parent = parent;
     }
 
@@ -47,11 +53,12 @@ public class Region {
      * @param min The minimum location of the region.
      * @param max The maximum location of the region.
      * @param members The members of the region.
+     * @param key The key of the region.
      *
      * @see #Region(String, Location, Location, Map, String)
      */
-    public Region(String name, Location min, Location max, Map<UUID, Map<String, String>> members) {
-        this(name, min, max, members, null);
+    public Region(String name, Location min, Location max, Map<UUID, Map<String, String>> members, String key) {
+        this(name, min, max, members, key, null);
     }
 
     // Getters and Setters
@@ -61,7 +68,7 @@ public class Region {
 
     public void setName(String name, RegionManager regionManager, String key) {
         this.name = name;
-        regionManager.createRegion(key, this); // Ensure changes are saved
+        regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
     public Location getMin() {
@@ -74,7 +81,7 @@ public class Region {
 
     public void setMin(Location min, RegionManager regionManager, String key) {
         this.min = min;
-        regionManager.createRegion(key, this); // Ensure changes are saved
+        regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
     public Location getMax() {
@@ -87,7 +94,7 @@ public class Region {
 
     public void setMax(Location max, RegionManager regionManager, String key) {
         this.max = max;
-        regionManager.createRegion(key, this); // Ensure changes are saved
+        regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
     public Map<UUID, Map<String, String>> getMembers() {
@@ -96,17 +103,17 @@ public class Region {
 
     public void setMembers(Map<UUID, Map<String, String>> members, RegionManager regionManager, String key) {
         this.members = members;
-        regionManager.createRegion(key, this); // Ensure changes are saved
+        regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
     public void addMember(UUID uuid, Map<String, String> permissions, RegionManager regionManager, String key) {
         this.members.put(uuid, permissions);
-        regionManager.createRegion(key, this); // Ensure changes are saved
+        regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
     public void removeMember(UUID uuid, RegionManager regionManager, String key) {
         this.members.remove(uuid);
-        regionManager.createRegion(key, this); // Ensure changes are saved
+        regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
     public boolean isMember(UUID uuid) {
@@ -123,18 +130,30 @@ public class Region {
 
     public void setParent(String parent, RegionManager regionManager, String key) {
         this.parent = parent;
-        regionManager.createRegion(key, this); // Ensure changes are saved
+        regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
     public Region getParentRegion(RegionManager regionManager) {
         return regionManager.regions().get(parent);
     }
 
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key, RegionManager regionManager) {
+        this.key = key;
+        regionManager.saveRegion(key, this); // Ensure changes are saved
+    }
+
+    public boolean contains(Location location) {
+        BoundingBox box = BoundingBox.of(min, max);
+        return box.contains(location.toVector());
+    }
+
     public void addMemberPermission(UUID uuid, String permission, String value, RegionManager regionManager, String key) {
-        regionManager.permissionManager.invalidateCache(uuid);
-        Region region = regionManager.regions().get(key);
-        region.members.computeIfAbsent(uuid, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)).put(permission, value);
-        regionManager.createRegion(key, region); // Ensure changes are saved
+        this.members.computeIfAbsent(uuid, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)).put(permission, value);
+        regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
     public JsonObject getAsJson() {

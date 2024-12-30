@@ -4,7 +4,6 @@ import de.t14d3.zones.PermissionManager;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.Zones;
-import de.t14d3.zones.utils.Utils;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import it.unimi.dsi.fastutil.Pair;
@@ -18,6 +17,7 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 import java.util.*;
+
 import static de.t14d3.zones.utils.BeaconUtils.resetBeacon;
 import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
 
@@ -69,6 +69,9 @@ public class CommandListener implements BasicCommand {
             case "create":
                 handleCreateCommand(player, args);
                 break;
+            case "subcreate":
+                handleSubCreateCommand(player, args);
+                break;
             case "cancel":
                 handleCancelCommand(player);
                 break;
@@ -88,13 +91,15 @@ public class CommandListener implements BasicCommand {
     public Collection<String> suggest(CommandSourceStack stack, String[] args) {
         Player player = (Player) stack.getSender();
         if (args.length <= 1) {
-            return List.of("info", "delete", "create", "cancel", "list", "set");
+            return List.of("info", "delete", "create", "subcreate", "cancel", "list", "set");
         }
-        if (args.length == 2 && (args[0].equalsIgnoreCase("info") || args[0].equalsIgnoreCase("delete"))) {
+        if (args.length == 2 && (args[0].equalsIgnoreCase("info")
+                || args[0].equalsIgnoreCase("delete")
+                || args[0].equalsIgnoreCase("subcreate"))) {
             List<String> builder = new ArrayList<>();
             regionManager.regions().forEach((regionKey, region) -> {
                     region.getMembers().keySet().stream()
-                            .filter(uuid -> pm.hasPermission(uuid, "role", "owner", region) || pm.hasPermission(uuid, "role", "admin", region))
+                            .filter(uuid -> pm.isAdmin(uuid, region))
                             .forEach(uuid -> builder.add(regionKey));
             });
             return builder;
@@ -166,6 +171,52 @@ public class CommandListener implements BasicCommand {
         }
 
         player.sendMessage(miniMessage.deserialize(messages.get("create.click_two_corners")));
+    }
+
+    private void handleSubCreateCommand(Player player, String[] args) {
+        if (!plugin.selection.containsKey(player.getUniqueId())) {
+            plugin.selection.put(player.getUniqueId(), Pair.of(null, null));
+            player.sendMessage(miniMessage.deserialize(messages.get("click_two_corners")));
+            return; // Failure
+        }
+
+        Pair<Location, Location> selectionPair = plugin.selection.get(player.getUniqueId());
+        if (selectionPair.first() == null || selectionPair.second() == null) {
+            player.sendMessage(miniMessage.deserialize(messages.get("create.click_two_corners")));
+            return; // Failure
+        }
+
+        Region parentRegion = null;
+        if (args.length < 2) {
+            for (Region region : regionManager.getRegionsAt(player.getLocation())) {
+                if (pm.isAdmin(player.getUniqueId(), region)) {
+                    parentRegion = region;
+                    break;
+                }
+            }
+        } else {
+            String regionKey = args[1];
+            parentRegion = regionManager.regions().get(regionKey);
+        }
+
+        if (parentRegion == null) {
+            player.sendMessage(miniMessage.deserialize(messages.get("subcreate.no_parent")));
+            return; // Failure
+        }
+
+        if (!parentRegion.contains(selectionPair.first()) || !parentRegion.contains(selectionPair.second())) {
+            player.sendMessage(miniMessage.deserialize(messages.get("subcreate.outside_parent")));
+            return; // Failure
+        }
+
+        Map<String, String> perms = new HashMap<>();
+        perms.put("role", "owner");
+
+        regionManager.createSubRegion(player.getName(), selectionPair.first(), selectionPair.second(), player.getUniqueId(), perms, parentRegion);
+        resetBeacon(player, selectionPair.first());
+        resetBeacon(player, selectionPair.second());
+        player.sendMessage(miniMessage.deserialize(messages.get("subcreate.region_created")));
+        plugin.selection.remove(player.getUniqueId());
     }
 
     private void handleCancelCommand(Player player) {
