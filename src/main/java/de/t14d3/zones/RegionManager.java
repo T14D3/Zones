@@ -158,7 +158,7 @@ public class RegionManager {
 
         String finalRegionKey = regionKey;
         ownerPermissions.forEach((permission, value) -> {
-            newRegion.addMemberPermission(playerUUID, permission, value, this, finalRegionKey);
+            newRegion.addMemberPermission(playerUUID, permission, value, this);
         });
 
         permissionManager.invalidateAllCaches();
@@ -187,7 +187,7 @@ public class RegionManager {
 
         String finalRegionKey = regionKey;
         ownerPermissions.forEach((permission, value) -> {
-            newRegion.addMemberPermission(playerUUID, permission, value, this, finalRegionKey);
+            newRegion.addMemberPermission(playerUUID, permission, value, this);
         });
 
         permissionManager.invalidateAllCaches();
@@ -221,10 +221,18 @@ public class RegionManager {
         createNewRegion(name, min, max, playerUUID, ownerPermissions);
     }
 
+    /**
+     * Adds a permission to a player's membership in a region.
+     *
+     * @param uuid       The UUID of the player.
+     * @param permission The permission to add.
+     * @param value      The value of the permission.
+     * @param key        The key of the region.
+     */
     public void addMemberPermission(UUID uuid, String permission, String value, String key) {
         permissionManager.invalidateCache(uuid);
         Region region = this.regions().get(key);
-        region.addMemberPermission(uuid, permission, value, this, key);
+        region.addMemberPermission(uuid, permission, value, this);
     }
 
     /**

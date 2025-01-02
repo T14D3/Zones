@@ -160,7 +160,7 @@ public class Region {
         return box.contains(location.toVector());
     }
 
-    public void addMemberPermission(UUID uuid, String permission, String value, RegionManager regionManager, String key) {
+    public void addMemberPermission(UUID uuid, String permission, String value, RegionManager regionManager) {
         this.members.computeIfAbsent(uuid, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)).put(permission, value);
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
