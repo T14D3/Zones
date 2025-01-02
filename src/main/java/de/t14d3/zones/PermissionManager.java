@@ -133,11 +133,11 @@ public class PermissionManager {
             permittedValue = permittedValue.trim(); // Trim whitespace
 
             // Check for wildcard allow
-            if ("*".equals(permittedValue) || "true".equals(permittedValue)) {
+            if ("*".equals(permittedValue) || "true".equalsIgnoreCase(permittedValue)) {
                 explicitAllow = true;
             }
             // Check for wildcard deny
-            else if ("! *".equals(permittedValue) || "false".equals(permittedValue)) {
+            else if ("! *".equals(permittedValue) || "false".equalsIgnoreCase(permittedValue)) {
                 explicitDeny = true;
             }
             // Check for specific type allow
