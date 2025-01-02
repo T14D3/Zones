@@ -4,6 +4,7 @@ import de.t14d3.zones.listeners.CommandListener;
 import de.t14d3.zones.listeners.PlayerInteractListener;
 import de.t14d3.zones.listeners.PlayerQuitListener;
 import de.t14d3.zones.utils.BeaconUtils;
+import de.t14d3.zones.utils.Types;
 import de.t14d3.zones.utils.Utils;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
@@ -17,6 +18,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -28,6 +30,7 @@ public final class Zones extends JavaPlugin {
     private BeaconUtils beaconUtils;
     public Map<UUID, Pair<Location, Location>> selection = new HashMap<>();
     private Map<String, String> messages;
+    public List<String> types;
 
     @Override
     @SuppressWarnings("UnstableApiUsage")
@@ -70,6 +73,11 @@ public final class Zones extends JavaPlugin {
         this.getServer().getPluginManager().registerEvents(new PlayerInteractListener(regionManager, permissionManager, this), this);
         this.getServer().getPluginManager().registerEvents(new PlayerQuitListener(this), this);
         getLogger().info("Zones plugin has been enabled and regions are loaded.");
+
+        // Populate Types
+        Types types = new Types();
+        types.populateTypes();
+        this.types = types.allTypes;
 
         // Register command executor and tab completer
         LifecycleEventManager<Plugin> manager = this.getLifecycleManager();

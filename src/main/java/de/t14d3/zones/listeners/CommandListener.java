@@ -4,6 +4,7 @@ import de.t14d3.zones.PermissionManager;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.Zones;
+import de.t14d3.zones.utils.Actions;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import it.unimi.dsi.fastutil.Pair;
@@ -101,22 +102,42 @@ public class CommandListener implements BasicCommand {
         // TODO: Implement proper set command handling, non-functional for now
         if (args[0].equalsIgnoreCase("set")) {
             if (args.length == 2) {
-                List<String> builder = new ArrayList<>();
-                regionManager.regions().forEach((regionKey, region) -> {
-                    if (pm.hasPermission(player.getUniqueId(), "role", "owner", region)) {
-                        builder.add(regionKey);
+                List<String> suggestions = new ArrayList<>();
+                for (String regionKey : regionManager.regions().keySet()) {
+                    if (regionKey.toLowerCase().startsWith(args[1].toLowerCase())
+                            && regionManager.regions().get(regionKey).isAdmin(player.getUniqueId())) {
+                        suggestions.add(regionKey);
                     }
-                });
-                return builder;
-            } else if (args.length == 3) {
-                String regionKey = args[1];
-                Region region = regionManager.regions().get(regionKey);
-                if (region == null) {
-                    return List.of("");
                 }
-                if (pm.hasPermission(player.getUniqueId(), "role", "owner", region)) {
-                    return List.of("role", "name", "min", "max", "members");
+                return suggestions;
+            }
+            if (args.length == 3) {
+                List<String> suggestions = new ArrayList<>();
+                for (OfflinePlayer offlinePlayer : Bukkit.getOfflinePlayers()) {
+                    if (offlinePlayer.getName() != null && offlinePlayer.getName().toLowerCase().startsWith(args[2].toLowerCase())) {
+                        suggestions.add(offlinePlayer.getName());
+                    }
                 }
+                return suggestions;
+            }
+            if (args.length == 4) {
+                List<String> suggestions = new ArrayList<>();
+                for (Actions action : Actions.values()) {
+                    if (action.name().toLowerCase().startsWith(args[3].toLowerCase())) {
+                        suggestions.add(action.name());
+                    }
+                }
+                return suggestions;
+            }
+            if (args.length >= 5) {
+                List<String> suggestions = new ArrayList<>();
+                List<String> types = plugin.types;
+                for (String value : types) {
+                    if (value.toLowerCase().startsWith(args[4].toLowerCase())) {
+                        suggestions.add(value);
+                    }
+                }
+                return suggestions;
             }
         }
 

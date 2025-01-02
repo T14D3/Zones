@@ -118,6 +118,13 @@ public class Region {
         return this.members.containsKey(uuid);
     }
 
+    public boolean isAdmin(UUID uuid) {
+        if (this.members.containsKey(uuid) && this.members.get(uuid).containsKey("role")) {
+            return this.members.get(uuid).get("role").equals("admin") || this.members.get(uuid).get("role").equals("owner");
+        }
+        return false; // Default to false
+    }
+
     public Map<String, String> getMemberPermissions(UUID uuid) {
         return this.members.get(uuid);
     }
