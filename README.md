@@ -23,7 +23,8 @@ The plugin provides the following commands:
 * `/zone create`: Creates a new region using the currently selected locations.
     * Usage: `/zone create`
     * Requires two locations to be selected using left and right click.
-* `/zone subcreate`: Creates a new sub-region within an existing region using the currently selected locations.
+* `/zone subcreate [regionKey]`: Creates a new sub-region within an existing region using the currently selected
+  locations.
     * Usage: `/zone subcreate [regionKey]`
     * `regionKey` is optional, if not provided, the region at the player's location will be used.
     * Requires two locations to be selected using left and right click.
@@ -37,34 +38,13 @@ The plugin provides the following commands:
     * Usage: `/zone list`
 * `/zone cancel`: Cancels the current region selection.
     * Usage: `/zone cancel`
-* `/zone set <regionKey> <permission> <value>`: Sets a permission for a member of a region.
-    * Usage: `/zone set <regionKey> <permission> <value>`
-    * `<regionKey>` is the name of the region.
+* `/zone set <regionKey> <player> <permission> <value>`: Sets a permission for a member of a region.
+  * Usage: `/zone set <regionKey> <player> <permission> <value>`
+  * `<regionKey>` is the key of the region.
+  * `<player>` is the name of the player.
     * `<permission>` is the permission to set (e.g., `role`, `break`, `place`, `interact`).
     * `<value>` is the value to set for the permission (
       e.g., `owner`, `true`, `false`, `*`, `!*`, `GRASS_BLOCK`, `!GRASS_BLOCK`).
-
-## Permissions
-
-The plugin uses the following permissions:
-
-* `zones.create.overlap`: Allows players to create regions that overlap existing regions.
-    * Default: `op`
-* `zones.bypass.unclaimed`: Allows players to interact with unclaimed regions.
-    * Default: `op`
-* `zones.bypass.claimed`: Allows players to interact with other players' regions.
-    * Default: `op`
-* `zones.info.other`: Allows players to view information about other regions.
-    * Default: `op`
-
-## Configuration
-
-The plugin uses the following configuration files:
-
-* `config.yml`: Contains general plugin settings (currently empty).
-* `messages.yml`: Contains all the messages used by the plugin. You can customize these messages to fit your server's
-  style.
-* `regions.yml`: Stores the data for all created regions, including their coordinates, members, and permissions.
 
 ## Code Structure
 
@@ -75,7 +55,8 @@ The plugin's code is organized as follows:
 * `de.t14d3.zones.listeners`: Contains event listeners for player interactions (`PlayerInteractListener.java`), command
   handling (`CommandListener.java`), and player quit events (`PlayerQuitListener.java`).
 * `de.t14d3.zones.utils`: Contains utility classes such as `Utils.java` for general helper functions, `BeaconUtils.java`
-  for beacon visualization, and `Actions.java` for defining different actions.
+  for beacon visualization, `Types.java` for defining possible type values (Blocks, Entities, etc.), and `Actions.java`
+* for defining different actions.
 
 ## Usage
 
@@ -94,13 +75,13 @@ The plugin's code is organized as follows:
 ### Setting Permissions
 
 1. Use the `/zone set <regionKey> <permission> <value>` command to set permissions for a member of a region.
-    * Example: `/zone set myregion break true` allows the executing player to break blocks in the region `myregion`.
-    * Example: `/zone set myregion break GRASS_BLOCK` allows the executing player to break only `GRASS_BLOCK` blocks in
-      the region `myregion`.
-    * Example: `/zone set myregion break !GRASS_BLOCK` denies the executing player to break `GRASS_BLOCK` blocks in the
-      region `myregion`.
-    * Example: `/zone set myregion break *` allows the executing player to break all blocks in the region `myregion`.
-    * Example: `/zone set myregion break !*` denies the executing player to break all blocks in the region `myregion`.
+  * Example: `/zone set <key> Player1 break true` allows "Player1" to break blocks in the specified region.
+  * Example: `/zone set <key> Player2 break GRASS_BLOCK` allows "Player2" to break only `GRASS_BLOCK` blocks
+    in the specified region.
+  * Example: `/zone set <key> Player3 interact !OAK_DOOR` denies "Player3" to interact with `OAK_DOOR`in
+    the specified region.
+  * Example: `/zone set <key> Player4 place *` allows "Player4" to place all blocks in the specified region.
+  * Example: `/zone set <key> Player5 break !*` denies "Player5" to break all blocks in the specified region.
 
 ### Viewing Region Information
 
