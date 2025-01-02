@@ -14,31 +14,29 @@ messages:
         values:
           allowed: "<green><value>"
           denied: "<red><value>"
-  command_only_player: "<red>This command can only be executed by a player."
-  region_deleted: "<green>Region '{regionKey}' deleted successfully!"
-  region_not_exist: "<red>Error: Region with key '{regionKey}' does not exist."
-  usage_delete: "<red>Usage: /zone delete <regionKey>"
-  region_created: "<green>Region created successfully!"
   selection_cancelled: "<yellow>Selection cancelled."
   no_selection: "<red>No selection to cancel."
   no_regions: "<red>No regions available."
   available_regions: "<green>Available regions:"
-  click_two_corners: "<yellow>Click two corners to select the region."
-  usage_info: "<red>Usage: /zone info <regionKey>"
   commands:
-    invalid: "<red>Invalid subcommand. Use /zone <create|delete|list|info|cancel>"
+    invalid: "<red>Invalid subcommand. Use /zone <create|delete|list|info|cancel|set>"
     create: "<green>Create a new region."
     delete: "<green>Delete a region."
     list: "<green>List all regions."
     info: "<green>Get information about a region."
     cancel: "<green>Cancel the current selection."
     no-permission: "<red>You don't have permission to execute this command!"
+    invalid-region: "<red>Invalid region."
+    only-player: "<red>This command can only be executed by a player."
   create:
     overlap: "<red>Error: Region overlaps existing region."
     click_two_corners: "<yellow>Click two corners to select the region."
     region_created: "<green>Region created successfully!"
+  delete:
+    success: "<green>Region <gold>'<region>'<green> deleted successfully!"
   set:
-    success: "<green>Permission '<permission>' set to '<value>' for region '<region>'"
+    success: "<green>Permission <permission> for player <player> set to <value> for region <region>"
+    invalid-usage: "<red>Invalid usage. Usage: /zone set <region> <player> <permission> <value>"
   subcreate:
     no_parent: "<red>Error: No parent region found."
     outside_parent: "<red>Error: Selection is outside parent region."
