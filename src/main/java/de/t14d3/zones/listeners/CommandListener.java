@@ -82,6 +82,10 @@ public class CommandListener implements BasicCommand {
             case "set":
                 handleSetCommand(player, args);
                 break;
+            case "save":
+                handleSaveCommand(player, args);
+            case "load":
+                handleLoadCommand(player, args);
             default:
                 player.sendMessage(miniMessage.deserialize(messages.get("invalidCommand")));
                 break;
@@ -289,6 +293,26 @@ public class CommandListener implements BasicCommand {
         regionManager.addMemberPermission(player.getUniqueId(), permission, value, regionKey);
         regionManager.saveRegions();
         player.sendMessage(miniMessage.deserialize(messages.get("set.success"), parsed("permission", permission), parsed("value", value), parsed("region", regionKey)));
+    }
+
+    private void handleSaveCommand(Player player, String[] args) {
+        if (player.hasPermission("zones.save")) {
+            regionManager.saveRegions();
+            int count = regionManager.regions().size();
+            player.sendMessage(miniMessage.deserialize(messages.get("commands.save"), parsed("count", String.valueOf(count))));
+        } else {
+            player.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
+        }
+    }
+
+    private void handleLoadCommand(Player player, String[] args) {
+        if (player.hasPermission("zones.load")) {
+            regionManager.loadRegions();
+            int count = regionManager.loadedRegions.size();
+            player.sendMessage(miniMessage.deserialize(messages.get("commands.load"), parsed("count", String.valueOf(count))));
+        } else {
+            player.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
+        }
     }
 
     private Component regionInfo(Map.Entry<String, Region> entry, boolean showMembers) {

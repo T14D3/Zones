@@ -19,3 +19,9 @@ permissions:
   zones.info.other:
     description: Allow players to view information about other regions
     default: op
+  zones.save:
+    description: Allow players to save all regions to file
+    default: op
+  zones.load:
+    description: Allow players to load all regions from file
+    default: op

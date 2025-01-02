@@ -32,6 +32,7 @@ messages:
     list: "<green>List all regions."
     info: "<green>Get information about a region."
     cancel: "<green>Cancel the current selection."
+    no-permission: "<red>You don't have permission to execute this command!"
   create:
     overlap: "<red>Error: Region overlaps existing region."
     click_two_corners: "<yellow>Click two corners to select the region."
@@ -42,3 +43,5 @@ messages:
     no_parent: "<red>Error: No parent region found."
     outside_parent: "<red>Error: Selection is outside parent region."
     region_created: "<green>Sub-region created successfully!"
+  load: "<green>Loaded <count> regions!"
+  save: "<green>Saved <count> regions to file"
