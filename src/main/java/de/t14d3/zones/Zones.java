@@ -46,7 +46,7 @@ public final class Zones extends JavaPlugin {
         this.beaconUtils = new BeaconUtils(this);
 
         // Load regions from regions.yml
-        regionManager.regions();
+        regionManager.loadRegions();
 
         this.saveDefaultConfig();
 

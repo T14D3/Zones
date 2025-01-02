@@ -20,6 +20,7 @@ public class RegionManager {
     private final Zones plugin;
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
     private final Map<String, String> messages;
+    public Map<String, Region> loadedRegions = new HashMap<>();
 
     public RegionManager(Zones plugin, PermissionManager permissionManager) {
         this.permissionManager = permissionManager;
@@ -46,23 +47,29 @@ public class RegionManager {
 
     /**
      * Loads regions from the YAML file into memory.
-     * @return A map of region keys and their corresponding {@link de.t14d3.zones.Region} objects.
      */
-    public Map<String, Region> regions() {
-        Map<String, Region> regions = new HashMap<>();
+    public void loadRegions() {
         if (regionsConfig.contains("regions")) {
-            for (String key : regionsConfig.getConfigurationSection("regions").getKeys(false)) {
+            for (String key : Objects.requireNonNull(regionsConfig.getConfigurationSection("regions")).getKeys(false)) {
                 String name = regionsConfig.getString("regions." + key + ".name");
                 Location min = loadLocation("regions." + key + ".min");
                 Location max = loadLocation("regions." + key + ".max");
                 String parent = regionsConfig.getString("regions." + key + ".parent");
 
                 Map<UUID, Map<String, String>> members = loadMembers(key);
-                Region region = new Region(name, min, max, members, key, parent);
-                regions.put(key, region);
+                Region region = new Region(name != null ? name : "Invalid Name", min, max, members, key, parent);
+                loadedRegions.put(key, region);
             }
         }
-        return regions;
+    }
+
+    /**
+     * Get all currently loaded regions and their corresponding key.
+     *
+     * @return A map of region keys and their corresponding {@link de.t14d3.zones.Region} objects.
+     */
+    public Map<String, Region> regions() {
+        return this.loadedRegions;
     }
 
     private Map<UUID, Map<String, String>> loadMembers(String key) {
