@@ -1,6 +1,7 @@
 package de.t14d3.zones.utils;
 
 import org.bukkit.Material;
+import org.bukkit.block.BlockState;
 import org.bukkit.block.Container;
 import org.bukkit.block.data.Powerable;
 import org.bukkit.entity.EntityType;
@@ -57,9 +58,17 @@ public class Types {
 
         // Populate containerTypes
         for (Material material : Material.values()) {
-            if (material.isBlock() && material.createBlockData().createBlockState() instanceof Container) {
-                containerTypes.add(material.name());
-                containerTypes.add("!" + material.name());
+            if (material.isBlock()) {
+                BlockState state;
+                try {
+                    state = material.createBlockData().createBlockState();
+                } catch (Exception ignored) {
+                    continue;
+                }
+                if (state instanceof Container) {
+                    containerTypes.add(material.name());
+                    containerTypes.add("!" + material.name());
+                }
             }
         }
         containerTypes.add("true");
@@ -67,9 +76,17 @@ public class Types {
 
         // Populate redstoneTypes
         for (Material material : Material.values()) {
-            if (material.isBlock() && material.createBlockData().createBlockState() instanceof Powerable) {
-                redstoneTypes.add(material.name());
-                redstoneTypes.add("!" + material.name());
+            if (material.isBlock()) {
+                BlockState state;
+                try {
+                    state = material.createBlockData().createBlockState();
+                } catch (Exception ignored) {
+                    continue;
+                }
+                if (state instanceof Powerable) {
+                    redstoneTypes.add(material.name());
+                    redstoneTypes.add("!" + material.name());
+                }
             }
         }
         redstoneTypes.add("true");
