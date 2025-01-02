@@ -228,15 +228,8 @@ public class RegionManager {
      * @see #overlapsExistingRegion(Location, Location)
      */
     public boolean overlapsExistingRegion(Region region) {
-        Map<String, Region> regions = regions();
-        for (Region otherRegion : regions.values()) {
-            BoundingBox otherBox = BoundingBox.of(otherRegion.getMin(), otherRegion.getMax());
-            BoundingBox thisBox = BoundingBox.of(region.getMin(), region.getMax());
-            if (thisBox.overlaps(otherBox)) {
-                return true; // Found an overlap
-            }
-        }
-        return false; // No overlaps found
+        BoundingBox box = BoundingBox.of(region.getMin(), region.getMax());
+        return overlapsExistingRegion(box); // No overlaps found
     }
 
     /**
@@ -248,8 +241,26 @@ public class RegionManager {
      * @see #overlapsExistingRegion(Region)
      */
     public boolean overlapsExistingRegion(Location min, Location max) {
-        Region region = new Region(null, min, max, null, null);
-        return overlapsExistingRegion(region);
+        BoundingBox thisBox = BoundingBox.of(min, max);
+        return overlapsExistingRegion(thisBox);
+    }
+
+    /**
+     * Checks if the given bounding box overlaps with any existing regions.
+     *
+     * @param thisBox The bounding box to check for overlaps.
+     * @return True if the bounding box overlaps with any existing regions, false otherwise.
+     * @see #overlapsExistingRegion(Region)
+     */
+    public boolean overlapsExistingRegion(BoundingBox thisBox) {
+        Map<String, Region> regions = regions();
+        for (Region otherRegion : regions.values()) {
+            BoundingBox otherBox = BoundingBox.of(otherRegion.getMin(), otherRegion.getMax());
+            if (thisBox.overlaps(otherBox)) {
+                return true; // Found an overlap
+            }
+        }
+        return false; // No overlaps found
     }
 
     /**
