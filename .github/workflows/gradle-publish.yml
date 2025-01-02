@@ -9,7 +9,9 @@ name: Gradle Package
 
 on:
   release:
-    types: [published]
+    types: [ released ]
+    tags-ignore:
+      - 'latest-dev'
 
 jobs:
   build:
