@@ -44,6 +44,7 @@ public class RegionManager {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        permissionManager.invalidateAllCaches();
     }
 
     /**
@@ -267,12 +268,37 @@ public class RegionManager {
      * @param thisBox The bounding box to check for overlaps.
      * @return True if the bounding box overlaps with any existing regions, false otherwise.
      * @see #overlapsExistingRegion(Region)
+     * @see #overlapsExistingRegion(BoundingBox, String)
      */
     public boolean overlapsExistingRegion(BoundingBox thisBox) {
         Map<String, Region> regions = regions();
         for (Region otherRegion : regions.values()) {
             BoundingBox otherBox = BoundingBox.of(otherRegion.getMin(), otherRegion.getMax());
             if (thisBox.overlaps(otherBox)) {
+                return true; // Found an overlap
+            }
+        }
+        return false; // No overlaps found
+    }
+
+    /**
+     * Checks if the given bounding box overlaps with any existing regions.
+     * Does not check neither the given region nor child regions.
+     *
+     * @param thisBox     The bounding box to check for overlaps.
+     * @param keyToIgnore The key of the region to ignore.
+     * @return True if the bounding box overlaps with any existing regions, false otherwise.
+     * @see #overlapsExistingRegion(BoundingBox)
+     */
+    public boolean overlapsExistingRegion(BoundingBox thisBox, String keyToIgnore) {
+        Map<String, Region> regions = regions();
+        for (Region otherRegion : regions.values()) {
+            if (otherRegion.getKey().equals(keyToIgnore) || otherRegion.getParent() != null) {
+                continue;
+            }
+            BoundingBox otherBox = BoundingBox.of(otherRegion.getMin(), otherRegion.getMax());
+            if (thisBox.overlaps(otherBox)) {
+                plugin.getLogger().info("Found overlap: " + otherRegion.getKey());
                 return true; // Found an overlap
             }
         }
@@ -333,7 +359,7 @@ public class RegionManager {
         }
         BoundingBox newRegion = BoundingBox.of(region.getMin(), region.getMax());
         newRegion.expand(direction.toBlockFace(), amount);
-        if (overlapsExistingRegion(newRegion)) {
+        if (overlapsExistingRegion(newRegion, region.getKey())) {
             return false;
         }
         expandBounds(region, direction, amount);
