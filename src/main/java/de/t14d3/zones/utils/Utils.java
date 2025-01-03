@@ -5,7 +5,6 @@ import org.bukkit.block.BlockState;
 import org.bukkit.block.Container;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Powerable;
-import org.bukkit.entity.Player;
 
 public class Utils {
     private Zones plugin;
@@ -14,11 +13,11 @@ public class Utils {
         this.plugin = plugin;
     }
 
-    public boolean isContainer(BlockState state) {
+    public static boolean isContainer(BlockState state) {
         return state instanceof Container;
     }
 
-    public boolean isPowerable(BlockData data) {
+    public static boolean isPowerable(BlockData data) {
         return data instanceof Powerable;
     }
 }

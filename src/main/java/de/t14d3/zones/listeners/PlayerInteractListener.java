@@ -91,12 +91,12 @@ public class PlayerInteractListener implements Listener {
         List<Actions> requiredPermissions = new ArrayList<>(); // Collect required permissions
 
         // Interactible blocks
-        if ((utils.isContainer(event.getClickedBlock().getState()) || utils.isPowerable(event.getClickedBlock().getBlockData())) && event.getAction() == Action.RIGHT_CLICK_BLOCK) {
+        if ((Utils.isContainer(event.getClickedBlock().getState()) || Utils.isPowerable(event.getClickedBlock().getBlockData())) && event.getAction() == Action.RIGHT_CLICK_BLOCK) {
             requiredPermissions.add(Actions.INTERACT);
-            if (utils.isContainer(event.getClickedBlock().getState())) {
+            if (Utils.isContainer(event.getClickedBlock().getState())) {
                 requiredPermissions.add(Actions.CONTAINER);
             }
-            if (utils.isPowerable(event.getClickedBlock().getBlockData())) {
+            if (Utils.isPowerable(event.getClickedBlock().getBlockData())) {
                 requiredPermissions.add(Actions.REDSTONE);
             }
             if (event.getClickedBlock().getType() == Material.TNT) {
@@ -119,10 +119,10 @@ public class PlayerInteractListener implements Listener {
         Location location = event.getBlockPlaced().getLocation();
         List<Actions> requiredPermissions = new ArrayList<>();
         requiredPermissions.add(Actions.PLACE);
-        if (utils.isContainer(event.getBlockPlaced().getState())) {
+        if (Utils.isContainer(event.getBlockPlaced().getState())) {
             requiredPermissions.add(Actions.CONTAINER);
         }
-        if (utils.isPowerable(event.getBlockPlaced().getBlockData())) {
+        if (Utils.isPowerable(event.getBlockPlaced().getBlockData())) {
             requiredPermissions.add(Actions.REDSTONE);
         }
         for (Actions action : requiredPermissions) {
@@ -141,10 +141,10 @@ public class PlayerInteractListener implements Listener {
         Location location = event.getBlock().getLocation();
         List<Actions> requiredPermissions = new ArrayList<>();
         requiredPermissions.add(Actions.BREAK);
-        if (utils.isContainer(event.getBlock().getState())) {
+        if (Utils.isContainer(event.getBlock().getState())) {
             requiredPermissions.add(Actions.CONTAINER);
         }
-        if (utils.isPowerable(event.getBlock().getBlockData())) {
+        if (Utils.isPowerable(event.getBlock().getBlockData())) {
             requiredPermissions.add(Actions.REDSTONE);
         }
         for (Actions action : requiredPermissions) {
