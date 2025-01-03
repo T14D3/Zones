@@ -31,6 +31,10 @@ public final class Zones extends JavaPlugin {
     public Map<UUID, Pair<Location, Location>> selection = new HashMap<>();
     private Map<String, String> messages;
     public List<String> types;
+    public List<String> blockTypes;
+    public List<String> entityTypes;
+    public List<String> containerTypes;
+    public List<String> redstoneTypes;
 
     @Override
     @SuppressWarnings("UnstableApiUsage")
@@ -78,6 +82,10 @@ public final class Zones extends JavaPlugin {
         Types types = new Types();
         types.populateTypes();
         this.types = types.allTypes;
+        this.blockTypes = types.blockTypes;
+        this.entityTypes = types.entityTypes;
+        this.containerTypes = types.containerTypes;
+        this.redstoneTypes = types.redstoneTypes;
 
         // Register command executor and tab completer
         LifecycleEventManager<Plugin> manager = this.getLifecycleManager();

@@ -92,7 +92,7 @@ public class CommandListener implements BasicCommand {
     public @NotNull Collection<String> suggest(CommandSourceStack stack, String[] args) {
         Player player = (Player) stack.getSender();
         if (args.length <= 1) {
-            return List.of("info", "delete", "create", "subcreate", "cancel", "list", "set", "load", "save");
+            return List.of("info", "delete", "create", "subcreate", "cancel", "list", "set", "load", "save", "expand");
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("info")
                 || args[0].equalsIgnoreCase("delete")
@@ -138,7 +138,30 @@ public class CommandListener implements BasicCommand {
             }
             if (args.length >= 5) {
                 List<String> suggestions = new ArrayList<>();
-                List<String> types = plugin.types;
+                List<String> types;
+                switch (args[3].toUpperCase()) {
+                    case "PLACE", "BREAK" -> {
+                        types = plugin.blockTypes;
+                    }
+                    case "CONTAINER" -> {
+                        types = plugin.containerTypes;
+                    }
+                    case "REDSTONE" -> {
+                        types = plugin.redstoneTypes;
+                    }
+                    case "ENTITY", "DAMAGE" -> {
+                        types = plugin.entityTypes;
+                    }
+                    case "IGNITE" -> {
+                        types = new ArrayList<>();
+                        types.add("true");
+                        types.add("false");
+                    }
+                    default -> {
+                        types = plugin.types;
+                    }
+
+                }
                 for (String value : types) {
                     if (value.toLowerCase().startsWith(args[4].toLowerCase())) {
                         suggestions.add(value);
