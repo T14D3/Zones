@@ -12,31 +12,19 @@ public enum Direction {
     DOWN;
 
     public static Direction fromYaw(double yaw) {
-        if (yaw < -180) {
-            yaw += 360;
+        if (yaw < -135 || yaw > 135) {
+            return Direction.NORTH;
         }
-        if (yaw > 180) {
-            yaw -= 360;
+        if (yaw < 135 && yaw > 45) {
+            return Direction.WEST;
         }
-        if (yaw < 0) {
-            yaw += 360;
+        if (yaw < 45 && yaw > -45) {
+            return Direction.SOUTH;
         }
-        if (yaw > 360) {
-            yaw -= 360;
+        if (yaw < -45 && yaw > -135) {
+            return Direction.EAST;
         }
-        Direction direction;
-        if (yaw < 22.5) {
-            direction = Direction.NORTH;
-        } else if (yaw < 67.5) {
-            direction = Direction.EAST;
-        } else if (yaw < 112.5) {
-            direction = Direction.SOUTH;
-        } else if (yaw < 157.5) {
-            direction = Direction.WEST;
-        } else {
-            direction = Direction.NORTH;
-        }
-        return direction;
+        return Direction.NORTH;
     }
 
     /**
