@@ -342,7 +342,7 @@ public class CommandListener implements BasicCommand {
         if (args.length < 2) {
             if (sender instanceof Player player) {
                 regionManager.getRegionsAt(player.getLocation()).forEach(region ->
-                        handleInfoCommand(sender, new String[]{region.getKey()}));
+                        handleInfoCommand(sender, new String[]{"info", region.getKey()}));
             } else {
                 sender.sendMessage(miniMessage.deserialize(messages.get("commands.invalid-region")));
             }
