@@ -41,5 +41,8 @@ messages:
     no_parent: "<red>Error: No parent region found."
     outside_parent: "<red>Error: Selection is outside parent region."
     region_created: "<green>Sub-region created successfully!"
+  expand:
+    success: "<green>Region <gold>'<region>'<green> expanded successfully!"
+    fail: "<red>Error: Region <gold>'<region>'<green> could not be expanded."
   load: "<green>Loaded <count> regions!"
   save: "<green>Saved <count> regions to file"

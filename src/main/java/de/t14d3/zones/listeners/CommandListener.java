@@ -5,6 +5,7 @@ import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.Zones;
 import de.t14d3.zones.utils.Actions;
+import de.t14d3.zones.utils.Direction;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import it.unimi.dsi.fastutil.Pair;
@@ -74,8 +75,13 @@ public class CommandListener implements BasicCommand {
                 break;
             case "save":
                 handleSaveCommand(stack.getSender(), args);
+                break;
             case "load":
                 handleLoadCommand(stack.getSender(), args);
+                break;
+            case "expand":
+                handleExpandCommand(stack.getSender(), args);
+                break;
             default:
                 stack.getSender().sendMessage(miniMessage.deserialize(messages.get("commands.invalid")));
                 break;
@@ -90,7 +96,8 @@ public class CommandListener implements BasicCommand {
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("info")
                 || args[0].equalsIgnoreCase("delete")
-                || args[0].equalsIgnoreCase("subcreate"))) {
+                || args[0].equalsIgnoreCase("subcreate")
+                || args[0].equalsIgnoreCase("expand"))) {
             List<String> builder = new ArrayList<>();
             regionManager.regions().forEach((regionKey, region) -> {
                     region.getMembers().keySet().stream()
@@ -99,7 +106,7 @@ public class CommandListener implements BasicCommand {
             });
             return builder;
         }
-        // TODO: Implement proper set command handling, non-functional for now
+
         if (args[0].equalsIgnoreCase("set")) {
             if (args.length == 2) {
                 List<String> suggestions = new ArrayList<>();
@@ -138,6 +145,18 @@ public class CommandListener implements BasicCommand {
                     }
                 }
                 return suggestions;
+            }
+        }
+        if (args[0].equalsIgnoreCase("expand")) {
+            if (args.length == 3) {
+                List<String> suggestions = new ArrayList<>();
+                for (int i = 1; i < 10; i++) {
+                    suggestions.add(String.valueOf(i));
+                }
+                return suggestions;
+            }
+            if (args.length == 4 && stack.getSender().hasPermission("zones.expand.overlap")) {
+                return List.of("overlap");
             }
         }
 
@@ -352,6 +371,31 @@ public class CommandListener implements BasicCommand {
                 parsed("player", target.getName()),
                 parsed("permission", permission),
                 parsed("value", value)));
+    }
+
+    private void handleExpandCommand(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage(miniMessage.deserialize(messages.get("commands.invalid-region")));
+            return;
+        }
+        String regionKey = args[1];
+        Direction direction;
+        if (sender instanceof Player player) {
+            direction = Direction.fromYaw(player.getLocation().getYaw());
+        } else {
+            direction = Direction.valueOf(args[4].toUpperCase());
+        }
+
+        int amount = Integer.parseInt(args[2]);
+        boolean allowOverlap = false;
+        if (args.length == 4) {
+            allowOverlap = Objects.equals(args[3], "overlap") && sender.hasPermission("zones.expand.overlap");
+        }
+        if (regionManager.expandBounds(regionManager.regions().get(regionKey), direction, amount, allowOverlap)) {
+            sender.sendMessage(miniMessage.deserialize(messages.get("expand.success"), parsed("region", regionKey)));
+        } else {
+            sender.sendMessage(miniMessage.deserialize(messages.get("expand.fail"), parsed("region", regionKey)));
+        }
     }
 
     private void handleSaveCommand(CommandSender sender, String[] args) {
