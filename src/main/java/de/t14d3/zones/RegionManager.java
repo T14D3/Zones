@@ -1,5 +1,6 @@
 package de.t14d3.zones;
 
+import de.t14d3.zones.utils.Direction;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -297,6 +298,63 @@ public class RegionManager {
         }
 
         return foundRegions;
+    }
+
+    /**
+     * Redefines the bounds of a region.
+     * Does not have any overlap checks.
+     *
+     * @param region The region to redefine.
+     * @param min    The new minimum location of the region.
+     * @param max    The new maximum location of the region.
+     */
+    public void redefineBounds(Region region, Location min, Location max) {
+        region.setMin(min, this);
+        region.setMax(max, this);
+    }
+
+
+    /**
+     * Expands the bounds of a region in a given direction by a given amount.
+     * Only succeeds if the region does not overlap with any other regions
+     * or the <code>allowOverlap</code> parameter is set to true.
+     *
+     * @param region       The region to expand.
+     * @param direction    The direction to expand in.
+     * @param amount       The amount to expand by.
+     * @param allowOverlap Whether to allow overlaps or not.
+     * @return Whether the expansion was successful.
+     * @see #expandBounds(Region, Direction, int)
+     */
+    public boolean expandBounds(Region region, Direction direction, int amount, boolean allowOverlap) {
+        if (allowOverlap) {
+            expandBounds(region, direction, amount);
+            return true;
+        }
+        BoundingBox newRegion = BoundingBox.of(region.getMin(), region.getMax());
+        newRegion.expand(direction.toBlockFace(), amount);
+        if (overlapsExistingRegion(newRegion)) {
+            return false;
+        }
+        expandBounds(region, direction, amount);
+        return true;
+    }
+
+    /**
+     * Expands the bounds of a region in a given direction by a given amount.
+     * Does not have any overlap checks.
+     *
+     * @param region    The region to expand.
+     * @param direction The direction to expand in.
+     * @param amount    The amount to expand by.
+     * @see #expandBounds(Region, Direction, int, boolean)
+     */
+    public void expandBounds(Region region, Direction direction, int amount) {
+        BoundingBox newRegion = BoundingBox.of(region.getMin(), region.getMax());
+        newRegion.expand(direction.toBlockFace(), amount);
+        region.setMin(newRegion.getMin().toBlockVector());
+        region.setMax(newRegion.getMax().toBlockVector());
+        saveRegions();
     }
 
     public Map<String, String> getMemberPermissions(Player player, Region region) {
