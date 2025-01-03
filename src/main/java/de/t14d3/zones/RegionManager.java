@@ -1,7 +1,6 @@
 package de.t14d3.zones;
 
 import de.t14d3.zones.utils.Direction;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -19,14 +18,11 @@ public class RegionManager {
     private final FileConfiguration regionsConfig;
     final PermissionManager permissionManager;
     private final Zones plugin;
-    private final MiniMessage miniMessage = MiniMessage.miniMessage();
-    private final Map<String, String> messages;
     public Map<String, Region> loadedRegions = new HashMap<>();
 
     public RegionManager(Zones plugin, PermissionManager permissionManager) {
         this.permissionManager = permissionManager;
         this.plugin = plugin;
-        this.messages = plugin.getMessages();
 
         regionsFile = new File(plugin.getDataFolder(), "regions.yml");
 
@@ -42,7 +38,7 @@ public class RegionManager {
         try {
             regionsConfig.save(regionsFile);
         } catch (IOException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("Failed to save regions.yml");
         }
         permissionManager.invalidateAllCaches();
     }
@@ -118,6 +114,7 @@ public class RegionManager {
         double x = regionsConfig.getDouble(path + ".x");
         double y = regionsConfig.getDouble(path + ".y");
         double z = regionsConfig.getDouble(path + ".z");
+        assert world != null;
         return new Location(Bukkit.getWorld(world), x, y, z);
     }
 
@@ -158,7 +155,6 @@ public class RegionManager {
         Map<UUID, Map<String, String>> members = new HashMap<>();
         Region newRegion = new Region(name, min, max, members, regionKey);
 
-        String finalRegionKey = regionKey;
         ownerPermissions.forEach((permission, value) -> {
             newRegion.addMemberPermission(playerUUID, permission, value, this);
         });

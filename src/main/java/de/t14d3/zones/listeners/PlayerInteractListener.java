@@ -41,7 +41,6 @@ public class PlayerInteractListener implements Listener {
     private final RegionManager regionManager;
     private final PermissionManager permissionManager;
     private final Zones plugin;
-    private final Utils utils;
     private final BeaconUtils beaconUtils;
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
     private final Map<String, String> messages;
@@ -50,7 +49,6 @@ public class PlayerInteractListener implements Listener {
         this.plugin = plugin;
         this.regionManager = regionManager;
         this.permissionManager = permissionManager;
-        this.utils = plugin.getUtils();
         this.beaconUtils = plugin.getBeaconUtils();
         this.messages = plugin.getMessages();
 

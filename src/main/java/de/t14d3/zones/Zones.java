@@ -5,7 +5,6 @@ import de.t14d3.zones.listeners.PlayerInteractListener;
 import de.t14d3.zones.listeners.PlayerQuitListener;
 import de.t14d3.zones.utils.BeaconUtils;
 import de.t14d3.zones.utils.Types;
-import de.t14d3.zones.utils.Utils;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
@@ -26,7 +25,6 @@ public final class Zones extends JavaPlugin {
 
     private RegionManager regionManager;
     private PermissionManager permissionManager;
-    private Utils utils;
     private BeaconUtils beaconUtils;
     public Map<UUID, Pair<Location, Location>> selection = new HashMap<>();
     private Map<String, String> messages;
@@ -49,7 +47,6 @@ public final class Zones extends JavaPlugin {
         this.permissionManager.setRegionManager(regionManager);
 
         // Initialize utilities
-        this.utils = new Utils(this);
         this.beaconUtils = new BeaconUtils(this);
 
         // Load regions from regions.yml
@@ -106,6 +103,5 @@ public final class Zones extends JavaPlugin {
     public RegionManager getRegionManager() { return regionManager; }
     public PermissionManager getPermissionManager() {return permissionManager; }
     public Map<String, String> getMessages() { return messages; }
-    public Utils getUtils() { return utils; }
     public BeaconUtils getBeaconUtils() { return beaconUtils; }
 }

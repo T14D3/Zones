@@ -24,6 +24,7 @@ public class Types {
     public List<String> redstoneTypes = new ArrayList<>();
 
 
+    @SuppressWarnings("UnstableApiUsage")
     public void populateTypes() {
         for (Material material : Material.values()) {
             if (material.isBlock()) {

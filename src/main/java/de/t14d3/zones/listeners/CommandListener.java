@@ -59,7 +59,7 @@ public class CommandListener implements BasicCommand {
                 handleDeleteCommand(stack.getSender(), args);
                 break;
             case "create":
-                handleCreateCommand(stack.getSender(), args);
+                handleCreateCommand(stack.getSender());
                 break;
             case "subcreate":
                 handleSubCreateCommand(stack.getSender(), args);
@@ -99,11 +99,9 @@ public class CommandListener implements BasicCommand {
                 || args[0].equalsIgnoreCase("subcreate")
                 || args[0].equalsIgnoreCase("expand"))) {
             List<String> builder = new ArrayList<>();
-            regionManager.regions().forEach((regionKey, region) -> {
-                    region.getMembers().keySet().stream()
-                            .filter(uuid -> pm.isAdmin(uuid, region))
-                            .forEach(uuid -> builder.add(regionKey));
-            });
+            regionManager.regions().forEach((regionKey, region) -> region.getMembers().keySet().stream()
+                    .filter(uuid -> pm.isAdmin(uuid, region))
+                    .forEach(uuid -> builder.add(regionKey)));
             return builder;
         }
 
@@ -140,26 +138,16 @@ public class CommandListener implements BasicCommand {
                 List<String> suggestions = new ArrayList<>();
                 List<String> types;
                 switch (args[3].toUpperCase()) {
-                    case "PLACE", "BREAK" -> {
-                        types = plugin.blockTypes;
-                    }
-                    case "CONTAINER" -> {
-                        types = plugin.containerTypes;
-                    }
-                    case "REDSTONE" -> {
-                        types = plugin.redstoneTypes;
-                    }
-                    case "ENTITY", "DAMAGE" -> {
-                        types = plugin.entityTypes;
-                    }
+                    case "PLACE", "BREAK" -> types = plugin.blockTypes;
+                    case "CONTAINER" -> types = plugin.containerTypes;
+                    case "REDSTONE" -> types = plugin.redstoneTypes;
+                    case "ENTITY", "DAMAGE" -> types = plugin.entityTypes;
                     case "IGNITE" -> {
                         types = new ArrayList<>();
                         types.add("true");
                         types.add("false");
                     }
-                    default -> {
-                        types = plugin.types;
-                    }
+                    default -> types = plugin.types;
 
                 }
                 for (String value : types) {
@@ -210,7 +198,7 @@ public class CommandListener implements BasicCommand {
         regionManager.saveRegions();
     }
 
-    private void handleCreateCommand(CommandSender sender, String[] args) {
+    private void handleCreateCommand(CommandSender sender) {
         if (sender instanceof Player player) {
             if (!plugin.selection.containsKey(player.getUniqueId())) {
                 plugin.selection.put(player.getUniqueId(), Pair.of(null, null));
