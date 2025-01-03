@@ -25,3 +25,6 @@ permissions:
   zones.load:
     description: Allow players to load all regions from file
     default: op
+  zones.expand.overlap:
+    description: Allow players to expand regions over other regions
+    default: op
