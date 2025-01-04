@@ -1,0 +1,52 @@
+# TODO
+
+- [ ] Particle visuals on:
+    - [ ] Region creation
+    - [ ] Region expansion
+    - [ ] Region overlap
+    - [ ] Region info
+- [ ] Proper global/default region handling
+- [x] Commands:
+    - [ ] Possible refactoring
+    - [x] info
+    - [x] delete
+    - [x] create
+    - [x] subcreate
+    - [x] cancel
+    - [ ] list (Incomplete)
+    - [x] set
+    - [x] save
+    - [x] load
+    - [x] expand
+    - [ ] redefine
+    - [ ] help
+- [ ]  Api/Internal:
+    - [x] RegionManager
+        - [x] JavaDocs
+        - [x] Constructive/Destructive methods
+        - [x] Region getters
+        - [x] Member getters
+        - [x] Member setters
+        - [x] Add/Remove member permissions
+        - [x] Save/Load
+        - [x] Expand bounds
+        - [x] Redefine bounds
+        - [x] Get regions at location
+        - [x] Get regions overlapping location
+    - [ ] PermissionManager
+        - [x] Functionality
+        - [ ] Performance improvements
+- [ ]  UI:
+    - [ ] New UI, currently terrible
+- [ ] Integrations:
+    - [ ] PlaceholderAPI
+    - [ ] Vault (Maybe? Not sure for what)
+    - [ ] WorldGuard (Overlap compatibility checking?)
+    - [ ] WorldEdit (Creating from selection, visuals)
+- [ ]  Other:
+    - [ ] Better error handling
+    - [ ] Storage Methods:
+        - [ ] SQLite/H2
+        - [ ] MySQL (MongoDB?)
+        - [x] YAML
+
