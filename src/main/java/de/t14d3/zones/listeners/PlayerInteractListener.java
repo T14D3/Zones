@@ -89,9 +89,9 @@ public class PlayerInteractListener implements Listener {
         List<Actions> requiredPermissions = new ArrayList<>(); // Collect required permissions
 
         // Interactable blocks
-        if ((Utils.isContainer(event.getClickedBlock().getState()) || Utils.isPowerable(event.getClickedBlock().getBlockData())) && event.getAction() == Action.RIGHT_CLICK_BLOCK) {
+        if ((Utils.isContainer(event.getClickedBlock().getState(false)) || Utils.isPowerable(event.getClickedBlock().getBlockData())) && event.getAction() == Action.RIGHT_CLICK_BLOCK) {
             requiredPermissions.add(Actions.INTERACT);
-            if (Utils.isContainer(event.getClickedBlock().getState())) {
+            if (Utils.isContainer(event.getClickedBlock().getState(false))) {
                 requiredPermissions.add(Actions.CONTAINER);
             }
             if (Utils.isPowerable(event.getClickedBlock().getBlockData())) {
@@ -117,7 +117,7 @@ public class PlayerInteractListener implements Listener {
         Location location = event.getBlockPlaced().getLocation();
         List<Actions> requiredPermissions = new ArrayList<>();
         requiredPermissions.add(Actions.PLACE);
-        if (Utils.isContainer(event.getBlockPlaced().getState())) {
+        if (Utils.isContainer(event.getBlockPlaced().getState(false))) {
             requiredPermissions.add(Actions.CONTAINER);
         }
         if (Utils.isPowerable(event.getBlockPlaced().getBlockData())) {
@@ -139,7 +139,7 @@ public class PlayerInteractListener implements Listener {
         Location location = event.getBlock().getLocation();
         List<Actions> requiredPermissions = new ArrayList<>();
         requiredPermissions.add(Actions.BREAK);
-        if (Utils.isContainer(event.getBlock().getState())) {
+        if (Utils.isContainer(event.getBlock().getState(false))) {
             requiredPermissions.add(Actions.CONTAINER);
         }
         if (Utils.isPowerable(event.getBlock().getBlockData())) {
