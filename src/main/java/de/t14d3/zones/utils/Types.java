@@ -3,6 +3,7 @@ package de.t14d3.zones.utils;
 import org.bukkit.Material;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Container;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Powerable;
 import org.bukkit.entity.EntityType;
 
@@ -78,13 +79,13 @@ public class Types {
         // Populate redstoneTypes
         for (Material material : Material.values()) {
             if (material.isBlock()) {
-                BlockState state;
+                BlockData data;
                 try {
-                    state = material.createBlockData().createBlockState();
+                    data = material.createBlockData();
                 } catch (Exception ignored) {
                     continue;
                 }
-                if (state instanceof Powerable) {
+                if (data instanceof Powerable) {
                     redstoneTypes.add(material.name());
                     redstoneTypes.add("!" + material.name());
                 }
