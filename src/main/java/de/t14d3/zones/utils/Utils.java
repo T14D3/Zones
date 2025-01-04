@@ -6,9 +6,19 @@ import org.bukkit.block.Container;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Powerable;
 
+/**
+ * Utility methods for the plugin.
+ * <p>
+ * Currently only contains methods for checking if a BlockState or BlockData is a container or powerable.
+ */
 public class Utils {
-    private Zones plugin;
+    private final Zones plugin;
 
+    /**
+     * Constructor for Utility methods.
+     *
+     * @param plugin The plugin instance.
+     */
     public Utils(Zones plugin) {
         this.plugin = plugin;
     }

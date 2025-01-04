@@ -54,7 +54,7 @@ public class PlayerInteractListener implements Listener {
 
     }
     @EventHandler
-    public void onPlayerInteract(PlayerInteractEvent event) {
+    private void onPlayerInteract(PlayerInteractEvent event) {
         Player player = event.getPlayer();
         if (event.getClickedBlock() == null) {
             return; // No block clicked, exit early
@@ -88,7 +88,7 @@ public class PlayerInteractListener implements Listener {
 
         List<Actions> requiredPermissions = new ArrayList<>(); // Collect required permissions
 
-        // Interactible blocks
+        // Interactable blocks
         if ((Utils.isContainer(event.getClickedBlock().getState()) || Utils.isPowerable(event.getClickedBlock().getBlockData())) && event.getAction() == Action.RIGHT_CLICK_BLOCK) {
             requiredPermissions.add(Actions.INTERACT);
             if (Utils.isContainer(event.getClickedBlock().getState())) {
@@ -111,7 +111,7 @@ public class PlayerInteractListener implements Listener {
     }
 
     @EventHandler
-    public void onBlockPlace(BlockPlaceEvent event) {
+    private void onBlockPlace(BlockPlaceEvent event) {
         Player player = event.getPlayer();
         String type = event.getBlockPlaced().getType().name();
         Location location = event.getBlockPlaced().getLocation();
@@ -133,7 +133,7 @@ public class PlayerInteractListener implements Listener {
     }
 
     @EventHandler
-    public void onBlockBreak(BlockBreakEvent event) {
+    private void onBlockBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
         String type = event.getBlock().getType().name();
         Location location = event.getBlock().getLocation();
@@ -156,7 +156,7 @@ public class PlayerInteractListener implements Listener {
 
 
     @EventHandler
-    public void onEntityInteract(PlayerInteractEntityEvent event) {
+    private void onEntityInteract(PlayerInteractEntityEvent event) {
         Player player = event.getPlayer();
         Location location = event.getRightClicked().getLocation();
         List<Actions> requiredPermissions = new ArrayList<>();
@@ -172,7 +172,7 @@ public class PlayerInteractListener implements Listener {
     }
 
     @EventHandler
-    public void onEntityDamage(EntityDamageByEntityEvent event) {
+    private void onEntityDamage(EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof Player player) {
             Location location = event.getEntity().getLocation();
             List<Actions> requiredPermissions = new ArrayList<>();
@@ -188,7 +188,7 @@ public class PlayerInteractListener implements Listener {
     }
 
     @EventHandler
-    public void onVehicleDamage(VehicleDamageEvent event) {
+    private void onVehicleDamage(VehicleDamageEvent event) {
         if (event.getAttacker() instanceof Player player) {
             Location location = event.getVehicle().getLocation();
             List<Actions> requiredPermissions = new ArrayList<>();
@@ -204,7 +204,7 @@ public class PlayerInteractListener implements Listener {
     }
 
     @EventHandler
-    public void onArmorStandManipulate(PlayerArmorStandManipulateEvent event) {
+    private void onArmorStandManipulate(PlayerArmorStandManipulateEvent event) {
         Player player = event.getPlayer();
         Location location = event.getRightClicked().getLocation();
         List<Actions> requiredPermissions = new ArrayList<>();
@@ -220,7 +220,7 @@ public class PlayerInteractListener implements Listener {
     }
 
     @EventHandler
-    public void onHangingPlace(HangingPlaceEvent event) {
+    private void onHangingPlace(HangingPlaceEvent event) {
         if (event.getPlayer() == null) {
             return;
         }
@@ -238,7 +238,7 @@ public class PlayerInteractListener implements Listener {
     }
 
     @EventHandler
-    public void onHangingBreak(HangingBreakByEntityEvent event) {
+    private void onHangingBreak(HangingBreakByEntityEvent event) {
         Player player = (Player) event.getRemover();
         Location location = event.getEntity().getLocation();
         List<Actions> requiredPermissions = new ArrayList<>();
@@ -254,7 +254,7 @@ public class PlayerInteractListener implements Listener {
     }
 
     @EventHandler
-    public void onEntityPlace(EntityPlaceEvent event) {
+    private void onEntityPlace(EntityPlaceEvent event) {
         if (event.getPlayer() == null) {
             return;
         }
