@@ -4,6 +4,7 @@ import de.t14d3.zones.listeners.CommandListener;
 import de.t14d3.zones.listeners.PlayerInteractListener;
 import de.t14d3.zones.listeners.PlayerQuitListener;
 import de.t14d3.zones.utils.BeaconUtils;
+import de.t14d3.zones.utils.ParticleHandler;
 import de.t14d3.zones.utils.Types;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
@@ -14,6 +15,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.util.BoundingBox;
 
 import java.io.File;
 import java.util.HashMap;
@@ -26,7 +28,9 @@ public final class Zones extends JavaPlugin {
     private RegionManager regionManager;
     private PermissionManager permissionManager;
     private BeaconUtils beaconUtils;
+    private ParticleHandler particleHandler;
     public Map<UUID, Pair<Location, Location>> selection = new HashMap<>();
+    public Map<UUID, BoundingBox> particles = new HashMap<>();
     private Map<String, String> messages;
     public List<String> types;
     public List<String> blockTypes;
@@ -48,6 +52,8 @@ public final class Zones extends JavaPlugin {
 
         // Initialize utilities
         this.beaconUtils = new BeaconUtils(this);
+        this.particleHandler = new ParticleHandler(this);
+        particleHandler.particleScheduler();
 
         // Load regions from regions.yml
         regionManager.loadRegions();
@@ -104,4 +110,8 @@ public final class Zones extends JavaPlugin {
     public PermissionManager getPermissionManager() {return permissionManager; }
     public Map<String, String> getMessages() { return messages; }
     public BeaconUtils getBeaconUtils() { return beaconUtils; }
+
+    public ParticleHandler getParticleHandler() {
+        return particleHandler;
+    }
 }

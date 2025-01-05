@@ -19,6 +19,7 @@ import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.util.BoundingBox;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -82,6 +83,9 @@ public class CommandListener implements BasicCommand {
             case "expand":
                 handleExpandCommand(stack.getSender(), args);
                 break;
+            case "select":
+                handleSelectCommand(stack.getSender(), args);
+                break;
             default:
                 stack.getSender().sendMessage(miniMessage.deserialize(messages.get("commands.invalid")));
                 break;
@@ -92,12 +96,13 @@ public class CommandListener implements BasicCommand {
     public @NotNull Collection<String> suggest(CommandSourceStack stack, String[] args) {
         Player player = (Player) stack.getSender();
         if (args.length <= 1) {
-            return List.of("info", "delete", "create", "subcreate", "cancel", "list", "set", "load", "save", "expand");
+            return List.of("info", "delete", "create", "subcreate", "cancel", "list", "set", "load", "save", "expand", "select");
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("info")
                 || args[0].equalsIgnoreCase("delete")
                 || args[0].equalsIgnoreCase("subcreate")
-                || args[0].equalsIgnoreCase("expand"))) {
+                || args[0].equalsIgnoreCase("expand")
+                || args[0].equalsIgnoreCase("select"))) {
             List<String> builder = new ArrayList<>();
             regionManager.regions().forEach((regionKey, region) -> region.getMembers().keySet().stream()
                     .filter(uuid -> pm.isAdmin(uuid, region))
@@ -286,9 +291,10 @@ public class CommandListener implements BasicCommand {
                 resetBeacon(player, selection.first());
                 resetBeacon(player, selection.second());
                 plugin.selection.remove(player.getUniqueId());
-                player.sendMessage(miniMessage.deserialize(messages.get("selection_cancelled")));
+                plugin.particles.remove(player.getUniqueId());
+                player.sendMessage(miniMessage.deserialize(messages.get("cancel.success")));
             } else {
-                player.sendMessage(miniMessage.deserialize(messages.get("no_selection")));
+                player.sendMessage(miniMessage.deserialize(messages.get("cancel.success")));
             }
         } else {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.only-player")));
@@ -389,6 +395,10 @@ public class CommandListener implements BasicCommand {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.invalid-region")));
             return;
         }
+        if (args.length < 3) {
+            sender.sendMessage(miniMessage.deserialize(messages.get("expand.invalid-usage")));
+            return;
+        }
         String regionKey = args[1];
         Direction direction;
         if (sender instanceof Player player) {
@@ -426,6 +436,30 @@ public class CommandListener implements BasicCommand {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.load"), parsed("count", String.valueOf(count))));
         } else {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
+        }
+    }
+
+    private void handleSelectCommand(CommandSender sender, String[] args) {
+        if (sender instanceof Player player) {
+            Region region;
+            if (args.length == 1) {
+                try {
+                    region = regionManager.getRegionsAt(player.getLocation()).get(0);
+                } catch (IndexOutOfBoundsException e) {
+                    plugin.particles.remove(player.getUniqueId());
+                    player.sendMessage(miniMessage.deserialize(messages.get("select.deselected")));
+                    return;
+                }
+            } else {
+                region = regionManager.regions().get(args[1]);
+            }
+            if (!plugin.particles.containsKey(player.getUniqueId()) || args.length >= 2) {
+                plugin.particles.put(player.getUniqueId(), BoundingBox.of(region.getMin(), region.getMax()));
+                player.sendMessage(miniMessage.deserialize(messages.get("select.selected"), parsed("region", region.getName())));
+            } else {
+                plugin.particles.remove(player.getUniqueId());
+                player.sendMessage(miniMessage.deserialize(messages.get("select.deselected")));
+            }
         }
     }
 

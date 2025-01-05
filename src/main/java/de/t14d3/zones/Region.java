@@ -69,7 +69,7 @@ public class Region {
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
-    Location getMin() {
+    public Location getMin() {
         return min;
     }
 
@@ -90,7 +90,7 @@ public class Region {
         this.min.set(min.getBlockX(), min.getBlockY(), min.getBlockZ());
     }
 
-    Location getMax() {
+    public Location getMax() {
         return max;
     }
 

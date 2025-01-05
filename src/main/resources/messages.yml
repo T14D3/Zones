@@ -44,5 +44,11 @@ messages:
   expand:
     success: "<green>Region <gold>'<region>'<green> expanded successfully!"
     fail: "<red>Error: Region <gold>'<region>'<green> could not be expanded."
+    invalid-usage: "<red>Invalid usage. Usage: /zone expand <region> <amount> [overlap]"
+  select:
+    selected: "<green>Selected region <gold>'<region>'<green>"
+    deselected: "<green>Deselected region."
   load: "<green>Loaded <count> regions!"
   save: "<green>Saved <count> regions to file"
+  cancel:
+    success: "<green>Cancelled selection."

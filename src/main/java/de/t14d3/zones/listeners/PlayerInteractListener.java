@@ -26,6 +26,7 @@ import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
+import org.bukkit.util.BoundingBox;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -83,6 +84,9 @@ public class PlayerInteractListener implements Listener {
             }
 
             plugin.selection.put(playerUUID, Pair.of(min, max));
+            if (min != null && max != null) {
+                plugin.particles.put(playerUUID, BoundingBox.of(min.toBlockLocation().add(1, 1, 1), max.toBlockLocation()));
+            }
             return;
         }
 
