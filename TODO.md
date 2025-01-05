@@ -1,10 +1,10 @@
 # TODO
 
 - [ ] Particle visuals on:
-    - [ ] Region creation
+    - [x] Region creation
     - [ ] Region expansion
     - [ ] Region overlap
-    - [ ] Region info
+    - [x] Region selection
 - [ ] Proper global/default region handling
 - [x] Commands:
     - [ ] Possible refactoring
