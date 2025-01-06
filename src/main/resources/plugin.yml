@@ -11,9 +11,7 @@ permissions:
     description: Allow players to view region information
     default: true
     children:
-      zones.info.other:
-        description: Allow players to view other player's regions
-        default: op
+      zones.info.other: true
   zones.delete:
     description: Allow players to delete regions
     default: true
@@ -39,6 +37,9 @@ permissions:
     description: Allow players to select regions
     default: true
 
+  zones.info.other:
+    description: Allow players to view other player's regions
+    default: op
   zones.create.overlap:
     description: Allow players to create regions that overlap existing regions
     default: op
