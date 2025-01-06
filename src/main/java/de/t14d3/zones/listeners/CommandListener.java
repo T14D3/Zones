@@ -142,7 +142,7 @@ public class CommandListener implements BasicCommand {
     public @NotNull Collection<String> suggest(CommandSourceStack stack, String[] args) {
         Player player = (Player) stack.getSender();
         if (args.length <= 1) {
-            return List.of("info", "delete", "create", "subcreate", "cancel", "list", "set", "commands.load", "commands.save", "expand", "select");
+            return List.of("info", "delete", "create", "subcreate", "cancel", "list", "set", "load", "save", "expand", "select");
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("info")
                 || args[0].equalsIgnoreCase("delete")
