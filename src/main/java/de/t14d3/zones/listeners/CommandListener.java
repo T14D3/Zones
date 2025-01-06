@@ -104,14 +104,14 @@ public class CommandListener implements BasicCommand {
                     sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
                 }
                 break;
-            case "save":
+            case "commands.save":
                 if (sender.hasPermission("zones.save")) {
                     handleSaveCommand(sender, args);
                 } else {
                     sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
                 }
                 break;
-            case "load":
+            case "commands.load":
                 if (sender.hasPermission("zones.load")) {
                     handleLoadCommand(sender, args);
                 } else {
@@ -142,7 +142,7 @@ public class CommandListener implements BasicCommand {
     public @NotNull Collection<String> suggest(CommandSourceStack stack, String[] args) {
         Player player = (Player) stack.getSender();
         if (args.length <= 1) {
-            return List.of("info", "delete", "create", "subcreate", "cancel", "list", "set", "load", "save", "expand", "select");
+            return List.of("info", "delete", "create", "subcreate", "cancel", "list", "set", "commands.load", "commands.save", "expand", "select");
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("info")
                 || args[0].equalsIgnoreCase("delete")
@@ -243,7 +243,7 @@ public class CommandListener implements BasicCommand {
             return; // Failure
         }
         regionManager.deleteRegion(regionKey);
-        sender.sendMessage(miniMessage.deserialize(messages.get("delete.success").replace("<region>", regionKey)));
+        sender.sendMessage(miniMessage.deserialize(messages.get("commands.delete.success").replace("<region>", regionKey)));
         regionManager.triggerSave();
     }
 
@@ -251,28 +251,28 @@ public class CommandListener implements BasicCommand {
         if (sender instanceof Player player) {
             if (!plugin.selection.containsKey(player.getUniqueId())) {
                 plugin.selection.put(player.getUniqueId(), Pair.of(null, null));
-                sender.sendMessage(miniMessage.deserialize(messages.get("create.click_two_corners")));
+                sender.sendMessage(miniMessage.deserialize(messages.get("commands.create.click-corners")));
                 return; // Failure
             }
 
             Pair<Location, Location> selectionPair = plugin.selection.get(player.getUniqueId());
             if (selectionPair.first() != null && selectionPair.second() != null) {
                 if (regionManager.overlapsExistingRegion(selectionPair.first(), selectionPair.second()) && !sender.hasPermission("zones.create.overlap")) {
-                    sender.sendMessage(miniMessage.deserialize(messages.get("create.overlap")));
+                    sender.sendMessage(miniMessage.deserialize(messages.get("commands.create.overlap")));
                     return; // Failure
                 }
 
                 Map<String, String> perms = new HashMap<>();
                 perms.put("role", "owner");
 
-                regionManager.create2DRegion(sender.getName(), selectionPair.first(), selectionPair.second(), player.getUniqueId(), perms);
+                String key = regionManager.create2DRegion(sender.getName(), selectionPair.first(), selectionPair.second(), player.getUniqueId(), perms);
                 resetBeacon(player, selectionPair.first());
                 resetBeacon(player, selectionPair.second());
-                sender.sendMessage(miniMessage.deserialize(messages.get("create.region_created")));
+                sender.sendMessage(miniMessage.deserialize(messages.get("commands.create.success"), parsed("region", key)));
                 plugin.selection.remove(player.getUniqueId());
                 return; // Success
             }
-            sender.sendMessage(miniMessage.deserialize(messages.get("create.click_two_corners")));
+            sender.sendMessage(miniMessage.deserialize(messages.get("commands.create.click-corners")));
         } else {
             sender.sendMessage(miniMessage.deserialize(messages.get("command.only-player")));
         }
@@ -288,7 +288,7 @@ public class CommandListener implements BasicCommand {
 
             Pair<Location, Location> selectionPair = plugin.selection.get(player.getUniqueId());
             if (selectionPair.first() == null || selectionPair.second() == null) {
-                player.sendMessage(miniMessage.deserialize(messages.get("create.click_two_corners")));
+                player.sendMessage(miniMessage.deserialize(messages.get("commands.create.click-corners")));
                 return; // Failure
             }
 
@@ -306,12 +306,12 @@ public class CommandListener implements BasicCommand {
             }
 
             if (parentRegion == null) {
-                player.sendMessage(miniMessage.deserialize(messages.get("subcreate.no_parent")));
+                player.sendMessage(miniMessage.deserialize(messages.get("commands.subcreate.no-parent")));
                 return; // Failure
             }
 
             if (!parentRegion.contains(selectionPair.first()) || !parentRegion.contains(selectionPair.second())) {
-                player.sendMessage(miniMessage.deserialize(messages.get("subcreate.outside_parent")));
+                player.sendMessage(miniMessage.deserialize(messages.get("commands.subcreate.outside-parent")));
                 return; // Failure
             }
 
@@ -321,7 +321,7 @@ public class CommandListener implements BasicCommand {
             regionManager.createSubRegion(player.getName(), selectionPair.first(), selectionPair.second(), player.getUniqueId(), perms, parentRegion);
             resetBeacon(player, selectionPair.first());
             resetBeacon(player, selectionPair.second());
-            player.sendMessage(miniMessage.deserialize(messages.get("subcreate.region_created")));
+            player.sendMessage(miniMessage.deserialize(messages.get("commands.subcreate.success")));
             plugin.selection.remove(player.getUniqueId());
         } else {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.only-player")));
@@ -336,9 +336,9 @@ public class CommandListener implements BasicCommand {
                 resetBeacon(player, selection.second());
                 plugin.selection.remove(player.getUniqueId());
                 plugin.particles.remove(player.getUniqueId());
-                player.sendMessage(miniMessage.deserialize(messages.get("cancel.success")));
+                player.sendMessage(miniMessage.deserialize(messages.get("commands.cancel.success")));
             } else {
-                player.sendMessage(miniMessage.deserialize(messages.get("cancel.success")));
+                player.sendMessage(miniMessage.deserialize(messages.get("commands.cancel.success")));
             }
         } else {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.only-player")));
@@ -410,7 +410,7 @@ public class CommandListener implements BasicCommand {
     private void handleSetCommand(CommandSender sender, String[] args) {
 
         if (args.length < 4) {
-            sender.sendMessage(miniMessage.deserialize(messages.get("set.invalid-usage")));
+            sender.sendMessage(miniMessage.deserialize(messages.get("commands.set.invalid-usage")));
             return;
         }
         String regionKey = args[1];
@@ -428,7 +428,7 @@ public class CommandListener implements BasicCommand {
         String value = args[4];
         regionManager.addMemberPermission(target.getUniqueId(), permission, value, regionKey);
         regionManager.triggerSave();
-        sender.sendMessage(miniMessage.deserialize(messages.get("set.success"),
+        sender.sendMessage(miniMessage.deserialize(messages.get("commands.set.success"),
                 parsed("region", regionKey),
                 parsed("player", target.getName()),
                 parsed("permission", permission),
@@ -441,7 +441,7 @@ public class CommandListener implements BasicCommand {
             return;
         }
         if (args.length < 3) {
-            sender.sendMessage(miniMessage.deserialize(messages.get("expand.invalid-usage")));
+            sender.sendMessage(miniMessage.deserialize(messages.get("commands.expand.invalid-usage")));
             return;
         }
         String regionKey = args[1];
@@ -458,22 +458,22 @@ public class CommandListener implements BasicCommand {
             allowOverlap = Objects.equals(args[3], "overlap") && sender.hasPermission("zones.expand.overlap");
         }
         if (regionManager.expandBounds(regionManager.regions().get(regionKey), direction, amount, allowOverlap)) {
-            sender.sendMessage(miniMessage.deserialize(messages.get("expand.success"), parsed("region", regionKey)));
+            sender.sendMessage(miniMessage.deserialize(messages.get("commands.expand.success"), parsed("region", regionKey)));
         } else {
-            sender.sendMessage(miniMessage.deserialize(messages.get("expand.fail"), parsed("region", regionKey)));
+            sender.sendMessage(miniMessage.deserialize(messages.get("commands.expand.fail"), parsed("region", regionKey)));
         }
     }
 
     private void handleSaveCommand(CommandSender sender, String[] args) {
         regionManager.saveRegions();
         int count = regionManager.regions().size();
-        sender.sendMessage(miniMessage.deserialize(messages.get("save"), parsed("count", String.valueOf(count))));
+        sender.sendMessage(miniMessage.deserialize(messages.get("commands.save"), parsed("count", String.valueOf(count))));
     }
 
     private void handleLoadCommand(CommandSender sender, String[] args) {
         regionManager.loadRegions();
         int count = regionManager.loadedRegions.size();
-        sender.sendMessage(miniMessage.deserialize(messages.get("load"), parsed("count", String.valueOf(count))));
+        sender.sendMessage(miniMessage.deserialize(messages.get("commands.load"), parsed("count", String.valueOf(count))));
     }
 
     private void handleSelectCommand(CommandSender sender, String[] args) {
@@ -484,7 +484,7 @@ public class CommandListener implements BasicCommand {
                     region = regionManager.getRegionsAt(player.getLocation()).get(0);
                 } catch (IndexOutOfBoundsException e) {
                     plugin.particles.remove(player.getUniqueId());
-                    player.sendMessage(miniMessage.deserialize(messages.get("select.deselected")));
+                    player.sendMessage(miniMessage.deserialize(messages.get("commands.select.deselected")));
                     return;
                 }
             } else {
@@ -492,10 +492,10 @@ public class CommandListener implements BasicCommand {
             }
             if (!plugin.particles.containsKey(player.getUniqueId()) || args.length >= 2) {
                 plugin.particles.put(player.getUniqueId(), BoundingBox.of(region.getMin(), region.getMax()));
-                player.sendMessage(miniMessage.deserialize(messages.get("select.selected"), parsed("region", region.getName())));
+                player.sendMessage(miniMessage.deserialize(messages.get("commands.select.selected"), parsed("region", region.getName())));
             } else {
                 plugin.particles.remove(player.getUniqueId());
-                player.sendMessage(miniMessage.deserialize(messages.get("select.deselected")));
+                player.sendMessage(miniMessage.deserialize(messages.get("commands.select.deselected")));
             }
         }
     }

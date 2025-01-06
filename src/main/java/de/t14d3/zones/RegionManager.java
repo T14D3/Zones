@@ -177,8 +177,9 @@ public class RegionManager {
      * @param playerUUID Region owner's UUID
      * @param ownerPermissions Owner's permissions map
      *
+     * @return The key of the newly created region
      */
-    public void createNewRegion(String name, Location min, Location max, UUID playerUUID, Map<String, String> ownerPermissions) {
+    public String createNewRegion(String name, Location min, Location max, UUID playerUUID, Map<String, String> ownerPermissions) {
         String regionKey;
         do {
             regionKey = UUID.randomUUID().toString().substring(0, 8);
@@ -193,6 +194,7 @@ public class RegionManager {
 
         permissionManager.invalidateAllCaches();
         saveRegion(regionKey, newRegion);
+        return regionKey;
     }
 
     /**
@@ -245,10 +247,10 @@ public class RegionManager {
         createNewRegion(name, min, max, playerUUID);
     }
 
-    public void create2DRegion(String name, Location min, Location max, UUID playerUUID, Map<String, String> ownerPermissions) {
+    public String create2DRegion(String name, Location min, Location max, UUID playerUUID, Map<String, String> ownerPermissions) {
         min.setY(-63);
         max.setY(319);
-        createNewRegion(name, min, max, playerUUID, ownerPermissions);
+        return createNewRegion(name, min, max, playerUUID, ownerPermissions);
     }
 
     /**

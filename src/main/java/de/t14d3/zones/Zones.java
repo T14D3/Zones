@@ -9,15 +9,16 @@ import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import it.unimi.dsi.fastutil.Pair;
 import org.bukkit.Location;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.BoundingBox;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.UUID;
 
 public final class Zones extends JavaPlugin {
@@ -54,11 +55,17 @@ public final class Zones extends JavaPlugin {
         this.saveDefaultConfig();
 
         // Load messages from messages.yml
-        File messagesFile = new File(getDataFolder(), "messages.yml");
+        File messagesFile = new File(getDataFolder(), "messages.properties");
         if (!messagesFile.exists()) {
-            saveResource("messages.yml", false); // Copy default messages.yml from jar
+            saveResource("messages.properties", false); // Copy default messages.yml from jar
         }
-        FileConfiguration messagesConfig = YamlConfiguration.loadConfiguration(messagesFile);
+        Properties messagesConfig = new Properties();
+        try {
+            messagesConfig.load(new FileInputStream(messagesFile));
+        } catch (IOException e) {
+            getLogger().severe("Failed to load messages.properties");
+        }
+
         messages = new Messages(messagesConfig, this);
 
 

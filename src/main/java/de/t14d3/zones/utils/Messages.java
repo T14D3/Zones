@@ -1,19 +1,22 @@
 package de.t14d3.zones.utils;
 
 import de.t14d3.zones.Zones;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 public class Messages {
     private final Zones zones;
     private final Map<String, String> messages = new HashMap<>();
 
-    public Messages(FileConfiguration messagesConfig, Zones zones) {
+    public Messages(Properties messagesConfig, Zones zones) {
         this.zones = zones;
-        messagesConfig.getKeys(true).forEach(key -> messages.put(key, messagesConfig.getString(key)));
+        messagesConfig.keySet().forEach(
+                key ->
+                        messages.put(key.toString(), messagesConfig.getProperty(key.toString()))
+        );
     }
 
     /**
