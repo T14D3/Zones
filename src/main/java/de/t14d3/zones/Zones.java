@@ -99,6 +99,10 @@ public final class Zones extends JavaPlugin {
     public void onDisable() {
         // Save regions to regions.yml before plugin shutdown
         regionManager.saveRegions();
+        regionManager.regions().clear();
+        regionManager.loadedRegions.clear();
+        regionManager.regionCache.clear();
+        permissionManager.invalidateAllCaches();
         getLogger().info("Zones plugin is disabling and regions are saved.");
     }
 
