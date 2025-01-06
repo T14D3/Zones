@@ -6,6 +6,7 @@ import de.t14d3.zones.listeners.PlayerQuitListener;
 import de.t14d3.zones.utils.BeaconUtils;
 import de.t14d3.zones.utils.ParticleHandler;
 import de.t14d3.zones.utils.Types;
+import de.t14d3.zones.utils.Utils;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
@@ -19,7 +20,6 @@ import org.bukkit.util.BoundingBox;
 
 import java.io.File;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -32,11 +32,7 @@ public final class Zones extends JavaPlugin {
     public Map<UUID, Pair<Location, Location>> selection = new HashMap<>();
     public Map<UUID, BoundingBox> particles = new HashMap<>();
     private Map<String, String> messages;
-    public List<String> types;
-    public List<String> blockTypes;
-    public List<String> entityTypes;
-    public List<String> containerTypes;
-    public List<String> redstoneTypes;
+    private Types types;
 
     @Override
     @SuppressWarnings("UnstableApiUsage")
@@ -79,16 +75,10 @@ public final class Zones extends JavaPlugin {
         // Register listeners
         this.getServer().getPluginManager().registerEvents(new PlayerInteractListener(regionManager, permissionManager, this), this);
         this.getServer().getPluginManager().registerEvents(new PlayerQuitListener(this), this);
-        getLogger().info("Zones plugin has been enabled and regions are loaded.");
 
         // Populate Types
-        Types types = new Types();
+        types = new Types();
         types.populateTypes();
-        this.types = types.allTypes;
-        this.blockTypes = types.blockTypes;
-        this.entityTypes = types.entityTypes;
-        this.containerTypes = types.containerTypes;
-        this.redstoneTypes = types.redstoneTypes;
 
         // Register command executor and tab completer
         LifecycleEventManager<Plugin> manager = this.getLifecycleManager();
@@ -96,6 +86,16 @@ public final class Zones extends JavaPlugin {
             final Commands commands = event.registrar();
             commands.register("zone", new CommandListener(this, regionManager));
         });
+
+        // Register saving task
+        if (getSavingMode() == Utils.SavingModes.PERIODIC) {
+            getServer().getScheduler().runTaskTimerAsynchronously(this, () -> {
+                regionManager.saveRegions();
+                getLogger().info("Zones have been saved.");
+            }, 20L, getConfig().getInt("zone-saving.period", 60) * 20L);
+        }
+
+        getLogger().info("Zones plugin has been enabled! Loaded " + regionManager.loadedRegions.size() + " regions.");
     }
 
     @Override
@@ -110,8 +110,15 @@ public final class Zones extends JavaPlugin {
     public PermissionManager getPermissionManager() {return permissionManager; }
     public Map<String, String> getMessages() { return messages; }
     public BeaconUtils getBeaconUtils() { return beaconUtils; }
-
     public ParticleHandler getParticleHandler() {
         return particleHandler;
+    }
+
+    public Types getTypes() {
+        return this.types;
+    }
+
+    public Utils.SavingModes getSavingMode() {
+        return Utils.SavingModes.fromString(this.getConfig().getString("zone-saving.mode", "MODIFIED"));
     }
 }

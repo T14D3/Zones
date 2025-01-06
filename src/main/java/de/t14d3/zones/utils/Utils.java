@@ -42,4 +42,20 @@ public class Utils {
     public static void setPDC(Player player, String key, String value) {
         player.getPersistentDataContainer().set(new NamespacedKey("zones", key), PersistentDataType.STRING, value);
     }
+
+    public enum SavingModes {
+        SHUTDOWN,
+        MODIFIED,
+        PERIODIC;
+
+        public static SavingModes fromString(String string) {
+            SavingModes mode;
+            try {
+                mode = SavingModes.valueOf(string.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                mode = SavingModes.MODIFIED;
+            }
+            return mode;
+        }
+    }
 }

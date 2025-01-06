@@ -3,3 +3,11 @@ selection-particles:
   primary: WAX_OFF
   secondary: WAX_ON
   range: 15 # Default: 15
+zone-saving:
+  # Valid values are SHUTDOWN, MODIFIED, PERIODIC
+  # Defaults to MODIFIED
+  # SHUTDOWN: Saves the regions.yml file when the plugin is disabled
+  # MODIFIED: Saves the regions.yml file when the plugin is disabled or when a region is modified
+  # PERIODIC: Saves the regions.yml file periodically
+  mode: MODIFIED
+  period: 60 # Default: 60, only used when mode is PERIODIC

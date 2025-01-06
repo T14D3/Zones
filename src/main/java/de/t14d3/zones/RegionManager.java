@@ -1,6 +1,7 @@
 package de.t14d3.zones;
 
 import de.t14d3.zones.utils.Direction;
+import de.t14d3.zones.utils.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -11,6 +12,8 @@ import org.bukkit.util.BoundingBox;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 public class RegionManager {
 
@@ -19,6 +22,7 @@ public class RegionManager {
     final PermissionManager permissionManager;
     private final Zones plugin;
     public Map<String, Region> loadedRegions = new HashMap<>();
+    public Map<Location, List<String>> regionCache = new HashMap<>();
 
     public RegionManager(Zones plugin, PermissionManager permissionManager) {
         this.permissionManager = permissionManager;
@@ -35,19 +39,44 @@ public class RegionManager {
     }
 
     public void saveRegions() {
+        for (Map.Entry<String, Region> entry : loadedRegions.entrySet()) {
+            String key = entry.getKey();
+            Region region = entry.getValue();
+            regionsConfig.set("regions." + key + ".name", region.getName());
+            saveLocation("regions." + key + ".min", region.getMin());
+            saveLocation("regions." + key + ".max", region.getMax());
+            if (region.getParent() != null) {
+                regionsConfig.set("regions." + key + ".parent", region.getParent());
+            }
+            saveMembers(key, region.getMembers());
+        }
         try {
             regionsConfig.save(regionsFile);
         } catch (IOException e) {
             plugin.getLogger().severe("Failed to save regions.yml");
         }
         permissionManager.invalidateAllCaches();
+        regionCache.clear();
+    }
+
+    /**
+     * Triggers saving the regions.
+     * Respects the saving mode.
+     *
+     * @see #saveRegions() #saveRegions() to force-save
+     */
+    public void triggerSave() {
+        if (plugin.getSavingMode() == Utils.SavingModes.MODIFIED) {
+            saveRegions();
+        }
     }
 
     /**
      * Loads regions from the YAML file into memory.
      */
-    public void loadRegions() {
+    public Future<Void> loadRegions() {
         if (regionsConfig.contains("regions")) {
+            loadedRegions.clear();
             for (String key : Objects.requireNonNull(regionsConfig.getConfigurationSection("regions")).getKeys(false)) {
                 String name = regionsConfig.getString("regions." + key + ".name");
                 Location min = loadLocation("regions." + key + ".min");
@@ -58,7 +87,10 @@ public class RegionManager {
                 Region region = new Region(name != null ? name : "Invalid Name", min, max, members, key, parent);
                 loadedRegions.put(key, region);
             }
+            regionCache.clear();
+            permissionManager.invalidateAllCaches();
         }
+        return CompletableFuture.completedFuture(null);
     }
 
     /**
@@ -96,7 +128,7 @@ public class RegionManager {
 
 
         saveMembers(key, region.getMembers());
-        saveRegions();
+        triggerSave();
     }
 
     private void saveMembers(String key, Map<UUID, Map<String, String>> members) {
@@ -132,7 +164,7 @@ public class RegionManager {
      */
     public void deleteRegion(String regionKey) {
         regions().remove(regionKey);
-        saveRegions();
+        triggerSave();
         permissionManager.invalidateAllCaches();
     }
 
@@ -183,12 +215,12 @@ public class RegionManager {
         Map<UUID, Map<String, String>> members = new HashMap<>();
         Region newRegion = new Region(name, min, max, members, regionKey, parentRegion.getKey());
 
-        String finalRegionKey = regionKey;
         ownerPermissions.forEach((permission, value) -> {
             newRegion.addMemberPermission(playerUUID, permission, value, this);
         });
 
         permissionManager.invalidateAllCaches();
+        regionCache.clear();
         saveRegion(regionKey, newRegion);
     }
 
@@ -294,11 +326,26 @@ public class RegionManager {
             }
             BoundingBox otherBox = BoundingBox.of(otherRegion.getMin(), otherRegion.getMax());
             if (thisBox.overlaps(otherBox)) {
-                plugin.getLogger().info("Found overlap: " + otherRegion.getKey());
                 return true; // Found an overlap
             }
         }
         return false; // No overlaps found
+    }
+
+    public CompletableFuture<Boolean> overlapsExistingRegionAsync(Region region) {
+        return CompletableFuture.supplyAsync(() -> overlapsExistingRegion(region));
+    }
+
+    public CompletableFuture<Boolean> overlapsExistingRegionAsync(Location min, Location max) {
+        return CompletableFuture.supplyAsync(() -> overlapsExistingRegion(min, max));
+    }
+
+    public CompletableFuture<Boolean> overlapsExistingRegionAsync(BoundingBox thisBox) {
+        return CompletableFuture.supplyAsync(() -> overlapsExistingRegion(thisBox));
+    }
+
+    public CompletableFuture<Boolean> overlapsExistingRegionAsync(BoundingBox thisBox, String keyToIgnore) {
+        return CompletableFuture.supplyAsync(() -> overlapsExistingRegion(thisBox, keyToIgnore));
     }
 
     /**
@@ -309,9 +356,13 @@ public class RegionManager {
      */
     public List<Region> getRegionsAt(Location location) {
         List<Region> foundRegions = new ArrayList<>();
-        Map<String, Region> regions = regions();
-
-        for (Region region : regions.values()) {
+        if (regionCache.containsKey(location)) {
+            for (String regionKey : regionCache.get(location)) {
+                foundRegions.add(regions().get(regionKey));
+            }
+            return foundRegions;
+        }
+        for (Region region : regions().values()) {
             BoundingBox regionBox = BoundingBox.of(region.getMin(), region.getMax());
             // Check if the location's bounding box overlaps with the region's bounding box
             if (regionBox.contains(location.toVector())) {
@@ -320,6 +371,16 @@ public class RegionManager {
         }
 
         return foundRegions;
+    }
+
+    /**
+     * Gets Regions at location async
+     *
+     * @param location Location to check
+     * @return List of regions at location
+     */
+    public CompletableFuture<List<Region>> getRegionsAtAsync(Location location) {
+        return CompletableFuture.supplyAsync(() -> getRegionsAt(location));
     }
 
     /**
@@ -355,7 +416,7 @@ public class RegionManager {
         }
         BoundingBox newRegion = BoundingBox.of(region.getMin(), region.getMax());
         newRegion.expand(direction.toBlockFace(), amount);
-        if (overlapsExistingRegion(newRegion, region.getKey())) {
+        if (overlapsExistingRegionAsync(newRegion, region.getKey()).join()) {
             return false;
         }
         expandBounds(region, direction, amount);
@@ -376,7 +437,7 @@ public class RegionManager {
         newRegion.expand(direction.toBlockFace(), amount);
         region.setMin(newRegion.getMin().toBlockVector());
         region.setMax(newRegion.getMax().toBlockVector());
-        saveRegions();
+        triggerSave();
     }
 
     public Map<String, String> getMemberPermissions(Player player, Region region) {

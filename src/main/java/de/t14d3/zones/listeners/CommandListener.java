@@ -23,6 +23,7 @@ import org.bukkit.util.BoundingBox;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 import static de.t14d3.zones.utils.BeaconUtils.resetBeacon;
 import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
@@ -45,9 +46,8 @@ public class CommandListener implements BasicCommand {
 
     @Override
     public void execute(CommandSourceStack stack, String[] args) {
-        Player player = (Player) stack.getSender();
         if (args.length < 1) {
-            player.sendMessage(miniMessage.deserialize(messages.get("commands.invalid")));
+            stack.getSender().sendMessage(miniMessage.deserialize(messages.get("commands.invalid")));
             return;
         }
 
@@ -143,16 +143,14 @@ public class CommandListener implements BasicCommand {
                 List<String> suggestions = new ArrayList<>();
                 List<String> types;
                 switch (args[3].toUpperCase()) {
-                    case "PLACE", "BREAK" -> types = plugin.blockTypes;
-                    case "CONTAINER" -> types = plugin.containerTypes;
-                    case "REDSTONE" -> types = plugin.redstoneTypes;
-                    case "ENTITY", "DAMAGE" -> types = plugin.entityTypes;
+                    case "PLACE", "BREAK" -> types = plugin.getTypes().blockTypes;
+                    case "CONTAINER" -> types = plugin.getTypes().containerTypes;
+                    case "REDSTONE" -> types = plugin.getTypes().redstoneTypes;
+                    case "ENTITY", "DAMAGE" -> types = plugin.getTypes().entityTypes;
                     case "IGNITE" -> {
-                        types = new ArrayList<>();
-                        types.add("true");
-                        types.add("false");
+                        types = List.of("true", "false");
                     }
-                    default -> types = plugin.types;
+                    default -> types = plugin.getTypes().allTypes;
 
                 }
                 for (String value : types) {
@@ -200,7 +198,7 @@ public class CommandListener implements BasicCommand {
         }
         regionManager.deleteRegion(regionKey);
         sender.sendMessage(miniMessage.deserialize(messages.get("delete.success").replace("<region>", regionKey)));
-        regionManager.saveRegions();
+        regionManager.triggerSave();
     }
 
     private void handleCreateCommand(CommandSender sender) {
@@ -319,7 +317,8 @@ public class CommandListener implements BasicCommand {
             Component hoverText = regionInfo(
                     entry,
                     (sender.hasPermission("zones.info.other") ||
-                            (player != null && this.plugin.getPermissionManager().isAdmin(player.getUniqueId(), regions.get(entry.getKey())))));
+                            (player != null && this.plugin.getPermissionManager().isAdmin(player.getUniqueId(), regions.get(entry.getKey())))))
+                    .join();
             var mm = MiniMessage.miniMessage();
 
             Component comp = mm.deserialize(messages.getOrDefault("region.info.name", "<gold><name> <dark_gray><italic>(#<key>)"), parsed("name", entry.getValue().getName()), parsed("key", entry.getKey()));
@@ -335,7 +334,7 @@ public class CommandListener implements BasicCommand {
         String regionKey;
         if (args.length < 2) {
             if (sender instanceof Player player) {
-                regionManager.getRegionsAt(player.getLocation()).forEach(region ->
+                regionManager.getRegionsAtAsync(player.getLocation()).join().forEach(region ->
                         handleInfoCommand(sender, new String[]{"info", region.getKey()}));
             } else {
                 sender.sendMessage(miniMessage.deserialize(messages.get("commands.invalid-region")));
@@ -357,8 +356,8 @@ public class CommandListener implements BasicCommand {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
             return;
         }
-        Component comp = regionInfo(regions.entrySet().stream().filter(entry -> entry.getKey().equals(regionKey)).findFirst().get(), true);
-        sender.sendMessage(comp);
+        regionInfo(regions.entrySet().stream().filter(entry -> entry.getKey().equals(regionKey)).findFirst().get(), true)
+                .thenAccept(sender::sendMessage);
 
     }
 
@@ -382,7 +381,7 @@ public class CommandListener implements BasicCommand {
         String permission = args[3];
         String value = args[4];
         regionManager.addMemberPermission(target.getUniqueId(), permission, value, regionKey);
-        regionManager.saveRegions();
+        regionManager.triggerSave();
         sender.sendMessage(miniMessage.deserialize(messages.get("set.success"),
                 parsed("region", regionKey),
                 parsed("player", target.getName()),
@@ -423,7 +422,7 @@ public class CommandListener implements BasicCommand {
         if (sender.hasPermission("zones.save")) {
             regionManager.saveRegions();
             int count = regionManager.regions().size();
-            sender.sendMessage(miniMessage.deserialize(messages.get("commands.save"), parsed("count", String.valueOf(count))));
+            sender.sendMessage(miniMessage.deserialize(messages.get("save"), parsed("count", String.valueOf(count))));
         } else {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
         }
@@ -433,7 +432,7 @@ public class CommandListener implements BasicCommand {
         if (sender.hasPermission("zones.load")) {
             regionManager.loadRegions();
             int count = regionManager.loadedRegions.size();
-            sender.sendMessage(miniMessage.deserialize(messages.get("commands.load"), parsed("count", String.valueOf(count))));
+            sender.sendMessage(miniMessage.deserialize(messages.get("load"), parsed("count", String.valueOf(count))));
         } else {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
         }
@@ -463,7 +462,7 @@ public class CommandListener implements BasicCommand {
         }
     }
 
-    private Component regionInfo(Map.Entry<String, Region> entry, boolean showMembers) {
+    private CompletableFuture<Component> regionInfo(Map.Entry<String, Region> entry, boolean showMembers) {
         var mm = MiniMessage.miniMessage();
         Component comp = Component.text("");
         comp = comp.append(mm.deserialize(messages.get("region.info.name"), parsed("name", entry.getValue().getName())));
@@ -526,6 +525,6 @@ public class CommandListener implements BasicCommand {
         }
         comp = comp.append(mm.deserialize(messages.get("region.info.key"), parsed("key", entry.getKey())));
 
-        return comp;
+        return CompletableFuture.completedFuture(comp);
     }
 }
