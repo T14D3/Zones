@@ -50,41 +50,86 @@ public class CommandListener implements BasicCommand {
             stack.getSender().sendMessage(miniMessage.deserialize(messages.get("commands.invalid")));
             return;
         }
+        CommandSender sender = stack.getSender();
 
         String command = args[0].toLowerCase();
         switch (command) {
             case "info":
-                handleInfoCommand(stack.getSender(), args);
+                if (sender.hasPermission("zones.info")) {
+                    handleInfoCommand(sender, args);
+                } else {
+                    sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
+                }
                 break;
             case "delete":
-                handleDeleteCommand(stack.getSender(), args);
+                if (sender.hasPermission("zones.delete")) {
+                    handleDeleteCommand(sender, args);
+                } else {
+                    sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
+                }
                 break;
             case "create":
-                handleCreateCommand(stack.getSender());
+                if (sender.hasPermission("zones.create")) {
+                    handleCreateCommand(sender);
+                } else {
+                    sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
+                }
                 break;
             case "subcreate":
-                handleSubCreateCommand(stack.getSender(), args);
+                if (sender.hasPermission("zones.subcreate")) {
+                    handleSubCreateCommand(sender, args);
+                } else {
+                    sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
+                }
                 break;
             case "cancel":
-                handleCancelCommand(stack.getSender());
+                if (sender.hasPermission("zones.cancel")) {
+                    handleCancelCommand(sender);
+                } else {
+                    sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
+                }
                 break;
             case "list":
-                handleListCommand(stack.getSender());
+                if (sender.hasPermission("zones.list")) {
+                    handleListCommand(sender);
+                } else {
+                    sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
+                }
                 break;
             case "set":
-                handleSetCommand(stack.getSender(), args);
+                if (sender.hasPermission("zones.set")) {
+                    handleSetCommand(sender, args);
+                } else {
+                    sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
+                }
                 break;
             case "save":
-                handleSaveCommand(stack.getSender(), args);
+                if (sender.hasPermission("zones.save")) {
+                    handleSaveCommand(sender, args);
+                } else {
+                    sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
+                }
                 break;
             case "load":
-                handleLoadCommand(stack.getSender(), args);
+                if (sender.hasPermission("zones.load")) {
+                    handleLoadCommand(sender, args);
+                } else {
+                    sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
+                }
                 break;
             case "expand":
-                handleExpandCommand(stack.getSender(), args);
+                if (sender.hasPermission("zones.expand")) {
+                    handleExpandCommand(sender, args);
+                } else {
+                    sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
+                }
                 break;
             case "select":
-                handleSelectCommand(stack.getSender(), args);
+                if (sender.hasPermission("zones.select")) {
+                    handleSelectCommand(sender, args);
+                } else {
+                    sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
+                }
                 break;
             default:
                 stack.getSender().sendMessage(miniMessage.deserialize(messages.get("commands.invalid")));
@@ -419,23 +464,15 @@ public class CommandListener implements BasicCommand {
     }
 
     private void handleSaveCommand(CommandSender sender, String[] args) {
-        if (sender.hasPermission("zones.save")) {
-            regionManager.saveRegions();
-            int count = regionManager.regions().size();
-            sender.sendMessage(miniMessage.deserialize(messages.get("save"), parsed("count", String.valueOf(count))));
-        } else {
-            sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
-        }
+        regionManager.saveRegions();
+        int count = regionManager.regions().size();
+        sender.sendMessage(miniMessage.deserialize(messages.get("save"), parsed("count", String.valueOf(count))));
     }
 
     private void handleLoadCommand(CommandSender sender, String[] args) {
-        if (sender.hasPermission("zones.load")) {
-            regionManager.loadRegions();
-            int count = regionManager.loadedRegions.size();
-            sender.sendMessage(miniMessage.deserialize(messages.get("load"), parsed("count", String.valueOf(count))));
-        } else {
-            sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
-        }
+        regionManager.loadRegions();
+        int count = regionManager.loadedRegions.size();
+        sender.sendMessage(miniMessage.deserialize(messages.get("load"), parsed("count", String.valueOf(count))));
     }
 
     private void handleSelectCommand(CommandSender sender, String[] args) {
