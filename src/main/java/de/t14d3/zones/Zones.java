@@ -3,10 +3,7 @@ package de.t14d3.zones;
 import de.t14d3.zones.listeners.CommandListener;
 import de.t14d3.zones.listeners.PlayerInteractListener;
 import de.t14d3.zones.listeners.PlayerQuitListener;
-import de.t14d3.zones.utils.BeaconUtils;
-import de.t14d3.zones.utils.ParticleHandler;
-import de.t14d3.zones.utils.Types;
-import de.t14d3.zones.utils.Utils;
+import de.t14d3.zones.utils.*;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
@@ -31,8 +28,8 @@ public final class Zones extends JavaPlugin {
     private ParticleHandler particleHandler;
     public Map<UUID, Pair<Location, Location>> selection = new HashMap<>();
     public Map<UUID, BoundingBox> particles = new HashMap<>();
-    private Map<String, String> messages;
     private Types types;
+    private Messages messages;
 
     @Override
     @SuppressWarnings("UnstableApiUsage")
@@ -61,15 +58,8 @@ public final class Zones extends JavaPlugin {
         if (!messagesFile.exists()) {
             saveResource("messages.yml", false); // Copy default messages.yml from jar
         }
-
         FileConfiguration messagesConfig = YamlConfiguration.loadConfiguration(messagesFile);
-        Map<String, Object> rawMessages = messagesConfig.getConfigurationSection("messages").getValues(true); // Get raw messages as Map<String, Object>
-        messages = new HashMap<>();
-
-        // Convert to Map<String, String>
-        for (Map.Entry<String, Object> entry : rawMessages.entrySet()) {
-            messages.put(entry.getKey(), entry.getValue().toString()); // Convert each value to String
-        }
+        messages = new Messages(messagesConfig, this);
 
 
         // Register listeners
@@ -108,7 +98,10 @@ public final class Zones extends JavaPlugin {
     // Getters
     public RegionManager getRegionManager() { return regionManager; }
     public PermissionManager getPermissionManager() {return permissionManager; }
-    public Map<String, String> getMessages() { return messages; }
+
+    public Messages getMessages() {
+        return messages;
+    }
     public BeaconUtils getBeaconUtils() { return beaconUtils; }
     public ParticleHandler getParticleHandler() {
         return particleHandler;

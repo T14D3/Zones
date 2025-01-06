@@ -6,6 +6,7 @@ import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.Zones;
 import de.t14d3.zones.utils.Actions;
 import de.t14d3.zones.utils.Direction;
+import de.t14d3.zones.utils.Messages;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import it.unimi.dsi.fastutil.Pair;
@@ -34,7 +35,7 @@ public class CommandListener implements BasicCommand {
     private final Zones plugin;
     private final RegionManager regionManager;
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
-    private final Map<String, String> messages;
+    private final Messages messages;
     private final PermissionManager pm;
 
     public CommandListener(Zones plugin, RegionManager regionManager) {
@@ -366,7 +367,7 @@ public class CommandListener implements BasicCommand {
                     .join();
             var mm = MiniMessage.miniMessage();
 
-            Component comp = mm.deserialize(messages.getOrDefault("region.info.name", "<gold><name> <dark_gray><italic>(#<key>)"), parsed("name", entry.getValue().getName()), parsed("key", entry.getKey()));
+            Component comp = mm.deserialize(messages.get("region.info.name"), parsed("name", entry.getValue().getName()), parsed("key", entry.getKey()));
             HoverEvent<Component> hover = hoverText.asHoverEvent();
             ClickEvent click = ClickEvent.runCommand("/zone info " + entry.getKey());
             comp = comp.hoverEvent(hover);

@@ -6,6 +6,7 @@ import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.Zones;
 import de.t14d3.zones.utils.Actions;
 import de.t14d3.zones.utils.BeaconUtils;
+import de.t14d3.zones.utils.Messages;
 import de.t14d3.zones.utils.Utils;
 import it.unimi.dsi.fastutil.Pair;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -30,7 +31,6 @@ import org.bukkit.util.BoundingBox;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -44,7 +44,7 @@ public class PlayerInteractListener implements Listener {
     private final Zones plugin;
     private final BeaconUtils beaconUtils;
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
-    private final Map<String, String> messages;
+    private final Messages messages;
 
     public PlayerInteractListener(RegionManager regionManager, PermissionManager permissionManager, Zones plugin) {
         this.plugin = plugin;
