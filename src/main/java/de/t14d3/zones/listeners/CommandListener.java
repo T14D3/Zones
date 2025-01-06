@@ -104,14 +104,14 @@ public class CommandListener implements BasicCommand {
                     sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
                 }
                 break;
-            case "commands.save":
+            case "save":
                 if (sender.hasPermission("zones.save")) {
                     handleSaveCommand(sender, args);
                 } else {
                     sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
                 }
                 break;
-            case "commands.load":
+            case "load":
                 if (sender.hasPermission("zones.load")) {
                     handleLoadCommand(sender, args);
                 } else {
@@ -139,34 +139,29 @@ public class CommandListener implements BasicCommand {
     }
 
     @Override
-    public @NotNull Collection<String> suggest(CommandSourceStack stack, String[] args) {
-        Player player = (Player) stack.getSender();
+    public @NotNull Collection<String> suggest(@NotNull CommandSourceStack stack, String[] args) {
         if (args.length <= 1) {
-            return List.of("info", "delete", "create", "subcreate", "cancel", "list", "set", "load", "save", "expand", "select");
+            List<String> suggestions = new ArrayList<>();
+            for (String command : List.of("info", "delete", "create", "subcreate", "cancel", "list", "set", "load", "save", "expand", "select")) {
+                if (stack.getSender().hasPermission("zones." + command)) {
+                    suggestions.add(command);
+                }
+            }
+            return suggestions;
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("info")
                 || args[0].equalsIgnoreCase("delete")
                 || args[0].equalsIgnoreCase("subcreate")
                 || args[0].equalsIgnoreCase("expand")
-                || args[0].equalsIgnoreCase("select"))) {
+                || args[0].equalsIgnoreCase("select")
+                || args[0].equalsIgnoreCase("set"))) {
             List<String> builder = new ArrayList<>();
             regionManager.regions().forEach((regionKey, region) -> region.getMembers().keySet().stream()
                     .filter(uuid -> pm.isAdmin(uuid, region))
                     .forEach(uuid -> builder.add(regionKey)));
             return builder;
         }
-
         if (args[0].equalsIgnoreCase("set")) {
-            if (args.length == 2) {
-                List<String> suggestions = new ArrayList<>();
-                for (String regionKey : regionManager.regions().keySet()) {
-                    if (regionKey.toLowerCase().startsWith(args[1].toLowerCase())
-                            && regionManager.regions().get(regionKey).isAdmin(player.getUniqueId())) {
-                        suggestions.add(regionKey);
-                    }
-                }
-                return suggestions;
-            }
             if (args.length == 3) {
                 List<String> suggestions = new ArrayList<>();
                 for (OfflinePlayer offlinePlayer : Bukkit.getOfflinePlayers()) {
@@ -219,8 +214,6 @@ public class CommandListener implements BasicCommand {
                 return List.of("overlap");
             }
         }
-
-
         return List.of();
     }
 
