@@ -132,6 +132,13 @@ public class CommandListener implements BasicCommand {
                     sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
                 }
                 break;
+            case "rename":
+                if (sender.hasPermission("zones.rename")) {
+                    handleRenameCommand(sender, args);
+                } else {
+                    sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
+                }
+                break;
             default:
                 stack.getSender().sendMessage(miniMessage.deserialize(messages.get("commands.invalid")));
                 break;
@@ -143,7 +150,8 @@ public class CommandListener implements BasicCommand {
         if (args.length <= 1) {
             List<String> suggestions = new ArrayList<>();
             for (String command : List.of("info", "delete", "create", "subcreate", "cancel", "list", "set", "load", "save", "expand", "select")) {
-                if (stack.getSender().hasPermission("zones." + command)) {
+                if (stack.getSender().hasPermission("zones." + command)
+                        && (args.length == 0 || command.startsWith(args[0].toLowerCase()))) {
                     suggestions.add(command);
                 }
             }
@@ -154,7 +162,8 @@ public class CommandListener implements BasicCommand {
                 || args[0].equalsIgnoreCase("subcreate")
                 || args[0].equalsIgnoreCase("expand")
                 || args[0].equalsIgnoreCase("select")
-                || args[0].equalsIgnoreCase("set"))) {
+                || args[0].equalsIgnoreCase("set")
+                || args[0].equalsIgnoreCase("rename"))) {
             List<String> builder = new ArrayList<>();
             regionManager.regions().forEach((regionKey, region) -> region.getMembers().keySet().stream()
                     .filter(uuid -> pm.isAdmin(uuid, region))
@@ -189,7 +198,7 @@ public class CommandListener implements BasicCommand {
                     case "REDSTONE" -> types = plugin.getTypes().redstoneTypes;
                     case "ENTITY", "DAMAGE" -> types = plugin.getTypes().entityTypes;
                     case "IGNITE" -> {
-                        types = List.of("true", "false");
+                        types = List.of("TRUE", "FALSE");
                     }
                     default -> types = plugin.getTypes().allTypes;
 
@@ -455,6 +464,32 @@ public class CommandListener implements BasicCommand {
         } else {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.expand.fail"), parsed("region", regionKey)));
         }
+    }
+
+    private void handleRenameCommand(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage(miniMessage.deserialize(messages.get("commands.invalid-region")));
+            return;
+        }
+        String regionKey = args[1];
+        Region region = regionManager.regions().get(regionKey);
+        Player player = null;
+        if (sender instanceof Player) {
+            player = (Player) sender;
+        }
+        if (region == null || (player != null && !region.isAdmin(player.getUniqueId()))) {
+            sender.sendMessage(miniMessage.deserialize(messages.get("commands.invalid-region")));
+            return;
+        }
+        if (args.length < 3) {
+            sender.sendMessage(miniMessage.deserialize(messages.get("commands.rename.provide-name")));
+            return;
+        }
+        region.setName(args[2], regionManager);
+        sender.sendMessage(miniMessage.deserialize(messages.get("commands.rename.success"),
+                parsed("region", regionKey),
+                parsed("name", args[2])));
+
     }
 
     private void handleSaveCommand(CommandSender sender, String[] args) {

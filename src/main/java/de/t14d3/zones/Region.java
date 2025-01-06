@@ -64,7 +64,7 @@ public class Region {
         return name;
     }
 
-    void setName(String name, RegionManager regionManager, String key) {
+    public void setName(String name, RegionManager regionManager) {
         this.name = name;
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
