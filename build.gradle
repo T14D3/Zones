@@ -20,11 +20,15 @@ repositories {
         name = "sonatype"
         url = "https://oss.sonatype.org/content/groups/public/"
     }
+    maven {
+        url = "https://repo.extendedclip.com/releases/"
+    }
 }
 
 dependencies {
     //compileOnly("io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT")
     paperweight.paperDevBundle("1.21.1-R0.1-SNAPSHOT")
+    compileOnly 'me.clip:placeholderapi:2.11.6'
 }
 
 def targetJavaVersion = 21

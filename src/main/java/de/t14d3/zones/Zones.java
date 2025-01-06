@@ -1,5 +1,6 @@
 package de.t14d3.zones;
 
+import de.t14d3.zones.integrations.PlaceholderAPI;
 import de.t14d3.zones.listeners.CommandListener;
 import de.t14d3.zones.listeners.PlayerInteractListener;
 import de.t14d3.zones.listeners.PlayerQuitListener;
@@ -90,6 +91,11 @@ public final class Zones extends JavaPlugin {
                 regionManager.saveRegions();
                 getLogger().info("Zones have been saved.");
             }, 20L, getConfig().getInt("zone-saving.period", 60) * 20L);
+        }
+        // PlaceholderAPI integration
+        if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            new PlaceholderAPI(this).register();
+            getLogger().info("PlaceholderAPI hooked!");
         }
 
         getLogger().info("Zones plugin has been enabled! Loaded " + regionManager.loadedRegions.size() + " regions.");
