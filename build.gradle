@@ -80,6 +80,9 @@ publishing {
     }
     publications {
         gpr(MavenPublication) {
+            artifactId = project.name.toLowerCase()
+            groupId = group.toLowerCase()
+            version = version
             from(components.java)
         }
     }
