@@ -1,5 +1,5 @@
 name: Zones
-version: '1.0-SNAPSHOT'
+version: '${version}'
 main: de.t14d3.zones.Zones
 api-version: '1.21'
 commands:

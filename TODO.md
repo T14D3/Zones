@@ -18,6 +18,7 @@
     - [x] save
     - [x] load
     - [x] expand
+  - [x] rename
     - [ ] redefine
     - [ ] help
 - [ ]  Api/Internal:
