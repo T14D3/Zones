@@ -32,9 +32,6 @@ jobs:
       - name: Build with Gradle Wrapper
         run: ./gradlew build
 
-      - name: Rename the jar
-        run: mv build/libs/zones-1.0-dev.jar build/libs/Zones-${{ github.sha }}.jar
-
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v4
         with:
