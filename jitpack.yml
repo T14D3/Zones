@@ -1,4 +1,7 @@
 jdk:
   - openjdk21
 before_install:
-  - sdk install maven
+  - sdk install java 21.0.5-graal
+  - sdk use java 21.0.5-graal
+  - sdk install gradle
+  - gradlew -v
