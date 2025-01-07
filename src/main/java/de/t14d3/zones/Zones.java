@@ -31,10 +31,12 @@ public final class Zones extends JavaPlugin {
     public Map<UUID, BoundingBox> particles = new HashMap<>();
     private Types types;
     private Messages messages;
+    private static Zones instance;
 
     @Override
     @SuppressWarnings("UnstableApiUsage")
     public void onEnable() {
+        instance = this;
         // Initialize PermissionManager first without RegionManager
         this.permissionManager = new PermissionManager();
 
@@ -124,5 +126,9 @@ public final class Zones extends JavaPlugin {
 
     public Utils.SavingModes getSavingMode() {
         return Utils.SavingModes.fromString(this.getConfig().getString("zone-saving.mode", "MODIFIED"));
+    }
+
+    public static Zones getInstance() {
+        return instance;
     }
 }
