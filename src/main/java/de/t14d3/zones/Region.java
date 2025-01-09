@@ -111,6 +111,13 @@ public class Region {
         this.max.set(max.getBlockX(), max.getBlockY(), max.getBlockZ());
     }
 
+    /**
+     * Get the members of this region and their permissions. <br>
+     * Use {@link de.t14d3.zones.PermissionManager#hasPermission} to check player permissions.
+     *
+     * @return {@code Map<UUID player, Map<String permission, String value> permissions>}
+     * @see de.t14d3.zones.PermissionManager#hasPermission
+     */
     public Map<UUID, Map<String, String>> getMembers() {
         return members;
     }
@@ -189,6 +196,17 @@ public class Region {
         this.members.computeIfAbsent(uuid, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)).put(permission, value);
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
+
+    public @Nullable UUID getOwner() {
+        for (Map.Entry<UUID, Map<String, String>> entry : members.entrySet()) {
+            Map<String, String> map = entry.getValue();
+            if (map.containsKey("role") && map.get("role").equalsIgnoreCase("owner")) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
 
     JsonObject getAsJson() {
         JsonObject json = new JsonObject();
