@@ -3,8 +3,8 @@ package de.t14d3.zones;
 import com.fastasyncworldedit.core.util.WEManager;
 import com.sk89q.worldedit.WorldEdit;
 import de.t14d3.zones.integrations.FAWEIntegration;
-import de.t14d3.zones.integrations.WorldEditSession;
 import de.t14d3.zones.integrations.PlaceholderAPI;
+import de.t14d3.zones.integrations.WorldEditSession;
 import de.t14d3.zones.listeners.CommandListener;
 import de.t14d3.zones.listeners.PlayerInteractListener;
 import de.t14d3.zones.listeners.PlayerQuitListener;
@@ -103,13 +103,13 @@ public final class Zones extends JavaPlugin {
             new PlaceholderAPI(this).register();
             getLogger().info("PlaceholderAPI hooked!");
         }
-        if (getServer().getPluginManager().getPlugin("WorldEdit") != null) {
-            WorldEdit.getInstance().getEventBus().register(new WorldEditSession(this));
-            getLogger().info("WorldEdit Integration enabled.");
-        }
+
         if (getServer().getPluginManager().getPlugin("FastAsyncWorldEdit") != null) {
             WEManager.weManager().addManager(new FAWEIntegration(this));
             getLogger().info("FAWE Integration enabled.");
+        } else if (getServer().getPluginManager().getPlugin("WorldEdit") != null) {
+            WorldEdit.getInstance().getEventBus().register(new WorldEditSession(this));
+            getLogger().info("WorldEdit Integration enabled.");
         }
 
         getLogger().info("Zones plugin has been enabled! Loaded " + regionManager.loadedRegions.size() + " regions.");
