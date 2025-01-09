@@ -4,6 +4,7 @@ import com.fastasyncworldedit.core.util.WEManager;
 import com.sk89q.worldedit.WorldEdit;
 import de.t14d3.zones.integrations.FAWEIntegration;
 import de.t14d3.zones.integrations.WorldEditSession;
+import de.t14d3.zones.integrations.PlaceholderAPI;
 import de.t14d3.zones.listeners.CommandListener;
 import de.t14d3.zones.listeners.PlayerInteractListener;
 import de.t14d3.zones.listeners.PlayerQuitListener;
@@ -96,6 +97,11 @@ public final class Zones extends JavaPlugin {
                 regionManager.saveRegions();
                 getLogger().info("Zones have been saved.");
             }, 20L, getConfig().getInt("zone-saving.period", 60) * 20L);
+        }
+        // PlaceholderAPI integration
+        if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            new PlaceholderAPI(this).register();
+            getLogger().info("PlaceholderAPI hooked!");
         }
         if (getServer().getPluginManager().getPlugin("WorldEdit") != null) {
             WorldEdit.getInstance().getEventBus().register(new WorldEditSession(this));
