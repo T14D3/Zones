@@ -43,7 +43,9 @@
     - [ ] PlaceholderAPI
     - [ ] Vault (Maybe? Not sure for what)
     - [ ] WorldGuard (Overlap compatibility checking?)
-    - [ ] WorldEdit (Creating from selection, visuals)
+  - [ ] WorldEdit
+      - [x] Zone-based restrictions
+      - [ ] Selection integration (Visuals, Creation)
 - [ ]  Other:
     - [ ] Better error handling
     - [ ] Storage Methods:
