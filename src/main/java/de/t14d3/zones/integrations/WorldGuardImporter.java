@@ -53,6 +53,7 @@ public class WorldGuardImporter {
             }
 
             plugin.getLogger().info("Imported " + count[0] + " regions from WorldGuard.");
+            plugin.getRegionManager().triggerSave();
         }).start();
     }
 }

@@ -39,6 +39,7 @@ public class RegionManager {
     }
 
     public void saveRegions() {
+        regionsConfig.set("regions", null);
         for (Map.Entry<String, Region> entry : loadedRegions.entrySet()) {
             String key = entry.getKey();
             Region region = entry.getValue();
