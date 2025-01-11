@@ -297,7 +297,7 @@ public class CommandListener implements BasicCommand {
             Region parentRegion = null;
             if (args.length < 2) {
                 for (Region region : regionManager.getRegionsAt(player.getLocation())) {
-                    if (pm.isAdmin(player.getUniqueId(), region)) {
+                    if (pm.isAdmin(player.getUniqueId().toString(), region)) {
                         parentRegion = region;
                         break;
                     }
@@ -371,7 +371,7 @@ public class CommandListener implements BasicCommand {
             Component hoverText = regionInfo(
                     entry,
                     (sender.hasPermission("zones.info.other") ||
-                            (player != null && this.plugin.getPermissionManager().isAdmin(player.getUniqueId(), regions.get(entry.getKey())))))
+                            (player != null && this.plugin.getPermissionManager().isAdmin(player.getUniqueId().toString(), regions.get(entry.getKey())))))
                     .join();
             var mm = MiniMessage.miniMessage();
 
@@ -406,7 +406,7 @@ public class CommandListener implements BasicCommand {
         if (sender instanceof Player) {
             player = (Player) sender;
         }
-        if (!sender.hasPermission("zones.info.other") && (player != null && !this.plugin.getPermissionManager().isAdmin(player.getUniqueId(), regions.get(regionKey)))) {
+        if (!sender.hasPermission("zones.info.other") && (player != null && !this.plugin.getPermissionManager().isAdmin(player.getUniqueId().toString(), regions.get(regionKey)))) {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
             return;
         }
@@ -553,8 +553,13 @@ public class CommandListener implements BasicCommand {
 
         if (showMembers) {
             // Iterate over members to format permissions
-            for (Map.Entry<UUID, Map<String, String>> member : entry.getValue().getMembers().entrySet()) {
-                String playerName = Bukkit.getPlayer(member.getKey()) != null ? Bukkit.getPlayer(member.getKey()).getName() : member.getKey().toString();
+            for (Map.Entry<String, Map<String, String>> member : entry.getValue().getMembers().entrySet()) {
+                String playerName;
+                try {
+                    playerName = Bukkit.getOfflinePlayer(UUID.fromString(member.getKey())).getName();
+                } catch (IllegalArgumentException e) {
+                    playerName = member.getKey();
+                }
                 Component playerComponent = mm.deserialize(messages.get("region.info.members.name"), parsed("name", playerName));
                 playerComponent = playerComponent.appendNewline();
 

@@ -19,7 +19,7 @@ public class Region {
     private String name;
     private Location min;
     private Location max;
-    private Map<UUID, Map<String, String>> members;
+    private Map<String, Map<String, String>> members;
     private String key;
     private String parent;
 
@@ -35,7 +35,7 @@ public class Region {
      *
      * @see #Region(String, Location, Location, Map, String)
      */
-    Region(@NotNull String name, @NotNull Location min, @NotNull Location max, Map<UUID, Map<String, String>> members, @NotNull String key, @Nullable String parent) {
+    Region(@NotNull String name, @NotNull Location min, @NotNull Location max, Map<String, Map<String, String>> members, @NotNull String key, @Nullable String parent) {
         this.name = name;
         this.min = min;
         this.max = max;
@@ -55,7 +55,7 @@ public class Region {
      *
      * @see #Region(String, Location, Location, Map, String)
      */
-    Region(String name, Location min, Location max, Map<UUID, Map<String, String>> members, String key) {
+    Region(String name, Location min, Location max, Map<String, Map<String, String>> members, String key) {
         this(name, min, max, members, key, null);
     }
 
@@ -118,38 +118,48 @@ public class Region {
      * @return {@code Map<UUID player, Map<String permission, String value> permissions>}
      * @see de.t14d3.zones.PermissionManager#hasPermission
      */
-    public Map<UUID, Map<String, String>> getMembers() {
+    public Map<String, Map<String, String>> getMembers() {
         return members;
     }
 
-    void setMembers(Map<UUID, Map<String, String>> members, RegionManager regionManager, String key) {
+    public List<String> getGroupNames() {
+        List<String> groupNames = new ArrayList<>();
+        for (Map.Entry<String, Map<String, String>> entry : members.entrySet()) {
+            if (entry.getKey().startsWith(":group-")) {
+                groupNames.add(entry.getKey());
+            }
+        }
+        return groupNames;
+    }
+
+    void setMembers(Map<String, Map<String, String>> members, RegionManager regionManager, String key) {
         this.members = members;
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
     void addMember(UUID uuid, Map<String, String> permissions, RegionManager regionManager, String key) {
-        this.members.put(uuid, permissions);
+        this.members.put(uuid.toString(), permissions);
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
     void removeMember(UUID uuid, RegionManager regionManager, String key) {
-        this.members.remove(uuid);
+        this.members.remove(uuid.toString());
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
     public boolean isMember(UUID uuid) {
-        return this.members.containsKey(uuid);
+        return this.members.containsKey(uuid.toString());
     }
 
     public boolean isAdmin(UUID uuid) {
-        if (this.members.containsKey(uuid) && this.members.get(uuid).containsKey("role")) {
-            return this.members.get(uuid).get("role").equals("admin") || this.members.get(uuid).get("role").equals("owner");
+        if (this.members.containsKey(uuid.toString()) && this.members.get(uuid.toString()).containsKey("role")) {
+            return this.members.get(uuid.toString()).get("role").equals("admin") || this.members.get(uuid.toString()).get("role").equals("owner");
         }
         return false; // Default to false
     }
 
     Map<String, String> getMemberPermissions(UUID uuid) {
-        return this.members.get(uuid);
+        return this.members.get(uuid.toString());
     }
 
     public String getParent() {
@@ -193,15 +203,15 @@ public class Region {
     }
 
     void addMemberPermission(UUID uuid, String permission, String value, RegionManager regionManager) {
-        this.members.computeIfAbsent(uuid, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)).put(permission, value);
+        this.members.computeIfAbsent(uuid.toString(), k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)).put(permission, value);
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
     public @Nullable UUID getOwner() {
-        for (Map.Entry<UUID, Map<String, String>> entry : members.entrySet()) {
+        for (Map.Entry<String, Map<String, String>> entry : members.entrySet()) {
             Map<String, String> map = entry.getValue();
             if (map.containsKey("role") && map.get("role").equalsIgnoreCase("owner")) {
-                return entry.getKey();
+                return UUID.fromString(entry.getKey());
             }
         }
         return null;
@@ -212,7 +222,7 @@ public class Region {
         JsonObject json = new JsonObject();
         json.addProperty("name", getName());
         JsonObject membersJson = new JsonObject();
-        for (Map.Entry<UUID, Map<String, String>> member : getMembers().entrySet()) {
+        for (Map.Entry<String, Map<String, String>> member : getMembers().entrySet()) {
             JsonObject memberJson = new JsonObject();
             memberJson.addProperty("player", Bukkit.getPlayer(member.getKey()) != null ? Bukkit.getPlayer(member.getKey()).getName() : member.getKey().toString());
             JsonObject permissions = new JsonObject();
@@ -220,7 +230,7 @@ public class Region {
                 permissions.addProperty(perm.getKey(), perm.getValue());
             }
             memberJson.add("permissions", permissions);
-            membersJson.add(member.getKey().toString(), memberJson);
+            membersJson.add(member.getKey(), memberJson);
         }
         json.add("members", membersJson);
         return json;

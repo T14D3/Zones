@@ -84,18 +84,36 @@ public class PermissionManager {
         permissionCache.clear();
     }
 
+
+    /**
+     * hasPermission(UUID, String, String, Region) overload
+     *
+     * @param uuid       The UUID of the player whose permission is being checked.
+     * @param permission The permission being checked (e.g., "break", "place").
+     * @param type       The type of object the permission applies to (e.g., "GRASS_BLOCK").
+     * @param region     The region in which the permission is being checked.
+     * @return true if the player has the specified permission for the type, false otherwise.
+     * @see #hasPermission(String, String, String, Region)
+     */
+    public boolean hasPermission(UUID uuid, String permission, String type, Region region) {
+        return hasPermission(uuid.toString(), permission, type, region);
+    }
     /**
      * Checks if a player has a specific permission for a given type in the provided region.
      *
-     * @param uuid    The UUID of the player whose permission is being checked.
+     * @param who    Who to check the permission for
      * @param permission The permission being checked (e.g., "break", "place").
      * @param type    The type of object the permission applies to (e.g., "GRASS_BLOCK").
      * @param region  The region in which the permission is being checked.
      * @return True if the player has the specified permission for the type, false otherwise.
      */
-    public boolean hasPermission(UUID uuid, String permission, String type, Region region) {
+    public boolean hasPermission(String who, String permission, String type, Region region) {
         permission = permission.toLowerCase();
-        Player player = Bukkit.getPlayer(uuid);
+        Player player = null;
+        try {
+            player = Bukkit.getPlayer(UUID.fromString(who));
+        } catch (IllegalArgumentException ignored) {
+        }
 
         // Check if player has a global bypass permission
         if (player != null && player.hasPermission("zones.bypass.claimed")) {
@@ -103,26 +121,23 @@ public class PermissionManager {
         }
 
         // Retrieve the permissions for the player in the specified region
-        Map<UUID, Map<String, String>> members = region.getMembers();
-
-        // Check if the player is a member of the region
-        if (!members.containsKey(uuid)) {
-            return false; // Player is not a member, deny access
-        }
+        Map<String, Map<String, String>> members = region.getMembers();
 
         // Get the permissions for the player
-        Map<String, String> permissions = members.get(uuid);
+        Map<String, String> permissions = members.get(who);
         String value = permissions.get(permission);
-        String ownerValue = permissions.get("owner");
-        if ("true".equalsIgnoreCase(ownerValue) && permissions.get(permission) == null) {
-            return true;
-        }
         // If no permission value is found, deny access
         if (value == null) {
             if (region.getParent() != null) {
-                return hasPermission(uuid, permission, type, region.getParentRegion(this.regionManager));
+                return hasPermission(who, permission, type, region.getParentRegion(this.regionManager));
             }
-            return false;
+            if (permissions.containsKey("group")) {
+                for (String group : permissions.get("group").split(",")) {
+                    return hasPermission(":group-" + group, permission, type, region);
+                }
+            } else {
+                return false;
+            }
         }
 
         // Analyze permission values
@@ -160,7 +175,7 @@ public class PermissionManager {
         return false;
     }
 
-    public boolean isAdmin(UUID uuid, Region region) {
-        return hasPermission(uuid, "role", "owner", region) || hasPermission(uuid, "role", "admin", region);
+    public boolean isAdmin(String who, Region region) {
+        return hasPermission(who, "role", "owner", region) || hasPermission(who, "role", "admin", region);
     }
 }

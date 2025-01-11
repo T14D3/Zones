@@ -83,7 +83,7 @@ public class RegionManager {
                 Location max = loadLocation("regions." + key + ".max");
                 String parent = regionsConfig.getString("regions." + key + ".parent");
 
-                Map<UUID, Map<String, String>> members = loadMembers(key);
+                Map<String, Map<String, String>> members = loadMembers(key);
                 Region region = new Region(name != null ? name : "Invalid Name", min, max, members, key, parent);
                 loadedRegions.put(key, region);
             }
@@ -102,16 +102,15 @@ public class RegionManager {
         return this.loadedRegions;
     }
 
-    private Map<UUID, Map<String, String>> loadMembers(String key) {
-        Map<UUID, Map<String, String>> members = new HashMap<>();
+    private Map<String, Map<String, String>> loadMembers(String key) {
+        Map<String, Map<String, String>> members = new HashMap<>();
         if (regionsConfig.contains("regions." + key + ".members")) {
             for (String uuidStr : regionsConfig.getConfigurationSection("regions." + key + ".members").getKeys(false)) {
-                UUID uuid = UUID.fromString(uuidStr);
                 Map<String, String> permissions = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
                 for (String perm : regionsConfig.getConfigurationSection("regions." + key + ".members." + uuidStr).getKeys(false)) {
                     permissions.put(perm, regionsConfig.getString("regions." + key + ".members." + uuidStr + "." + perm));
                 }
-                members.put(uuid, permissions);
+                members.put(uuidStr, permissions);
             }
         }
         return members;
@@ -131,9 +130,9 @@ public class RegionManager {
         triggerSave();
     }
 
-    private void saveMembers(String key, Map<UUID, Map<String, String>> members) {
-        for (Map.Entry<UUID, Map<String, String>> entry : members.entrySet()) {
-            String uuid = entry.getKey().toString();
+    private void saveMembers(String key, Map<String, Map<String, String>> members) {
+        for (Map.Entry<String, Map<String, String>> entry : members.entrySet()) {
+            String uuid = entry.getKey();
             for (Map.Entry<String, String> perm : entry.getValue().entrySet()) {
                 regionsConfig.set("regions." + key + ".members." + uuid + "." + perm.getKey(), perm.getValue());
             }
@@ -185,7 +184,7 @@ public class RegionManager {
             regionKey = UUID.randomUUID().toString().substring(0, 8);
         } while (regions().containsKey(regionKey));
 
-        Map<UUID, Map<String, String>> members = new HashMap<>();
+        Map<String, Map<String, String>> members = new HashMap<>();
         Region newRegion = new Region(name, min, max, members, regionKey);
 
         ownerPermissions.forEach((permission, value) -> {
@@ -214,7 +213,7 @@ public class RegionManager {
             regionKey = UUID.randomUUID().toString().substring(0, 8);
         } while (regions().containsKey(regionKey));
 
-        Map<UUID, Map<String, String>> members = new HashMap<>();
+        Map<String, Map<String, String>> members = new HashMap<>();
         Region newRegion = new Region(name, min, max, members, regionKey, parentRegion.getKey());
 
         ownerPermissions.forEach((permission, value) -> {
