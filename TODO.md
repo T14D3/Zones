@@ -29,6 +29,7 @@
         - [x] Member getters
         - [x] Member setters
         - [x] Add/Remove member permissions
+      - [ ] Fixed/Custom member groups
         - [x] Save/Load
         - [x] Expand bounds
         - [x] Redefine bounds
@@ -37,6 +38,8 @@
     - [ ] PermissionManager
         - [x] Functionality
         - [ ] Performance improvements
+            - [ ] Better caching
+      - [ ] Member group checking
 - [ ]  UI:
     - [ ] New UI, currently terrible
 - [ ] Integrations:

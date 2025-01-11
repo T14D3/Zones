@@ -301,7 +301,7 @@ public class CommandListener implements BasicCommand {
         if (sender instanceof Player player) {
             if (!plugin.selection.containsKey(player.getUniqueId())) {
                 plugin.selection.put(player.getUniqueId(), Pair.of(null, null));
-                player.sendMessage(miniMessage.deserialize(messages.get("click_two_corners")));
+                player.sendMessage(miniMessage.deserialize(messages.get("commands.create.click-corners")));
                 return; // Failure
             }
 
@@ -321,7 +321,13 @@ public class CommandListener implements BasicCommand {
                 }
             } else {
                 String regionKey = args[1];
-                parentRegion = regionManager.regions().get(regionKey);
+                Region tempRegion = regionManager.regions().get(regionKey);
+                if (tempRegion == null || !tempRegion.isAdmin(player.getUniqueId())) {
+                    player.sendMessage(miniMessage.deserialize(messages.get("commands.invalid-region")));
+                    return;
+                } else {
+                    parentRegion = tempRegion;
+                }
             }
 
             if (parentRegion == null) {
@@ -465,8 +471,13 @@ public class CommandListener implements BasicCommand {
         }
         String regionKey = args[1];
         Direction direction;
+        Region region = regionManager.regions().get(regionKey);
         if (sender instanceof Player player) {
             direction = Direction.fromYaw(player.getLocation().getYaw());
+            if (region == null || !region.isAdmin(player.getUniqueId())) {
+                sender.sendMessage(miniMessage.deserialize(messages.get("commands.invalid-region")));
+                return;
+            }
         } else {
             direction = Direction.valueOf(args[4].toUpperCase());
         }
@@ -476,7 +487,7 @@ public class CommandListener implements BasicCommand {
         if (args.length == 4) {
             allowOverlap = Objects.equals(args[3], "overlap") && sender.hasPermission("zones.expand.overlap");
         }
-        if (regionManager.expandBounds(regionManager.regions().get(regionKey), direction, amount, allowOverlap)) {
+        if (regionManager.expandBounds(region, direction, amount, allowOverlap)) {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.expand.success"), parsed("region", regionKey)));
         } else {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.expand.fail"), parsed("region", regionKey)));
