@@ -41,9 +41,9 @@ public class WorldGuardImporter {
                     Location min = BukkitAdapter.adapt(world, region.getMinimumPoint());
                     Location max = BukkitAdapter.adapt(world, region.getMaximumPoint());
                     Map<UUID, Map<String, String>> members = new HashMap<>();
-                    Map<String, String> tempPerms = Map.of("role", "member");
 
-                    region.getMembers().getUniqueIds().forEach(uuid -> members.put(uuid, tempPerms));
+                    region.getMembers().getUniqueIds().forEach(uuid -> members.put(uuid, Map.of("role", "member")));
+                    region.getOwners().getUniqueIds().forEach(uuid -> members.put(uuid, Map.of("role", "owner")));
 
                     Region newRegion = plugin.getRegionManager().createNewRegion(key, name, min, max, members);
                     plugin.getRegionManager().addRegion(newRegion);
