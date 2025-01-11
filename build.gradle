@@ -33,6 +33,7 @@ dependencies {
     compileOnly 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
     compileOnly 'me.clip:placeholderapi:2.11.6'
     compileOnly 'com.sk89q.worldedit:worldedit-bukkit:7.3.0'
+    compileOnly 'com.sk89q.worldguard:worldguard-bukkit:7.0.12'
     implementation(platform("com.intellectualsites.bom:bom-newest:1.52"))
     compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Core")
     compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit")

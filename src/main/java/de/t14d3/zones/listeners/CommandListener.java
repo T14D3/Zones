@@ -4,6 +4,7 @@ import de.t14d3.zones.PermissionManager;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.Zones;
+import de.t14d3.zones.integrations.WorldGuardImporter;
 import de.t14d3.zones.utils.Actions;
 import de.t14d3.zones.utils.Direction;
 import de.t14d3.zones.utils.Messages;
@@ -139,6 +140,13 @@ public class CommandListener implements BasicCommand {
                     sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
                 }
                 break;
+            case "import":
+                if (sender.hasPermission("zones.import")) {
+                    handleImportCommand(sender, args);
+                } else {
+                    sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
+                }
+                break;
             default:
                 stack.getSender().sendMessage(miniMessage.deserialize(messages.get("commands.invalid")));
                 break;
@@ -149,7 +157,7 @@ public class CommandListener implements BasicCommand {
     public @NotNull Collection<String> suggest(@NotNull CommandSourceStack stack, String[] args) {
         if (args.length <= 1) {
             List<String> suggestions = new ArrayList<>();
-            for (String command : List.of("info", "delete", "create", "subcreate", "cancel", "list", "set", "load", "save", "expand", "select")) {
+            for (String command : List.of("info", "delete", "create", "subcreate", "cancel", "list", "set", "load", "save", "expand", "select", "import")) {
                 if (stack.getSender().hasPermission("zones." + command)
                         && (args.length == 0 || command.startsWith(args[0].toLowerCase()))) {
                     suggestions.add(command);
@@ -221,6 +229,15 @@ public class CommandListener implements BasicCommand {
             }
             if (args.length == 4 && stack.getSender().hasPermission("zones.expand.overlap")) {
                 return List.of("overlap");
+            }
+        }
+        if (args[0].equalsIgnoreCase("import")) {
+            if (args.length == 2) {
+                List<String> suggestions = new ArrayList<>();
+                if (plugin.getServer().getPluginManager().getPlugin("WorldGuard") != null) {
+                    suggestions.add("worldguard");
+                }
+                return suggestions;
             }
         }
         return List.of();
@@ -500,7 +517,7 @@ public class CommandListener implements BasicCommand {
 
     private void handleLoadCommand(CommandSender sender, String[] args) {
         regionManager.loadRegions();
-        int count = regionManager.loadedRegions.size();
+        int count = regionManager.regions().size();
         sender.sendMessage(miniMessage.deserialize(messages.get("commands.load"), parsed("count", String.valueOf(count))));
     }
 
@@ -525,6 +542,22 @@ public class CommandListener implements BasicCommand {
                 plugin.particles.remove(player.getUniqueId());
                 player.sendMessage(miniMessage.deserialize(messages.get("commands.select.deselected")));
             }
+        }
+    }
+
+    private void handleImportCommand(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage(miniMessage.deserialize(messages.get("commands.import.no-plugin")));
+            return;
+        }
+        if (args[1].equalsIgnoreCase("worldguard")) {
+            if (plugin.getServer().getPluginManager().getPlugin("WorldGuard") == null) {
+                sender.sendMessage(miniMessage.deserialize(messages.get("commands.import.not-loaded"), parsed("plugin", "WorldGuard")));
+                return;
+            }
+            WorldGuardImporter worldGuardImporter = new WorldGuardImporter(plugin);
+            worldGuardImporter.importRegions();
+            sender.sendMessage(miniMessage.deserialize(messages.get("commands.import.success")));
         }
     }
 

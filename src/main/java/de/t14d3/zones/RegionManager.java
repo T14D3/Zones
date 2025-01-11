@@ -21,7 +21,7 @@ public class RegionManager {
     private final FileConfiguration regionsConfig;
     final PermissionManager permissionManager;
     private final Zones plugin;
-    public Map<String, Region> loadedRegions = new HashMap<>();
+    Map<String, Region> loadedRegions = new HashMap<>();
     public Map<Location, List<String>> regionCache = new HashMap<>();
 
     public RegionManager(Zones plugin, PermissionManager permissionManager) {
@@ -194,8 +194,54 @@ public class RegionManager {
 
         permissionManager.invalidateAllCaches();
         saveRegion(regionKey, newRegion);
+        loadedRegions.put(regionKey, newRegion);
         return regionKey;
     }
+
+    /**
+     * Creates a new region with the given name and minimum and maximum locations
+     * The region will be owned by the given player
+     *
+     * @param name       The name of the new region.
+     * @param min        The minimum location of the new region.
+     * @param max        The maximum location of the new region.
+     * @param playerUUID The UUID of the player who will own the new region.
+     */
+    public void createNewRegion(String name, Location min, Location max, UUID playerUUID) {
+        Map<String, String> permissions = new HashMap<>();
+        permissions.put("role", "owner");
+        createNewRegion(name, min, max, playerUUID, permissions);
+    }
+
+    /**
+     * Creates a new region with the specified key, name, minimum and maximum locations, members and their permissions.
+     *
+     * @param key     The key of the new region.
+     * @param name    The name of the new region.
+     * @param min     The minimum location of the new region.
+     * @param max     The maximum location of the new region.
+     * @param members The members of the new region.
+     * @return The newly created region.
+     */
+    public Region createNewRegion(String key, String name, Location min, Location max, Map<UUID, Map<String, String>> members) {
+        Region region = new Region(name, min, max, members, key);
+        saveRegion(key, region);
+        return region;
+    }
+
+    public void create2DRegion(String name, Location min, Location max, UUID playerUUID) {
+        min.setY(-63);
+        max.setY(319);
+        createNewRegion(name, min, max, playerUUID);
+    }
+
+    public String create2DRegion(String name, Location min, Location max, UUID playerUUID, Map<String, String> ownerPermissions) {
+        min.setY(-63);
+        max.setY(319);
+        return createNewRegion(name, min, max, playerUUID, ownerPermissions);
+    }
+
+
 
     /**
      * Creates a new region as a sub-region of the given parent region.
@@ -224,33 +270,7 @@ public class RegionManager {
         permissionManager.invalidateAllCaches();
         regionCache.clear();
         saveRegion(regionKey, newRegion);
-    }
-
-    /**
-     * Creates a new region with the given name and minimum and maximum locations
-     * The region will be owned by the given player
-     *
-     * @param name       The name of the new region.
-     * @param min        The minimum location of the new region.
-     * @param max        The maximum location of the new region.
-     * @param playerUUID The UUID of the player who will own the new region.
-     */
-    public void createNewRegion(String name, Location min, Location max, UUID playerUUID) {
-        Map<String, String> permissions = new HashMap<>();
-        permissions.put("role", "owner");
-        createNewRegion(name, min, max, playerUUID, permissions);
-    }
-
-    public void create2DRegion(String name, Location min, Location max, UUID playerUUID) {
-        min.setY(-63);
-        max.setY(319);
-        createNewRegion(name, min, max, playerUUID);
-    }
-
-    public String create2DRegion(String name, Location min, Location max, UUID playerUUID, Map<String, String> ownerPermissions) {
-        min.setY(-63);
-        max.setY(319);
-        return createNewRegion(name, min, max, playerUUID, ownerPermissions);
+        loadedRegions.put(regionKey, newRegion);
     }
 
     /**
@@ -448,5 +468,17 @@ public class RegionManager {
 
     public Map<String, String> getMemberPermissions(UUID uuid, Region region) {
         return region.getMemberPermissions(uuid);
+    }
+
+    /**
+     * Adds a region to the loaded regions map.
+     * Requires an existing region object, to create a new region use {@link #createNewRegion(String, String, Location, Location, Map)}.
+     *
+     * @param region The region to add.
+     *
+     * @see #createNewRegion
+     */
+    public void addRegion(Region region) {
+        loadedRegions.put(region.getKey(), region);
     }
 }

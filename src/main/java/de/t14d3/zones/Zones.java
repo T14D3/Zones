@@ -5,6 +5,7 @@ import com.sk89q.worldedit.WorldEdit;
 import de.t14d3.zones.integrations.FAWEIntegration;
 import de.t14d3.zones.integrations.PlaceholderAPI;
 import de.t14d3.zones.integrations.WorldEditSession;
+import de.t14d3.zones.integrations.WorldGuardImporter;
 import de.t14d3.zones.listeners.CommandListener;
 import de.t14d3.zones.listeners.PlayerInteractListener;
 import de.t14d3.zones.listeners.PlayerQuitListener;
@@ -110,6 +111,10 @@ public final class Zones extends JavaPlugin {
         } else if (getServer().getPluginManager().getPlugin("WorldEdit") != null) {
             WorldEdit.getInstance().getEventBus().register(new WorldEditSession(this));
             getLogger().info("WorldEdit Integration enabled.");
+        }
+
+        if (getServer().getPluginManager().getPlugin("WorldGuard") != null) {
+            new WorldGuardImporter(this);
         }
 
         getLogger().info("Zones plugin has been enabled! Loaded " + regionManager.loadedRegions.size() + " regions.");
