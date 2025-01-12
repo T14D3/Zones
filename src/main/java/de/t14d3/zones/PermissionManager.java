@@ -126,16 +126,25 @@ public class PermissionManager {
         // Get the permissions for the player
         Map<String, String> permissions = members.get(who);
         String value = permissions.get(permission);
-        // If no permission value is found, deny access
+
+        // If no value found, check parent region and group permissions
         if (value == null) {
             if (region.getParent() != null) {
                 return hasPermission(who, permission, type, region.getParentRegion(this.regionManager));
             }
             if (permissions.containsKey("group")) {
+                if (who.startsWith(":group-") && !Zones.getInstance().getConfig().getBoolean("allow-group-recursion", false)) {
+                    Zones.getInstance().getLogger().severe("Recursive group permissions detected!! Groups are not allowed to contain other groups!");
+                    Zones.getInstance().getLogger().severe("Group '" + who.substring(7) + "' contains 'group' permission entry in region '" + region.getKey() + "'");
+                    Zones.getInstance().getLogger().severe("If you are 100% sure this is fine, add 'allow-group-recursion: true' to your config.yml");
+                    return false;
+                }
                 for (String group : permissions.get("group").split(",")) {
                     return hasPermission(":group-" + group, permission, type, region);
                 }
-            } else {
+            }
+            // Nothing found, deny access
+            else {
                 return false;
             }
         }
@@ -144,24 +153,26 @@ public class PermissionManager {
         boolean explicitAllow = false;
         boolean explicitDeny = false;
 
-        for (String permittedValue : value.split(",")) {
-            permittedValue = permittedValue.trim(); // Trim whitespace
+        if (value != null) {
+            for (String permittedValue : value.split(",")) {
+                permittedValue = permittedValue.trim(); // Trim whitespace
 
-            // Check for wildcard allow
-            if ("*".equals(permittedValue) || "true".equalsIgnoreCase(permittedValue)) {
-                explicitAllow = true;
-            }
-            // Check for wildcard deny
-            else if ("! *".equals(permittedValue) || "false".equalsIgnoreCase(permittedValue)) {
-                explicitDeny = true;
-            }
-            // Check for specific type allow
-            else if (permittedValue.equalsIgnoreCase(type)) {
-                explicitAllow = true;
-            }
-            // Check for specific type deny
-            else if (permittedValue.equalsIgnoreCase("!" + type)) {
-                explicitDeny = true;
+                // Check for wildcard allow
+                if ("*".equals(permittedValue) || "true".equalsIgnoreCase(permittedValue)) {
+                    explicitAllow = true;
+                }
+                // Check for wildcard deny
+                else if ("! *".equals(permittedValue) || "false".equalsIgnoreCase(permittedValue)) {
+                    explicitDeny = true;
+                }
+                // Check for specific type allow
+                else if (permittedValue.equalsIgnoreCase(type)) {
+                    explicitAllow = true;
+                }
+                // Check for specific type deny
+                else if (permittedValue.equalsIgnoreCase("!" + type)) {
+                    explicitDeny = true;
+                }
             }
         }
 
