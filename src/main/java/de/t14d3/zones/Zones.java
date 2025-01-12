@@ -122,13 +122,17 @@ public final class Zones extends JavaPlugin {
         regionManager.regions().clear();
         regionManager.loadedRegions.clear();
         regionManager.regionCache.clear();
-        permissionManager.invalidateAllCaches();
+        permissionManager.invalidateInteractionCaches();
+        permissionManager.invalidateCaches();
         getLogger().info("Zones plugin is disabling and regions are saved.");
     }
 
     // Getters
     public RegionManager getRegionManager() { return regionManager; }
-    public PermissionManager getPermissionManager() {return permissionManager; }
+
+    public PermissionManager getPermissionManager() {
+        return permissionManager;
+    }
 
     public Messages getMessages() {
         return messages;

@@ -19,13 +19,13 @@ public class RegionManager {
 
     private final File regionsFile;
     private final FileConfiguration regionsConfig;
-    final PermissionManager permissionManager;
+    final PermissionManager pm;
     private final Zones plugin;
     public Map<String, Region> loadedRegions = new HashMap<>();
     public Map<Location, List<String>> regionCache = new HashMap<>();
 
     public RegionManager(Zones plugin, PermissionManager permissionManager) {
-        this.permissionManager = permissionManager;
+        this.pm = permissionManager;
         this.plugin = plugin;
 
         regionsFile = new File(plugin.getDataFolder(), "regions.yml");
@@ -55,7 +55,7 @@ public class RegionManager {
         } catch (IOException e) {
             plugin.getLogger().severe("Failed to save regions.yml");
         }
-        permissionManager.invalidateAllCaches();
+        pm.invalidateInteractionCaches();
         regionCache.clear();
     }
 
@@ -88,7 +88,7 @@ public class RegionManager {
                 loadedRegions.put(key, region);
             }
             regionCache.clear();
-            permissionManager.invalidateAllCaches();
+            pm.invalidateInteractionCaches();
         }
         return CompletableFuture.completedFuture(null);
     }
@@ -164,7 +164,7 @@ public class RegionManager {
     public void deleteRegion(String regionKey) {
         regions().remove(regionKey);
         triggerSave();
-        permissionManager.invalidateAllCaches();
+        pm.invalidateInteractionCaches();
     }
 
     /**
@@ -191,7 +191,7 @@ public class RegionManager {
             newRegion.addMemberPermission(playerUUID, permission, value, this);
         });
 
-        permissionManager.invalidateAllCaches();
+        pm.invalidateInteractionCaches();
         saveRegion(regionKey, newRegion);
         return regionKey;
     }
@@ -220,7 +220,7 @@ public class RegionManager {
             newRegion.addMemberPermission(playerUUID, permission, value, this);
         });
 
-        permissionManager.invalidateAllCaches();
+        pm.invalidateInteractionCaches();
         regionCache.clear();
         saveRegion(regionKey, newRegion);
     }
@@ -261,7 +261,8 @@ public class RegionManager {
      * @param key        The key of the region.
      */
     public void addMemberPermission(UUID uuid, String permission, String value, String key) {
-        permissionManager.invalidateCache(uuid);
+        pm.invalidateInteractionCache(uuid);
+        pm.invalidateCache(uuid.toString());
         Region region = this.regions().get(key);
         region.addMemberPermission(uuid, permission, value, this);
     }

@@ -6,17 +6,16 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.util.BoundingBox;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class PermissionManager {
 
     private RegionManager regionManager;
 
     // Cache of player UUID -> (Region Name -> Action/Type Permission)
-    private final Map<UUID, Map<String, Boolean>> permissionCache = new HashMap<>();
+    private final Map<UUID, List<CacheEntry>> interactionCache = new HashMap<>();
+    private final Map<String, List<CacheEntry>> cache = new HashMap<>();
+
 
     public PermissionManager() {}
 
@@ -35,23 +34,21 @@ public class PermissionManager {
      */
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean canInteract(Location location, UUID playerUUID, Actions action, String type) {
-        Map<String, Boolean> playerCache = permissionCache.getOrDefault(playerUUID, new HashMap<>());
-        String cacheKey = getCacheKey(location, action, type);
-
-        if (playerCache.containsKey(cacheKey)) {
-            return playerCache.get(cacheKey); // Return cached result
+        if (interactionCache.containsKey(playerUUID)) {
+            List<CacheEntry> entries = interactionCache.get(playerUUID);
+            for (CacheEntry entry : entries) {
+                if (entry.isEqual(location.toString(), action.name(), type)) {
+                    return entry.result;
+                }
+            }
         }
-
         for (Map.Entry<String, Region> entry : regionManager.regions().entrySet()) {
             Region region = entry.getValue();
             BoundingBox box = BoundingBox.of(region.getMin(), region.getMax());
 
             if (box.contains(location.toVector())) {
                 boolean hasPermission = hasPermission(playerUUID, action.name(), type, region);
-
-                // Cache the result for this region
-                playerCache.put(cacheKey, hasPermission);
-                permissionCache.put(playerUUID, playerCache);
+                interactionCache.computeIfAbsent(playerUUID, k -> new ArrayList<>()).add(new CacheEntry(location.toString(), action.name(), type, hasPermission));
 
                 return hasPermission;
             }
@@ -61,29 +58,43 @@ public class PermissionManager {
         return player != null && player.hasPermission("zones.bypass.unclaimed");
     }
 
-    private String getCacheKey(Location location, Actions action, String type) {
-        return location.toString() + "|" + action.name() + "|" + type;
+    /**
+     * Invalidates the interaction cache for a player.
+     * Should be called e.g. when a player logs out.
+     *
+     * @param target The player to invalidate the cache for.
+     */
+    public void invalidateInteractionCache(UUID target) {
+        interactionCache.remove(target);
     }
 
-    public void invalidateCache(UUID playerUUID) {
-        permissionCache.remove(playerUUID);
-    }
-    public void invalidateCacheForLocation(Location location) {
-        List<Region> regions = regionManager.getRegionsAt(location);
-
-        // Invalidate caches for all players that have permissions in the regions covering the location
-        for (Region region : regions) {
-            for (UUID playerUUID : permissionCache.keySet()) {
-                // Remove the player's cached permissions related to this region
-                permissionCache.get(playerUUID).keySet().removeIf(key -> key.startsWith(getCacheKey(location, Actions.valueOf(""), "")));
-            }
-        }
+    /**
+     * Invalidates the interaction cache for all players.
+     * Should be called e.g. when the plugin is reloaded
+     * or when a region area is changed.
+     */
+    public void invalidateInteractionCaches() {
+        interactionCache.clear();
     }
 
-    public void invalidateAllCaches() {
-        permissionCache.clear();
+    /**
+     * Invalidates the flag/permission cache for a player.
+     * Should be called when a region's permissions are changed
+     *
+     * @param target The target player/group to invalidate the cache for.
+     */
+    public void invalidateCache(String target) {
+        cache.remove(target);
     }
 
+    /**
+     * Invalidates the flag/permission cache for all players.
+     * Should be called when the plugin is reloaded
+     * or when a region area is changed.
+     */
+    public void invalidateCaches() {
+        cache.clear();
+    }
 
     /**
      * hasPermission(UUID, String, String, Region) overload
@@ -108,6 +119,20 @@ public class PermissionManager {
      * @return True if the player has the specified permission for the type, false otherwise.
      */
     public boolean hasPermission(String who, String permission, String type, Region region) {
+        if (cache.containsKey(who)) {
+            List<CacheEntry> entries = cache.get(who);
+            for (CacheEntry entry : entries) {
+                if (entry.isEqual(permission, type, region.getKey())) {
+                    return entry.result;
+                }
+            }
+        }
+        boolean result = calculatePermission(who, permission, type, region);
+        cache.computeIfAbsent(who, k -> new ArrayList<>()).add(new CacheEntry(permission, type, region.getKey(), result));
+        return result;
+    }
+
+    private boolean calculatePermission(String who, String permission, String type, Region region) {
         permission = permission.toLowerCase();
         Player player = null;
         try {
@@ -188,5 +213,37 @@ public class PermissionManager {
 
     public boolean isAdmin(String who, Region region) {
         return hasPermission(who, "role", "owner", region) || hasPermission(who, "role", "admin", region);
+    }
+
+    public static class CacheEntry {
+        private final String flag;
+        private final String value;
+        private final String key;
+
+        public boolean result;
+
+        public CacheEntry(String flag, String value, String key, boolean result) {
+            this.flag = flag;
+            this.value = value;
+            this.key = key;
+            this.result = result;
+        }
+
+        // Getters
+        public String getFlag() {
+            return flag;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public String getKey() {
+            return key;
+        }
+
+        public boolean isEqual(String flag, String value, String key) {
+            return this.flag.equals(flag) && this.value.equals(value) && this.key.equals(key);
+        }
     }
 }
