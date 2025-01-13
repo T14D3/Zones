@@ -19,5 +19,6 @@ public class PlayerQuitListener implements Listener {
         zones.selection.remove(uuid);
         zones.particles.remove(uuid);
         zones.getPermissionManager().invalidateInteractionCache(uuid);
+        zones.getPermissionManager().invalidateCache(uuid.toString());
     }
 }
