@@ -554,10 +554,12 @@ public class CommandListener implements BasicCommand {
         if (showMembers) {
             // Iterate over members to format permissions
             for (Map.Entry<String, Map<String, String>> member : entry.getValue().getMembers().entrySet()) {
-                String playerName;
+                String playerName = null;
                 try {
                     playerName = Bukkit.getOfflinePlayer(UUID.fromString(member.getKey())).getName();
-                } catch (IllegalArgumentException e) {
+                } catch (IllegalArgumentException ignored) {
+                }
+                if (playerName == null) {
                     playerName = member.getKey();
                 }
                 Component playerComponent = mm.deserialize(messages.get("region.info.members.name"), parsed("name", playerName));
