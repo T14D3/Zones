@@ -157,70 +157,78 @@ public class CommandListener implements BasicCommand {
             }
             return suggestions;
         }
-        if (args.length == 2 && (args[0].equalsIgnoreCase("info")
-                || args[0].equalsIgnoreCase("delete")
-                || args[0].equalsIgnoreCase("subcreate")
-                || args[0].equalsIgnoreCase("expand")
-                || args[0].equalsIgnoreCase("select")
-                || args[0].equalsIgnoreCase("set")
-                || args[0].equalsIgnoreCase("rename"))) {
-            List<String> builder = new ArrayList<>();
-            regionManager.regions().forEach((regionKey, region) -> region.getMembers().keySet().stream()
-                    .filter(uuid -> pm.isAdmin(uuid, region))
-                    .forEach(uuid -> builder.add(regionKey)));
-            return builder;
-        }
-        if (args[0].equalsIgnoreCase("set")) {
-            if (args.length == 3) {
+        if (stack.getSender() instanceof Player player) {
+            if (args.length == 2 && (args[0].equalsIgnoreCase("info")
+                    || args[0].equalsIgnoreCase("delete")
+                    || args[0].equalsIgnoreCase("subcreate")
+                    || args[0].equalsIgnoreCase("expand")
+                    || args[0].equalsIgnoreCase("select")
+                    || args[0].equalsIgnoreCase("set")
+                    || args[0].equalsIgnoreCase("rename"))) {
                 List<String> suggestions = new ArrayList<>();
-                for (OfflinePlayer offlinePlayer : Bukkit.getOfflinePlayers()) {
-                    if (offlinePlayer.getName() != null && offlinePlayer.getName().toLowerCase().startsWith(args[2].toLowerCase())) {
-                        suggestions.add(offlinePlayer.getName());
+                regionManager.regions().forEach((regionKey, region) -> {
+                    if (region.isAdmin(player.getUniqueId()) && regionKey.startsWith(args[1])) {
+                        suggestions.add(regionKey);
                     }
-                }
+                });
                 return suggestions;
             }
-            if (args.length == 4) {
-                List<String> suggestions = new ArrayList<>();
-                for (Actions action : Actions.values()) {
-                    if (action.name().toLowerCase().startsWith(args[3].toLowerCase())) {
-                        suggestions.add(action.name());
+            if (args[0].equalsIgnoreCase("set")) {
+                if (args.length == 3) {
+                    List<String> suggestions = new ArrayList<>();
+                    for (OfflinePlayer offlinePlayer : Bukkit.getOfflinePlayers()) {
+                        if (offlinePlayer.getName() != null && offlinePlayer.getName().toLowerCase().startsWith(args[2].toLowerCase())) {
+                            suggestions.add(offlinePlayer.getName());
+                        }
                     }
+                    Region region = plugin.getRegionManager().regions().get(args[1]);
+                    if (region != null && region.isAdmin(player.getUniqueId())) {
+                        suggestions.addAll(region.getGroupNames());
+                    }
+                    return suggestions;
                 }
-                return suggestions;
-            }
-            if (args.length >= 5) {
-                List<String> suggestions = new ArrayList<>();
-                List<String> types;
-                switch (args[3].toUpperCase()) {
-                    case "PLACE", "BREAK" -> types = plugin.getTypes().blockTypes;
-                    case "CONTAINER" -> types = plugin.getTypes().containerTypes;
-                    case "REDSTONE" -> types = plugin.getTypes().redstoneTypes;
-                    case "ENTITY", "DAMAGE" -> types = plugin.getTypes().entityTypes;
-                    case "IGNITE" -> {
-                        types = List.of("TRUE", "FALSE");
+                if (args.length == 4) {
+                    List<String> suggestions = new ArrayList<>();
+                    for (Actions action : Actions.values()) {
+                        if (action.name().toLowerCase().startsWith(args[3].toLowerCase())) {
+                            suggestions.add(action.name());
+                        }
                     }
-                    default -> types = plugin.getTypes().allTypes;
+                    return suggestions;
+                }
+                if (args.length >= 5) {
+                    List<String> suggestions = new ArrayList<>();
+                    List<String> types;
+                    switch (args[3].toUpperCase()) {
+                        case "PLACE", "BREAK" -> types = plugin.getTypes().blockTypes;
+                        case "CONTAINER" -> types = plugin.getTypes().containerTypes;
+                        case "REDSTONE" -> types = plugin.getTypes().redstoneTypes;
+                        case "ENTITY", "DAMAGE" -> types = plugin.getTypes().entityTypes;
+                        case "IGNITE" -> {
+                            types = List.of("TRUE", "FALSE");
+                        }
+                        default -> types = plugin.getTypes().allTypes;
 
-                }
-                for (String value : types) {
-                    if (value.toLowerCase().startsWith(args[4].toLowerCase())) {
-                        suggestions.add(value);
                     }
+                    for (String value : types) {
+                        if (value.toLowerCase().startsWith(args[4].toLowerCase())) {
+                            suggestions.add(value);
+                        }
+                    }
+                    return suggestions;
                 }
-                return suggestions;
             }
-        }
-        if (args[0].equalsIgnoreCase("expand")) {
-            if (args.length == 3) {
-                List<String> suggestions = new ArrayList<>();
-                for (int i = 1; i < 10; i++) {
-                    suggestions.add(String.valueOf(i));
+            if (args[0].equalsIgnoreCase("expand")) {
+                if (args.length == 3) {
+                    List<String> suggestions = new ArrayList<>();
+                    for (int i = 1; i < 10; i++) {
+                        suggestions.add(String.valueOf(i));
+                    }
+                    return suggestions;
                 }
-                return suggestions;
-            }
-            if (args.length == 4 && stack.getSender().hasPermission("zones.expand.overlap")) {
-                return List.of("overlap");
+                if (args.length == 4 && stack.getSender().hasPermission("zones.expand.overlap")) {
+                    return List.of("overlap");
+                }
             }
         }
         return List.of();
