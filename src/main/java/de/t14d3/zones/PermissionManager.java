@@ -14,7 +14,7 @@ public class PermissionManager {
 
     // Cache of player UUID -> (Region Name -> Action/Type Permission)
     private final Map<UUID, List<CacheEntry>> interactionCache = new HashMap<>();
-    private final Map<String, List<CacheEntry>> cache = new HashMap<>();
+    private final Map<String, List<CacheEntry>> permissionCache = new HashMap<>();
 
 
     public PermissionManager() {}
@@ -84,7 +84,7 @@ public class PermissionManager {
      * @param target The target player/group to invalidate the cache for.
      */
     public void invalidateCache(String target) {
-        cache.remove(target);
+        permissionCache.remove(target);
     }
 
     /**
@@ -93,7 +93,7 @@ public class PermissionManager {
      * or when a region area is changed.
      */
     public void invalidateCaches() {
-        cache.clear();
+        permissionCache.clear();
     }
 
     /**
@@ -119,8 +119,8 @@ public class PermissionManager {
      * @return True if the player has the specified permission for the type, false otherwise.
      */
     public boolean hasPermission(String who, String permission, String type, Region region) {
-        if (cache.containsKey(who)) {
-            List<CacheEntry> entries = cache.get(who);
+        if (permissionCache.containsKey(who)) {
+            List<CacheEntry> entries = permissionCache.get(who);
             for (CacheEntry entry : entries) {
                 if (entry.isEqual(permission, type, region.getKey())) {
                     return entry.result;
@@ -128,7 +128,7 @@ public class PermissionManager {
             }
         }
         boolean result = calculatePermission(who, permission, type, region);
-        cache.computeIfAbsent(who, k -> new ArrayList<>()).add(new CacheEntry(permission, type, region.getKey(), result));
+        permissionCache.computeIfAbsent(who, k -> new ArrayList<>()).add(new CacheEntry(permission, type, region.getKey(), result));
         return result;
     }
 
