@@ -32,7 +32,6 @@ public class PermissionManager {
      * @param type The type of the block or entity the interaction happened with.
      * @return True if the player can interact with the region, false otherwise.
      */
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean canInteract(Location location, UUID playerUUID, Actions action, String type) {
         if (interactionCache.containsKey(playerUUID)) {
             List<CacheEntry> entries = interactionCache.get(playerUUID);
