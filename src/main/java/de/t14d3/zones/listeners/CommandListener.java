@@ -174,6 +174,7 @@ public class CommandListener implements BasicCommand {
                 return suggestions;
             }
             if (args[0].equalsIgnoreCase("set")) {
+                Region region = plugin.getRegionManager().regions().get(args[1]);
                 if (args.length == 3) {
                     List<String> suggestions = new ArrayList<>();
                     for (OfflinePlayer offlinePlayer : Bukkit.getOfflinePlayers()) {
@@ -181,7 +182,6 @@ public class CommandListener implements BasicCommand {
                             suggestions.add(offlinePlayer.getName());
                         }
                     }
-                    Region region = plugin.getRegionManager().regions().get(args[1]);
                     if (region != null && region.isAdmin(player.getUniqueId())) {
                         suggestions.addAll(region.getGroupNames());
                     }
@@ -191,7 +191,17 @@ public class CommandListener implements BasicCommand {
                     List<String> suggestions = new ArrayList<>();
                     for (Actions action : Actions.values()) {
                         if (action.name().toLowerCase().startsWith(args[3].toLowerCase())) {
-                            suggestions.add(action.name());
+                            String who;
+                            if (args[2].startsWith(":")) {
+                                who = args[2];
+                            } else {
+                                who = Bukkit.getOfflinePlayer(args[2]).getUniqueId().toString();
+                            }
+                            String temp = action.name();
+                            if (region.getMemberPermissions(who).get(action.name()) != null) {
+                                temp += " " + region.getMemberPermissions(who).get(action.name()).replace(",", "").toLowerCase();
+                            }
+                            suggestions.add(temp);
                         }
                     }
                     return suggestions;

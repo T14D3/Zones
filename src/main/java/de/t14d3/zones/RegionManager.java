@@ -443,10 +443,10 @@ public class RegionManager {
     }
 
     public Map<String, String> getMemberPermissions(Player player, Region region) {
-        return region.getMemberPermissions(player.getUniqueId());
+        return region.getMemberPermissions(player.getUniqueId().toString());
     }
 
     public Map<String, String> getMemberPermissions(UUID uuid, Region region) {
-        return region.getMemberPermissions(uuid);
+        return region.getMemberPermissions(uuid.toString());
     }
 }

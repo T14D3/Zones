@@ -158,8 +158,8 @@ public class Region {
         return false; // Default to false
     }
 
-    Map<String, String> getMemberPermissions(UUID uuid) {
-        return this.members.get(uuid.toString());
+    public Map<String, String> getMemberPermissions(String who) {
+        return this.members.get(who);
     }
 
     public String getParent() {
