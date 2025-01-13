@@ -6,16 +6,17 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.util.BoundingBox;
 
-import java.util.*;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class PermissionManager {
 
     private RegionManager regionManager;
 
-    // Cache of player UUID -> (Region Name -> Action/Type Permission)
-    private final Map<UUID, List<CacheEntry>> interactionCache = new HashMap<>();
-    private final Map<String, List<CacheEntry>> permissionCache = new HashMap<>();
-
+    private final ConcurrentHashMap<UUID, ConcurrentLinkedQueue<CacheEntry>> interactionCache = new ConcurrentHashMap<UUID, ConcurrentLinkedQueue<CacheEntry>>();
+    private final ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>> permissionCache = new ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>>();
 
     public PermissionManager() {}
 
@@ -34,9 +35,9 @@ public class PermissionManager {
      */
     public boolean canInteract(Location location, UUID playerUUID, Actions action, String type) {
         if (interactionCache.containsKey(playerUUID)) {
-            List<CacheEntry> entries = interactionCache.get(playerUUID);
+            ConcurrentLinkedQueue<CacheEntry> entries = interactionCache.get(playerUUID);
             for (CacheEntry entry : entries) {
-                if (entry.isEqual(location.toString(), action.name(), type)) {
+                if (entry.isEqual(location, action.name(), type)) {
                     return entry.result;
                 }
             }
@@ -47,7 +48,7 @@ public class PermissionManager {
 
             if (box.contains(location.toVector())) {
                 boolean hasPermission = hasPermission(playerUUID, action.name(), type, region);
-                interactionCache.computeIfAbsent(playerUUID, k -> new ArrayList<>()).add(new CacheEntry(location.toString(), action.name(), type, hasPermission));
+                interactionCache.computeIfAbsent(playerUUID, k -> new ConcurrentLinkedQueue<>()).add(new CacheEntry(location, action.name(), type, hasPermission));
 
                 return hasPermission;
             }
@@ -76,6 +77,29 @@ public class PermissionManager {
         interactionCache.clear();
     }
 
+    /**
+     * Invalidates the interaction cache for a chunk.
+     * Should be called e.g. when a chunk is unloaded.
+     */
+    public void invalidateInteractionCacheForChunk(int chunkX, int chunkZ, String world) {
+        Bukkit.getScheduler().runTaskAsynchronously(Zones.getInstance(), () -> {
+            synchronized (interactionCache) {
+                interactionCache.forEach((uuid, cacheEntries) -> {
+                    for (CacheEntry entry : cacheEntries) {
+                        Location location = (Location) entry.getFlag();
+                        if (!world.equals(location.getWorld().getName())) {
+                            continue;
+                        }
+                        int locX = location.getBlockX() >> 4;
+                        int locZ = location.getBlockZ() >> 4;
+                        if (chunkX == locX && chunkZ == locZ) {
+                            interactionCache.computeIfAbsent(uuid, k -> new ConcurrentLinkedQueue<>()).remove(entry);
+                        }
+                    }
+                });
+            }
+        });
+    }
     /**
      * Invalidates the flag/permission cache for a player.
      * Should be called when a region's permissions are changed
@@ -119,7 +143,7 @@ public class PermissionManager {
      */
     public boolean hasPermission(String who, String permission, String type, Region region) {
         if (permissionCache.containsKey(who)) {
-            List<CacheEntry> entries = permissionCache.get(who);
+            ConcurrentLinkedQueue<CacheEntry> entries = permissionCache.get(who);
             for (CacheEntry entry : entries) {
                 if (entry.isEqual(permission, type, region.getKey())) {
                     return entry.result;
@@ -127,7 +151,7 @@ public class PermissionManager {
             }
         }
         boolean result = calculatePermission(who, permission, type, region);
-        permissionCache.computeIfAbsent(who, k -> new ArrayList<>()).add(new CacheEntry(permission, type, region.getKey(), result));
+        permissionCache.computeIfAbsent(who, k -> new ConcurrentLinkedQueue<>()).add(new CacheEntry(permission, type, region.getKey(), result));
         return result;
     }
 
@@ -149,6 +173,9 @@ public class PermissionManager {
 
         // Get the permissions for the player
         Map<String, String> permissions = members.get(who);
+        if (permissions == null) {
+            return false;
+        }
         String value = permissions.get(permission);
 
         // If no value found, check parent region and group permissions
@@ -215,13 +242,13 @@ public class PermissionManager {
     }
 
     public static class CacheEntry {
-        private final String flag;
+        private final Object flag;
         private final String value;
         private final String key;
 
         public boolean result;
 
-        public CacheEntry(String flag, String value, String key, boolean result) {
+        public CacheEntry(Object flag, String value, String key, boolean result) {
             this.flag = flag;
             this.value = value;
             this.key = key;
@@ -229,7 +256,7 @@ public class PermissionManager {
         }
 
         // Getters
-        public String getFlag() {
+        public Object getFlag() {
             return flag;
         }
 
@@ -241,7 +268,7 @@ public class PermissionManager {
             return key;
         }
 
-        public boolean isEqual(String flag, String value, String key) {
+        public boolean isEqual(Object flag, String value, String key) {
             return this.flag.equals(flag) && this.value.equals(value) && this.key.equals(key);
         }
     }
