@@ -5,6 +5,7 @@ import com.sk89q.worldedit.WorldEdit;
 import de.t14d3.zones.integrations.FAWEIntegration;
 import de.t14d3.zones.integrations.PlaceholderAPI;
 import de.t14d3.zones.integrations.WorldEditSession;
+import de.t14d3.zones.listeners.ChunkEventListener;
 import de.t14d3.zones.listeners.CommandListener;
 import de.t14d3.zones.listeners.PlayerInteractListener;
 import de.t14d3.zones.listeners.PlayerQuitListener;
@@ -79,6 +80,7 @@ public final class Zones extends JavaPlugin {
         // Register listeners
         this.getServer().getPluginManager().registerEvents(new PlayerInteractListener(regionManager, permissionManager, this), this);
         this.getServer().getPluginManager().registerEvents(new PlayerQuitListener(this), this);
+        this.getServer().getPluginManager().registerEvents(new ChunkEventListener(this), this);
 
         // Populate Types
         types = new Types();
@@ -122,13 +124,17 @@ public final class Zones extends JavaPlugin {
         regionManager.regions().clear();
         regionManager.loadedRegions.clear();
         regionManager.regionCache.clear();
-        permissionManager.invalidateAllCaches();
+        permissionManager.invalidateInteractionCaches();
+        permissionManager.invalidateCaches();
         getLogger().info("Zones plugin is disabling and regions are saved.");
     }
 
     // Getters
     public RegionManager getRegionManager() { return regionManager; }
-    public PermissionManager getPermissionManager() {return permissionManager; }
+
+    public PermissionManager getPermissionManager() {
+        return permissionManager;
+    }
 
     public Messages getMessages() {
         return messages;

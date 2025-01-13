@@ -157,70 +157,88 @@ public class CommandListener implements BasicCommand {
             }
             return suggestions;
         }
-        if (args.length == 2 && (args[0].equalsIgnoreCase("info")
-                || args[0].equalsIgnoreCase("delete")
-                || args[0].equalsIgnoreCase("subcreate")
-                || args[0].equalsIgnoreCase("expand")
-                || args[0].equalsIgnoreCase("select")
-                || args[0].equalsIgnoreCase("set")
-                || args[0].equalsIgnoreCase("rename"))) {
-            List<String> builder = new ArrayList<>();
-            regionManager.regions().forEach((regionKey, region) -> region.getMembers().keySet().stream()
-                    .filter(uuid -> pm.isAdmin(uuid, region))
-                    .forEach(uuid -> builder.add(regionKey)));
-            return builder;
-        }
-        if (args[0].equalsIgnoreCase("set")) {
-            if (args.length == 3) {
+        if (stack.getSender() instanceof Player player) {
+            if (args.length == 2 && (args[0].equalsIgnoreCase("info")
+                    || args[0].equalsIgnoreCase("delete")
+                    || args[0].equalsIgnoreCase("subcreate")
+                    || args[0].equalsIgnoreCase("expand")
+                    || args[0].equalsIgnoreCase("select")
+                    || args[0].equalsIgnoreCase("set")
+                    || args[0].equalsIgnoreCase("rename"))) {
                 List<String> suggestions = new ArrayList<>();
-                for (OfflinePlayer offlinePlayer : Bukkit.getOfflinePlayers()) {
-                    if (offlinePlayer.getName() != null && offlinePlayer.getName().toLowerCase().startsWith(args[2].toLowerCase())) {
-                        suggestions.add(offlinePlayer.getName());
+                regionManager.regions().forEach((regionKey, region) -> {
+                    if (region.isAdmin(player.getUniqueId()) && regionKey.startsWith(args[1])) {
+                        suggestions.add(regionKey);
                     }
-                }
+                });
                 return suggestions;
             }
-            if (args.length == 4) {
-                List<String> suggestions = new ArrayList<>();
-                for (Actions action : Actions.values()) {
-                    if (action.name().toLowerCase().startsWith(args[3].toLowerCase())) {
-                        suggestions.add(action.name());
+            if (args[0].equalsIgnoreCase("set")) {
+                Region region = plugin.getRegionManager().regions().get(args[1]);
+                if (args.length == 3) {
+                    List<String> suggestions = new ArrayList<>();
+                    for (OfflinePlayer offlinePlayer : Bukkit.getOfflinePlayers()) {
+                        if (offlinePlayer.getName() != null && offlinePlayer.getName().toLowerCase().startsWith(args[2].toLowerCase())) {
+                            suggestions.add(offlinePlayer.getName());
+                        }
                     }
+                    if (region != null && region.isAdmin(player.getUniqueId())) {
+                        suggestions.addAll(region.getGroupNames());
+                    }
+                    return suggestions;
                 }
-                return suggestions;
-            }
-            if (args.length >= 5) {
-                List<String> suggestions = new ArrayList<>();
-                List<String> types;
-                switch (args[3].toUpperCase()) {
-                    case "PLACE", "BREAK" -> types = plugin.getTypes().blockTypes;
-                    case "CONTAINER" -> types = plugin.getTypes().containerTypes;
-                    case "REDSTONE" -> types = plugin.getTypes().redstoneTypes;
-                    case "ENTITY", "DAMAGE" -> types = plugin.getTypes().entityTypes;
-                    case "IGNITE" -> {
-                        types = List.of("TRUE", "FALSE");
+                if (args.length == 4) {
+                    List<String> suggestions = new ArrayList<>();
+                    for (Actions action : Actions.values()) {
+                        if (action.name().toLowerCase().startsWith(args[3].toLowerCase())) {
+                            String who;
+                            if (args[2].startsWith(":")) {
+                                who = args[2];
+                            } else {
+                                who = Bukkit.getOfflinePlayer(args[2]).getUniqueId().toString();
+                            }
+                            String temp = action.name();
+                            if (region.getMemberPermissions(who).get(action.name()) != null) {
+                                temp += " " + region.getMemberPermissions(who).get(action.name()).replace(",", "").toLowerCase();
+                            }
+                            suggestions.add(temp);
+                        }
                     }
-                    default -> types = plugin.getTypes().allTypes;
+                    return suggestions;
+                }
+                if (args.length >= 5) {
+                    List<String> suggestions = new ArrayList<>();
+                    List<String> types;
+                    switch (args[3].toUpperCase()) {
+                        case "PLACE", "BREAK" -> types = plugin.getTypes().blockTypes;
+                        case "CONTAINER" -> types = plugin.getTypes().containerTypes;
+                        case "REDSTONE" -> types = plugin.getTypes().redstoneTypes;
+                        case "ENTITY", "DAMAGE" -> types = plugin.getTypes().entityTypes;
+                        case "IGNITE" -> {
+                            types = List.of("TRUE", "FALSE");
+                        }
+                        default -> types = plugin.getTypes().allTypes;
 
-                }
-                for (String value : types) {
-                    if (value.toLowerCase().startsWith(args[4].toLowerCase())) {
-                        suggestions.add(value);
                     }
+                    for (String value : types) {
+                        if (value.toLowerCase().startsWith(args[4].toLowerCase())) {
+                            suggestions.add(value);
+                        }
+                    }
+                    return suggestions;
                 }
-                return suggestions;
             }
-        }
-        if (args[0].equalsIgnoreCase("expand")) {
-            if (args.length == 3) {
-                List<String> suggestions = new ArrayList<>();
-                for (int i = 1; i < 10; i++) {
-                    suggestions.add(String.valueOf(i));
+            if (args[0].equalsIgnoreCase("expand")) {
+                if (args.length == 3) {
+                    List<String> suggestions = new ArrayList<>();
+                    for (int i = 1; i < 10; i++) {
+                        suggestions.add(String.valueOf(i));
+                    }
+                    return suggestions;
                 }
-                return suggestions;
-            }
-            if (args.length == 4 && stack.getSender().hasPermission("zones.expand.overlap")) {
-                return List.of("overlap");
+                if (args.length == 4 && stack.getSender().hasPermission("zones.expand.overlap")) {
+                    return List.of("overlap");
+                }
             }
         }
         return List.of();
@@ -297,7 +315,7 @@ public class CommandListener implements BasicCommand {
             Region parentRegion = null;
             if (args.length < 2) {
                 for (Region region : regionManager.getRegionsAt(player.getLocation())) {
-                    if (pm.isAdmin(player.getUniqueId(), region)) {
+                    if (pm.isAdmin(player.getUniqueId().toString(), region)) {
                         parentRegion = region;
                         break;
                     }
@@ -371,7 +389,7 @@ public class CommandListener implements BasicCommand {
             Component hoverText = regionInfo(
                     entry,
                     (sender.hasPermission("zones.info.other") ||
-                            (player != null && this.plugin.getPermissionManager().isAdmin(player.getUniqueId(), regions.get(entry.getKey())))))
+                            (player != null && this.plugin.getPermissionManager().isAdmin(player.getUniqueId().toString(), regions.get(entry.getKey())))))
                     .join();
             var mm = MiniMessage.miniMessage();
 
@@ -406,7 +424,7 @@ public class CommandListener implements BasicCommand {
         if (sender instanceof Player) {
             player = (Player) sender;
         }
-        if (!sender.hasPermission("zones.info.other") && (player != null && !this.plugin.getPermissionManager().isAdmin(player.getUniqueId(), regions.get(regionKey)))) {
+        if (!sender.hasPermission("zones.info.other") && (player != null && !this.plugin.getPermissionManager().isAdmin(player.getUniqueId().toString(), regions.get(regionKey)))) {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
             return;
         }
@@ -553,8 +571,15 @@ public class CommandListener implements BasicCommand {
 
         if (showMembers) {
             // Iterate over members to format permissions
-            for (Map.Entry<UUID, Map<String, String>> member : entry.getValue().getMembers().entrySet()) {
-                String playerName = Bukkit.getPlayer(member.getKey()) != null ? Bukkit.getPlayer(member.getKey()).getName() : member.getKey().toString();
+            for (Map.Entry<String, Map<String, String>> member : entry.getValue().getMembers().entrySet()) {
+                String playerName = null;
+                try {
+                    playerName = Bukkit.getOfflinePlayer(UUID.fromString(member.getKey())).getName();
+                } catch (IllegalArgumentException ignored) {
+                }
+                if (playerName == null) {
+                    playerName = member.getKey();
+                }
                 Component playerComponent = mm.deserialize(messages.get("region.info.members.name"), parsed("name", playerName));
                 playerComponent = playerComponent.appendNewline();
 
