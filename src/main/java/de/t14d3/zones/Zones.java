@@ -1,6 +1,5 @@
 package de.t14d3.zones;
 
-import com.fastasyncworldedit.core.util.WEManager;
 import com.sk89q.worldedit.WorldEdit;
 import de.t14d3.zones.integrations.FAWEIntegration;
 import de.t14d3.zones.integrations.PlaceholderAPI;
@@ -107,7 +106,7 @@ public final class Zones extends JavaPlugin {
         }
 
         if (getServer().getPluginManager().getPlugin("FastAsyncWorldEdit") != null) {
-            WEManager.weManager().addManager(new FAWEIntegration(this));
+            new FAWEIntegration(this).register();
             getLogger().info("FAWE Integration enabled.");
         } else if (getServer().getPluginManager().getPlugin("WorldEdit") != null) {
             WorldEdit.getInstance().getEventBus().register(new WorldEditSession(this));
