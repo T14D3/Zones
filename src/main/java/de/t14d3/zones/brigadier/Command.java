@@ -69,36 +69,43 @@ public class Command {
                                     ctx.getSource().getSender().sendMessage(String.join(", ", ctx.getInput().split(" ")));
                                     return com.mojang.brigadier.Command.SINGLE_SUCCESS;
                                 })
-                                .then(Commands.argument("player", StringArgumentType.word())
+                                .then(Commands.argument("name", StringArgumentType.string())
                                         .suggests((ctx, builder) -> {
-                                            if (arg(ctx, 1).equalsIgnoreCase("INFO") || arg(ctx, 1).equalsIgnoreCase("DELETE") || arg(ctx, 1).equalsIgnoreCase("SELECT")) {
+                                            if (arg(ctx, 1).equalsIgnoreCase("RENAME")) {
+                                                builder.suggest("<New Name>", MessageComponentSerializer.message().serialize(Component.text("Type the new name for the region")));
                                                 return builder.buildFuture();
                                             }
-                                            for (OfflinePlayer offlinePlayer : Bukkit.getOfflinePlayers()) {
-                                                if (ctx.getInput().split(" ").length <= 3 || (offlinePlayer.getName() != null ? offlinePlayer.getName() : offlinePlayer.getUniqueId().toString()).toLowerCase().startsWith(arg(ctx, 3).toLowerCase())) {
-                                                    builder.suggest(offlinePlayer.getName());
+                                            if (arg(ctx, 1).equalsIgnoreCase("SET")) {
+                                                for (OfflinePlayer offlinePlayer : Bukkit.getOfflinePlayers()) {
+                                                    if (ctx.getInput().split(" ").length <= 3 || (offlinePlayer.getName() != null ? offlinePlayer.getName() : offlinePlayer.getUniqueId().toString()).toLowerCase().startsWith(arg(ctx, 3).toLowerCase())) {
+                                                        builder.suggest(offlinePlayer.getName());
+                                                    }
                                                 }
-                                            }
-                                            for (Map.Entry<String, Region> region : Zones.getInstance().getRegionManager().regions().entrySet()) {
-                                                if (!ctx.getInput().split(" ")[2].equalsIgnoreCase(region.getKey())) {
-                                                    continue;
-                                                }
-                                                if (ctx.getSource().getSender().hasPermission("zones.info.other")
-                                                        || (ctx.getSource().getSender() instanceof Player player && region.getValue().isAdmin(player.getUniqueId()))) {
-                                                    region.getValue().getGroupNames().forEach(group -> {
-                                                        List<String> groupMembers = new ArrayList<>();
-                                                        region.getValue().getGroupMembers(group).forEach(val -> {
-                                                            groupMembers.add(Bukkit.getOfflinePlayer(UUID.fromString(val)).getName());
+                                                for (Map.Entry<String, Region> region : Zones.getInstance().getRegionManager().regions().entrySet()) {
+                                                    if (!ctx.getInput().split(" ")[2].equalsIgnoreCase(region.getKey())) {
+                                                        continue;
+                                                    }
+                                                    if (ctx.getSource().getSender().hasPermission("zones.info.other")
+                                                            || (ctx.getSource().getSender() instanceof Player player && region.getValue().isAdmin(player.getUniqueId()))) {
+                                                        region.getValue().getGroupNames().forEach(group -> {
+                                                            List<String> groupMembers = new ArrayList<>();
+                                                            region.getValue().getGroupMembers(group).forEach(val -> {
+                                                                groupMembers.add(Bukkit.getOfflinePlayer(UUID.fromString(val)).getName());
+                                                            });
+                                                            if (ctx.getInput().split(" ").length <= 3
+                                                                    || group.toLowerCase().startsWith(arg(ctx, 3).toLowerCase())
+                                                                    || group.toLowerCase().replace("+", "").startsWith(arg(ctx, 3).toLowerCase())) {
+                                                                builder.suggest(group, MessageComponentSerializer.message().serialize(Component.text(groupMembers.toString())));
+                                                            }
                                                         });
-                                                        if (ctx.getInput().split(" ").length <= 3
-                                                                || group.toLowerCase().startsWith(arg(ctx, 3).toLowerCase())
-                                                                || group.toLowerCase().replace("+", "").startsWith(arg(ctx, 3).toLowerCase())) {
-                                                            builder.suggest(group, MessageComponentSerializer.message().serialize(Component.text(groupMembers.toString())));
-                                                        }
-                                                    });
+                                                    }
                                                 }
                                             }
                                             return builder.buildFuture();
+                                        })
+                                        .executes(ctx -> {
+                                            Zones.getInstance().getCommandListener().execute(ctx.getSource(), ctx.getInput());
+                                            return com.mojang.brigadier.Command.SINGLE_SUCCESS;
                                         })
                                         .then(Commands.argument("flag", new FlagArgument())
                                                 .suggests((ctx, builder) -> {

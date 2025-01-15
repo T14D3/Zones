@@ -415,10 +415,11 @@ public class CommandListener {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.rename.provide-name")));
             return;
         }
-        region.setName(args[2], regionManager);
+        String name = String.join(" ", args).substring(16).replace("\"", "").replace("'", "");
+        region.setName(name, regionManager);
         sender.sendMessage(miniMessage.deserialize(messages.get("commands.rename.success"),
                 parsed("region", regionKey),
-                parsed("name", args[2])));
+                parsed("name", name)));
 
     }
 
