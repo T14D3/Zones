@@ -33,11 +33,7 @@ public class RegionKeyArgument implements CustomArgumentType.Converted<Region, S
      */
     @Override
     public @NotNull Region convert(@NotNull String nativeType) throws CommandSyntaxException {
-        Region region = Zones.getInstance().getRegionManager().regions().get(nativeType);
-        if (region == null) {
-            throw new CommandSyntaxException(null, () -> "Region not found!");
-        }
-        return region;
+        return Zones.getInstance().getRegionManager().regions().get(nativeType);
     }
 
     @Override

@@ -203,6 +203,7 @@ public class PermissionManager {
         // Analyze permission values
         boolean explicitAllow = false;
         boolean explicitDeny = false;
+        boolean result = false;
 
         if (value != null) {
             for (String permittedValue : value.split(",")) {
@@ -210,31 +211,24 @@ public class PermissionManager {
 
                 // Check for wildcard allow
                 if ("*".equals(permittedValue) || "true".equalsIgnoreCase(permittedValue)) {
-                    explicitAllow = true;
+                    result = true;
                 }
                 // Check for wildcard deny
                 else if ("! *".equals(permittedValue) || "false".equalsIgnoreCase(permittedValue)) {
-                    explicitDeny = true;
+                    result = false;
                 }
                 // Check for specific type allow
                 else if (permittedValue.equalsIgnoreCase(type)) {
-                    explicitAllow = true;
+                    result = true;
                 }
                 // Check for specific type deny
                 else if (permittedValue.equalsIgnoreCase("!" + type)) {
-                    explicitDeny = true;
+                    result = false;
                 }
             }
         }
 
-        // Determine final access based on explicit allow/deny flags
-        if (explicitDeny) {
-            return false;
-        } else if (explicitAllow) {
-            return true;
-        }
-        // Deny by default
-        return false;
+        return result;
     }
 
     public boolean isAdmin(String who, Region region) {
