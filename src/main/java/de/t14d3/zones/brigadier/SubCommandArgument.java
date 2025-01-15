@@ -28,7 +28,10 @@ public class SubCommandArgument implements CustomArgumentType.Converted<SubComma
     @Override
     public <S> @NotNull CompletableFuture<Suggestions> listSuggestions(@NotNull CommandContext<S> context, @NotNull SuggestionsBuilder builder) {
         for (SubCommands subCommand : SubCommands.values()) {
-            builder.suggest(subCommand.name(), MessageComponentSerializer.message().serialize(subCommand.getInfo()));
+            String[] args = context.getInput().split(" ");
+            if (args.length == 1 || subCommand.name().toLowerCase().startsWith(args[1].toLowerCase())) {
+                builder.suggest(subCommand.name().toLowerCase(), MessageComponentSerializer.message().serialize(subCommand.getInfo()));
+            }
         }
         return builder.buildFuture();
     }
