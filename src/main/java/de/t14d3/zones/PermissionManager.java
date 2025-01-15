@@ -214,7 +214,7 @@ public class PermissionManager {
                     result = true;
                 }
                 // Check for wildcard deny
-                else if ("! *".equals(permittedValue) || "false".equalsIgnoreCase(permittedValue)) {
+                else if ("!*".equals(permittedValue) || "false".equalsIgnoreCase(permittedValue)) {
                     result = false;
                 }
                 // Check for specific type allow
