@@ -131,7 +131,7 @@ public class Region {
     public List<String> getGroupNames() {
         List<String> groupNames = new ArrayList<>();
         for (Map.Entry<String, Map<String, String>> entry : members.entrySet()) {
-            if (entry.getKey().startsWith(":group-")) {
+            if (entry.getKey().startsWith("+group-")) {
                 groupNames.add(entry.getKey());
             }
         }

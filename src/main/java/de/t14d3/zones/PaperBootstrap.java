@@ -1,8 +1,12 @@
 package de.t14d3.zones;
 
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
-import de.t14d3.zones.brigadier.*;
+import de.t14d3.zones.brigadier.FlagArgument;
+import de.t14d3.zones.brigadier.RegionKeyArgument;
+import de.t14d3.zones.brigadier.SubCommandArgument;
+import de.t14d3.zones.brigadier.SubCommands;
 import de.t14d3.zones.utils.Actions;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
@@ -20,8 +24,10 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @SuppressWarnings("UnstableApiUsage")
 public class PaperBootstrap implements PluginBootstrap {
@@ -62,10 +68,27 @@ public class PaperBootstrap implements PluginBootstrap {
                                                 ctx.getSource().getSender().sendMessage("root: " + ctx.getRootNode().getName());
                                                 return Command.SINGLE_SUCCESS;
                                             })
-                                            .then(Commands.argument("player", new NameArgument())
+                                            .then(Commands.argument("player", StringArgumentType.word())
                                                     .suggests((ctx, builder) -> {
                                                         for (OfflinePlayer offlinePlayer : Bukkit.getOfflinePlayers()) {
-                                                            builder.suggest(offlinePlayer.getName());
+                                                            if (ctx.getInput().split(" ").length <= 3 || (offlinePlayer.getName() != null ? offlinePlayer.getName() : offlinePlayer.getUniqueId().toString()).startsWith(arg(ctx, 3))) {
+                                                                builder.suggest(offlinePlayer.getName());
+                                                            }
+                                                        }
+                                                        for (Map.Entry<String, Region> region : Zones.getInstance().getRegionManager().regions().entrySet()) {
+                                                            if (!ctx.getInput().split(" ")[2].equalsIgnoreCase(region.getKey())) {
+                                                                continue;
+                                                            }
+                                                            if (ctx.getSource().getSender().hasPermission("zones.info.other")
+                                                                    || (ctx.getSource().getSender() instanceof Player player && region.getValue().isAdmin(player.getUniqueId()))) {
+                                                                region.getValue().getGroupNames().forEach(group -> {
+                                                                    List<String> groupMembers = new ArrayList<>();
+                                                                    region.getValue().getGroupMembers(group).forEach(val -> {
+                                                                        groupMembers.add(Bukkit.getOfflinePlayer(UUID.fromString(val)).getName());
+                                                                    });
+                                                                    builder.suggest(group, MessageComponentSerializer.message().serialize(Component.text(groupMembers.toString())));
+                                                                });
+                                                            }
                                                         }
                                                         return builder.buildFuture();
                                                     })
