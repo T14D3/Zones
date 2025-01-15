@@ -1,0 +1,5 @@
+name: Zones
+version: '${version}'
+main: de.t14d3.zones.Zones
+api-version: '1.21'
+bootstrapper: de.t14d3.zones.PaperBootstrap

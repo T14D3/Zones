@@ -9,12 +9,8 @@ import de.t14d3.zones.listeners.CommandListener;
 import de.t14d3.zones.listeners.PlayerInteractListener;
 import de.t14d3.zones.listeners.PlayerQuitListener;
 import de.t14d3.zones.utils.*;
-import io.papermc.paper.command.brigadier.Commands;
-import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
-import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import it.unimi.dsi.fastutil.Pair;
 import org.bukkit.Location;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.BoundingBox;
 
@@ -37,6 +33,7 @@ public final class Zones extends JavaPlugin {
     private Types types;
     private Messages messages;
     private static Zones instance;
+    private CommandListener commandListener;
 
     @Override
     @SuppressWarnings("UnstableApiUsage")
@@ -86,12 +83,14 @@ public final class Zones extends JavaPlugin {
         types.populateTypes();
 
         // Register command executor and tab completer
-        LifecycleEventManager<Plugin> manager = this.getLifecycleManager();
-        manager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
-            final Commands commands = event.registrar();
-            commands.register("zone", new CommandListener(this, regionManager));
-        });
+//        LifecycleEventManager<Plugin> manager = this.getLifecycleManager();
+//        manager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
+//            final Commands commands = event.registrar();
+//            commands.register("zone", commandListener);
+//        });
 
+
+        this.commandListener = new CommandListener(this, regionManager);
         // Register saving task
         if (getSavingMode() == Utils.SavingModes.PERIODIC) {
             getServer().getScheduler().runTaskTimerAsynchronously(this, () -> {
@@ -153,5 +152,9 @@ public final class Zones extends JavaPlugin {
 
     public static Zones getInstance() {
         return instance;
+    }
+
+    public CommandListener getCommandListener() {
+        return commandListener;
     }
 }

@@ -435,7 +435,7 @@ public class CommandListener implements BasicCommand {
 
     private void handleSetCommand(CommandSender sender, String[] args) {
 
-        if (args.length < 4) {
+        if (args.length < 5) {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.set.invalid-usage")));
             return;
         }
