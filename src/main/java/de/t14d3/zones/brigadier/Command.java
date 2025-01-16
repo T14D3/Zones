@@ -3,14 +3,16 @@ package de.t14d3.zones.brigadier;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.tree.LiteralCommandNode;
+import de.t14d3.zones.PaperBootstrap;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.Zones;
-import de.t14d3.zones.utils.Actions;
+import de.t14d3.zones.utils.Flags;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.MessageComponentSerializer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -22,8 +24,13 @@ import java.util.UUID;
 
 @SuppressWarnings("UnstableApiUsage")
 public class Command {
+    private final PaperBootstrap context;
 
-    public static LiteralCommandNode<CommandSourceStack> node() {
+    public Command(PaperBootstrap context) {
+        this.context = context;
+    }
+
+    public LiteralCommandNode<CommandSourceStack> node() {
         return Commands.literal("zone")
                 .then(Commands.argument("subcommand", new SubCommandArgument())
                         .suggests((ctx, builder) -> {
@@ -107,11 +114,17 @@ public class Command {
                                             Zones.getInstance().getCommandListener().execute(ctx.getSource(), ctx.getInput());
                                             return com.mojang.brigadier.Command.SINGLE_SUCCESS;
                                         })
-                                        .then(Commands.argument("flag", new FlagArgument())
+                                        .then(Commands.argument("flag", new FlagArgument(context))
                                                 .suggests((ctx, builder) -> {
-                                                    for (Actions action : Actions.values()) {
-                                                        builder.suggest(action.name().toLowerCase(), MessageComponentSerializer.message().serialize(Component.text(action.getKey())));
+                                                    Flags flags = context.getFlags();
+                                                    MiniMessage mm = MiniMessage.miniMessage();
+                                                    for (Map.Entry<String, String> entry : flags.getFlags().entrySet()) {
+                                                        builder.suggest(entry.getKey(),
+                                                                MessageComponentSerializer.message().serialize(
+                                                                        mm.deserialize(Zones.getInstance().getMessages().getOrDefault("flags." + entry.getKey(), entry.getValue()))
+                                                                ));
                                                     }
+
                                                     return builder.buildFuture();
                                                 })
                                                 .then(Commands.argument("value", StringArgumentType.greedyString())

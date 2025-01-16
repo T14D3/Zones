@@ -34,6 +34,11 @@ public final class Zones extends JavaPlugin {
     private Messages messages;
     private static Zones instance;
     private CommandListener commandListener;
+    private PaperBootstrap bootstrap;
+
+    public Zones(PaperBootstrap bootstrap) {
+        this.bootstrap = bootstrap;
+    }
 
     @Override
     public void onEnable() {

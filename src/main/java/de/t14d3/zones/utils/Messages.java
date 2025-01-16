@@ -29,4 +29,8 @@ public class Messages {
     public @NotNull String get(String key) {
         return messages.getOrDefault(key, zones.getConfig().getString("messages.default", key).replaceAll("<key>", key));
     }
+
+    public @NotNull String getOrDefault(String key, String defaultValue) {
+        return messages.getOrDefault(key, defaultValue);
+    }
 }
