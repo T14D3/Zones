@@ -43,8 +43,7 @@ public class CommandListener {
 
     @SuppressWarnings("UnstableApiUsage")
     public void execute(CommandSourceStack stack, String arg) {
-        String[] args = arg.replaceFirst("zone ", "").split(" ");
-        stack.getSender().sendMessage(String.join(", ", args));
+        String[] args = arg.replaceFirst("zone ", "").replaceFirst("zones:", "").split(" ");
         CommandSender sender = stack.getSender();
 
         String command = args[0].toLowerCase();

@@ -32,6 +32,12 @@ public class Command {
 
     public LiteralCommandNode<CommandSourceStack> node() {
         return Commands.literal("zone")
+                .executes(ctx -> {
+                    MiniMessage mm = MiniMessage.miniMessage();
+                    Component comp = mm.deserialize(Zones.getInstance().getMessages().get("commands.invalid"));
+                    ctx.getSource().getSender().sendMessage(comp);
+                    return 1;
+                })
                 .then(Commands.argument("subcommand", new SubCommandArgument())
                         .suggests((ctx, builder) -> {
                             for (SubCommands subCommand : SubCommands.values()) {
@@ -73,8 +79,7 @@ public class Command {
                                 })
                                 .executes(ctx -> {
                                     Zones.getInstance().getCommandListener().execute(ctx.getSource(), ctx.getInput());
-                                    ctx.getSource().getSender().sendMessage(String.join(", ", ctx.getInput().split(" ")));
-                                    return com.mojang.brigadier.Command.SINGLE_SUCCESS;
+                                    return 1;
                                 })
                                 .then(Commands.argument("name", StringArgumentType.string())
                                         .suggests((ctx, builder) -> {
@@ -112,7 +117,7 @@ public class Command {
                                         })
                                         .executes(ctx -> {
                                             Zones.getInstance().getCommandListener().execute(ctx.getSource(), ctx.getInput());
-                                            return com.mojang.brigadier.Command.SINGLE_SUCCESS;
+                                            return 1;
                                         })
                                         .then(Commands.argument("flag", new FlagArgument(context))
                                                 .suggests((ctx, builder) -> {
@@ -124,7 +129,6 @@ public class Command {
                                                                         mm.deserialize(Zones.getInstance().getMessages().getOrDefault("flags." + entry.getKey(), entry.getValue()))
                                                                 ));
                                                     }
-
                                                     return builder.buildFuture();
                                                 })
                                                 .then(Commands.argument("value", StringArgumentType.greedyString())
@@ -141,6 +145,18 @@ public class Command {
                                                                 case "ENTITY", "DAMAGE" ->
                                                                         types = plugin.getTypes().entityTypes;
                                                                 case "IGNITE" -> types = List.of("TRUE", "FALSE");
+                                                                case "GROUP" -> {
+                                                                    types = new ArrayList<>();
+                                                                    for (Map.Entry<String, Region> region : Zones.getInstance().getRegionManager().regions().entrySet()) {
+                                                                        if (!ctx.getInput().split(" ")[2].equalsIgnoreCase(region.getKey())) {
+                                                                            continue;
+                                                                        }
+                                                                        if (ctx.getSource().getSender().hasPermission("zones.info.other")
+                                                                                || (ctx.getSource().getSender() instanceof Player player && region.getValue().isAdmin(player.getUniqueId()))) {
+                                                                            types.addAll(region.getValue().getGroupNames());
+                                                                        }
+                                                                    }
+                                                                }
                                                                 default -> types = plugin.getTypes().allTypes;
                                                             }
                                                             String[] args = ctx.getInput().split(" ");
@@ -154,7 +170,7 @@ public class Command {
                                                         })
                                                         .executes(ctx -> {
                                                             Zones.getInstance().getCommandListener().execute(ctx.getSource(), ctx.getInput());
-                                                            return com.mojang.brigadier.Command.SINGLE_SUCCESS;
+                                                            return 1;
                                                         })
                                                 )
                                         )
@@ -171,6 +187,7 @@ public class Command {
      * @return Argument at the given index
      */
     public static String arg(CommandContext<CommandSourceStack> ctx, int index) {
-        return ctx.getInput().split(" ")[index];
+        String arg = ctx.getInput().replace("zones:", "");
+        return arg.split(" ")[index];
     }
 }
