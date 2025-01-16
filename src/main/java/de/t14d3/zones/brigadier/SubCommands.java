@@ -15,7 +15,8 @@ public enum SubCommands {
     RENAME(Component.text("Renames a region").color(NamedTextColor.YELLOW)),
     SUBCREATE(Component.text("Creates a sub-region").color(NamedTextColor.DARK_PURPLE)),
     SAVE(Component.text("Saves all regions to file").color(NamedTextColor.DARK_GREEN)),
-    LOAD(Component.text("Loads all regions from file").color(NamedTextColor.DARK_AQUA));
+    LOAD(Component.text("Loads all regions from file").color(NamedTextColor.DARK_AQUA)),
+    IMPORT(Component.text("Imports regions from another plugin").color(NamedTextColor.DARK_PURPLE));
 
 
     private final Component info;

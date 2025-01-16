@@ -3,6 +3,18 @@ version: '${version}'
 main: de.t14d3.zones.Zones
 api-version: '1.21'
 bootstrapper: de.t14d3.zones.PaperBootstrap
+dependencies:
+  server:
+    WorldGuard:
+      join-classpath: true
+    PlaceholderAPI:
+      join-classpath: true
+    WorldEdit:
+      join-classpath: true
+    FastAsyncWorldEdit:
+      join-classpath: true
+
+
 permissions:
   zones.info:
     description: Allow players to view region information

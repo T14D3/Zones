@@ -5,7 +5,6 @@ import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.Zones;
 import de.t14d3.zones.integrations.WorldGuardImporter;
-import de.t14d3.zones.utils.Actions;
 import de.t14d3.zones.utils.Direction;
 import de.t14d3.zones.utils.Messages;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -327,11 +326,11 @@ public class CommandListener {
         if (sender instanceof Player) {
             player = (Player) sender;
         }
-        if (!sender.hasPermission("zones.info.other") && (player != null && !this.plugin.getPermissionManager().isAdmin(player.getUniqueId().toString(), regions.get(regionKey)))) {
+        if (!sender.hasPermission("zones.info.other") && (player != null && !regions.get(regionKey).isMember(player.getUniqueId()))) {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
             return;
         }
-        regionInfo(regions.entrySet().stream().filter(entry -> entry.getKey().equals(regionKey)).findFirst().get(), true)
+        regionInfo(regions.entrySet().stream().filter(entry -> entry.getKey().equals(regionKey)).findFirst().get(), regions.get(regionKey).isAdmin(player.getUniqueId()))
                 .thenAccept(sender::sendMessage);
 
     }

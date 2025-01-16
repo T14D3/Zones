@@ -61,6 +61,10 @@ public class Command {
                                         case "LIST", "CANCEL", "CREATE", "SAVE", "LOAD" -> {
                                             return builder.buildFuture();
                                         }
+                                        case "IMPORT" -> {
+                                            builder.suggest("worldguard", MessageComponentSerializer.message().serialize(Component.text("Imports regions from WorldGuard")));
+                                            return builder.buildFuture();
+                                        }
                                         default -> {
                                         }
                                     }
