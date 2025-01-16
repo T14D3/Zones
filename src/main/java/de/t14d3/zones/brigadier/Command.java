@@ -94,7 +94,8 @@ public class Command {
                                                     }
                                                 }
                                                 for (Map.Entry<String, Region> region : Zones.getInstance().getRegionManager().regions().entrySet()) {
-                                                    if (!ctx.getInput().split(" ")[2].equalsIgnoreCase(region.getKey())) {
+                                                    String[] args = ctx.getInput().split(" ");
+                                                    if (args.length <= 2 || !args[2].equalsIgnoreCase(region.getKey())) {
                                                         continue;
                                                     }
                                                     if (ctx.getSource().getSender().hasPermission("zones.info.other")
