@@ -36,7 +36,6 @@ public final class Zones extends JavaPlugin {
     private CommandListener commandListener;
 
     @Override
-    @SuppressWarnings("UnstableApiUsage")
     public void onEnable() {
         instance = this;
         // Initialize PermissionManager first without RegionManager
@@ -81,13 +80,6 @@ public final class Zones extends JavaPlugin {
         // Populate Types
         types = new Types();
         types.populateTypes();
-
-        // Register command executor and tab completer
-//        LifecycleEventManager<Plugin> manager = this.getLifecycleManager();
-//        manager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
-//            final Commands commands = event.registrar();
-//            commands.register("zone", commandListener);
-//        });
 
 
         this.commandListener = new CommandListener(this, regionManager);

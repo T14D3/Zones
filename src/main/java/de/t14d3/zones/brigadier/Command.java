@@ -20,9 +20,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+@SuppressWarnings("UnstableApiUsage")
 public class Command {
 
-    @SuppressWarnings("UnstableApiUsage")
     public static LiteralCommandNode<CommandSourceStack> node() {
         return Commands.literal("zone")
                 .then(Commands.argument("subcommand", new SubCommandArgument())

@@ -41,6 +41,7 @@ public class CommandListener {
         this.pm = plugin.getPermissionManager();
     }
 
+    @SuppressWarnings("UnstableApiUsage")
     public void execute(CommandSourceStack stack, String arg) {
         String[] args = arg.replaceFirst("zone ", "").split(" ");
         stack.getSender().sendMessage(String.join(", ", args));
@@ -133,13 +134,9 @@ public class CommandListener {
                 }
                 break;
             default:
-                stack.getSender().sendMessage(miniMessage.deserialize(messages.get("commands.invalid")));
+                sender.sendMessage(miniMessage.deserialize(messages.get("commands.invalid")));
                 break;
         }
-    }
-
-    public void def(CommandSender sender, String[] args) {
-        sender.sendMessage(miniMessage.deserialize(messages.get("commands.invalid")));
     }
 
     public void handleDeleteCommand(CommandSender sender, String[] args) {

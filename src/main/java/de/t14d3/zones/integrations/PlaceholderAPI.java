@@ -9,6 +9,7 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.UUID;
 
 public class PlaceholderAPI extends PlaceholderExpansion {
     private final Zones plugin;
@@ -79,16 +80,21 @@ public class PlaceholderAPI extends PlaceholderExpansion {
         }
         if (params.equalsIgnoreCase("get_members")) {
             final String[] members = {""};
-            regions.get(0).getMembers().keySet().forEach(uuid -> {
-                        String member = Bukkit.getOfflinePlayer(uuid).getName() != null ? Bukkit.getOfflinePlayer(uuid).getName() : uuid.toString();
+            regions.get(0).getMembers().keySet().forEach(val -> {
+                String member;
+                try {
+                    UUID uuid = UUID.fromString(val);
+                    member = Bukkit.getOfflinePlayer(uuid).getName() != null ? Bukkit.getOfflinePlayer(uuid).getName() : String.valueOf(uuid);
+                } catch (IllegalArgumentException ignored) {
+                    member = val;
+                }
 
-                        if (members[0].isEmpty()) {
-                            members[0] = member;
-                        } else {
-                            members[0] = members[0] + ", " + member;
-                        }
-                    }
-            );
+                if (members[0].isEmpty()) {
+                    members[0] = member;
+                } else {
+                    members[0] = members[0] + ", " + member;
+                }
+            });
             return members[0];
         }
         if (params.equalsIgnoreCase("get_owner")) {
