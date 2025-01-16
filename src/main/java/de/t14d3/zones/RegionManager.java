@@ -19,13 +19,13 @@ public class RegionManager {
 
     private final File regionsFile;
     private final FileConfiguration regionsConfig;
-    final PermissionManager permissionManager;
+    final PermissionManager pm;
     private final Zones plugin;
     Map<String, Region> loadedRegions = new HashMap<>();
     public Map<Location, List<String>> regionCache = new HashMap<>();
 
     public RegionManager(Zones plugin, PermissionManager permissionManager) {
-        this.permissionManager = permissionManager;
+        this.pm = permissionManager;
         this.plugin = plugin;
 
         regionsFile = new File(plugin.getDataFolder(), "regions.yml");
@@ -56,7 +56,7 @@ public class RegionManager {
         } catch (IOException e) {
             plugin.getLogger().severe("Failed to save regions.yml");
         }
-        permissionManager.invalidateAllCaches();
+        pm.invalidateInteractionCaches();
         regionCache.clear();
     }
 
@@ -84,12 +84,12 @@ public class RegionManager {
                 Location max = loadLocation("regions." + key + ".max");
                 String parent = regionsConfig.getString("regions." + key + ".parent");
 
-                Map<UUID, Map<String, String>> members = loadMembers(key);
+                Map<String, Map<String, String>> members = loadMembers(key);
                 Region region = new Region(name != null ? name : "Invalid Name", min, max, members, key, parent);
                 loadedRegions.put(key, region);
             }
             regionCache.clear();
-            permissionManager.invalidateAllCaches();
+            pm.invalidateInteractionCaches();
         }
         return CompletableFuture.completedFuture(null);
     }
@@ -103,16 +103,15 @@ public class RegionManager {
         return this.loadedRegions;
     }
 
-    private Map<UUID, Map<String, String>> loadMembers(String key) {
-        Map<UUID, Map<String, String>> members = new HashMap<>();
+    private Map<String, Map<String, String>> loadMembers(String key) {
+        Map<String, Map<String, String>> members = new HashMap<>();
         if (regionsConfig.contains("regions." + key + ".members")) {
             for (String uuidStr : regionsConfig.getConfigurationSection("regions." + key + ".members").getKeys(false)) {
-                UUID uuid = UUID.fromString(uuidStr);
                 Map<String, String> permissions = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
                 for (String perm : regionsConfig.getConfigurationSection("regions." + key + ".members." + uuidStr).getKeys(false)) {
                     permissions.put(perm, regionsConfig.getString("regions." + key + ".members." + uuidStr + "." + perm));
                 }
-                members.put(uuid, permissions);
+                members.put(uuidStr, permissions);
             }
         }
         return members;
@@ -132,9 +131,9 @@ public class RegionManager {
         triggerSave();
     }
 
-    private void saveMembers(String key, Map<UUID, Map<String, String>> members) {
-        for (Map.Entry<UUID, Map<String, String>> entry : members.entrySet()) {
-            String uuid = entry.getKey().toString();
+    private void saveMembers(String key, Map<String, Map<String, String>> members) {
+        for (Map.Entry<String, Map<String, String>> entry : members.entrySet()) {
+            String uuid = entry.getKey();
             for (Map.Entry<String, String> perm : entry.getValue().entrySet()) {
                 regionsConfig.set("regions." + key + ".members." + uuid + "." + perm.getKey(), perm.getValue());
             }
@@ -166,7 +165,7 @@ public class RegionManager {
     public void deleteRegion(String regionKey) {
         regions().remove(regionKey);
         triggerSave();
-        permissionManager.invalidateAllCaches();
+        pm.invalidateInteractionCaches();
     }
 
     /**
@@ -186,14 +185,14 @@ public class RegionManager {
             regionKey = UUID.randomUUID().toString().substring(0, 8);
         } while (regions().containsKey(regionKey));
 
-        Map<UUID, Map<String, String>> members = new HashMap<>();
+        Map<String, Map<String, String>> members = new HashMap<>();
         Region newRegion = new Region(name, min, max, members, regionKey);
 
         ownerPermissions.forEach((permission, value) -> {
             newRegion.addMemberPermission(playerUUID, permission, value, this);
         });
 
-        permissionManager.invalidateAllCaches();
+        pm.invalidateInteractionCaches();
         saveRegion(regionKey, newRegion);
         loadedRegions.put(regionKey, newRegion);
         return regionKey;
@@ -261,14 +260,14 @@ public class RegionManager {
             regionKey = UUID.randomUUID().toString().substring(0, 8);
         } while (regions().containsKey(regionKey));
 
-        Map<UUID, Map<String, String>> members = new HashMap<>();
+        Map<String, Map<String, String>> members = new HashMap<>();
         Region newRegion = new Region(name, min, max, members, regionKey, parentRegion.getKey());
 
         ownerPermissions.forEach((permission, value) -> {
             newRegion.addMemberPermission(playerUUID, permission, value, this);
         });
 
-        permissionManager.invalidateAllCaches();
+        pm.invalidateInteractionCaches();
         regionCache.clear();
         saveRegion(regionKey, newRegion);
         loadedRegions.put(regionKey, newRegion);
@@ -283,7 +282,8 @@ public class RegionManager {
      * @param key        The key of the region.
      */
     public void addMemberPermission(UUID uuid, String permission, String value, String key) {
-        permissionManager.invalidateCache(uuid);
+        pm.invalidateInteractionCache(uuid);
+        pm.invalidateCache(uuid.toString());
         Region region = this.regions().get(key);
         region.addMemberPermission(uuid, permission, value, this);
     }
@@ -464,11 +464,11 @@ public class RegionManager {
     }
 
     public Map<String, String> getMemberPermissions(Player player, Region region) {
-        return region.getMemberPermissions(player.getUniqueId());
+        return region.getMemberPermissions(player.getUniqueId().toString());
     }
 
     public Map<String, String> getMemberPermissions(UUID uuid, Region region) {
-        return region.getMemberPermissions(uuid);
+        return region.getMemberPermissions(uuid.toString());
     }
 
     /**

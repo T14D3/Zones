@@ -2,6 +2,7 @@ package de.t14d3.zones.integrations;
 
 import com.fastasyncworldedit.bukkit.regions.BukkitMaskManager;
 import com.fastasyncworldedit.core.regions.FaweMask;
+import com.fastasyncworldedit.core.util.WEManager;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import de.t14d3.zones.Region;
@@ -18,6 +19,10 @@ public class FAWEIntegration extends BukkitMaskManager {
     public FAWEIntegration(final Zones plugin) {
         super(plugin.getName());
         this.plugin = plugin;
+    }
+
+    public void register() {
+        WEManager.weManager().addManager(this);
     }
 
     public boolean isAllowed(Player player, Region region, MaskType type) {

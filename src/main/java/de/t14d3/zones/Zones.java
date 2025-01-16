@@ -1,21 +1,17 @@
 package de.t14d3.zones;
 
-import com.fastasyncworldedit.core.util.WEManager;
 import com.sk89q.worldedit.WorldEdit;
 import de.t14d3.zones.integrations.FAWEIntegration;
 import de.t14d3.zones.integrations.PlaceholderAPI;
 import de.t14d3.zones.integrations.WorldEditSession;
 import de.t14d3.zones.integrations.WorldGuardImporter;
+import de.t14d3.zones.listeners.ChunkEventListener;
 import de.t14d3.zones.listeners.CommandListener;
 import de.t14d3.zones.listeners.PlayerInteractListener;
 import de.t14d3.zones.listeners.PlayerQuitListener;
 import de.t14d3.zones.utils.*;
-import io.papermc.paper.command.brigadier.Commands;
-import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
-import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import it.unimi.dsi.fastutil.Pair;
 import org.bukkit.Location;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.BoundingBox;
 
@@ -38,9 +34,14 @@ public final class Zones extends JavaPlugin {
     private Types types;
     private Messages messages;
     private static Zones instance;
+    private CommandListener commandListener;
+    private PaperBootstrap bootstrap;
+
+    public Zones(PaperBootstrap bootstrap) {
+        this.bootstrap = bootstrap;
+    }
 
     @Override
-    @SuppressWarnings("UnstableApiUsage")
     public void onEnable() {
         instance = this;
         // Initialize PermissionManager first without RegionManager
@@ -80,18 +81,14 @@ public final class Zones extends JavaPlugin {
         // Register listeners
         this.getServer().getPluginManager().registerEvents(new PlayerInteractListener(regionManager, permissionManager, this), this);
         this.getServer().getPluginManager().registerEvents(new PlayerQuitListener(this), this);
+        this.getServer().getPluginManager().registerEvents(new ChunkEventListener(this), this);
 
         // Populate Types
         types = new Types();
         types.populateTypes();
 
-        // Register command executor and tab completer
-        LifecycleEventManager<Plugin> manager = this.getLifecycleManager();
-        manager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
-            final Commands commands = event.registrar();
-            commands.register("zone", new CommandListener(this, regionManager));
-        });
 
+        this.commandListener = new CommandListener(this, regionManager);
         // Register saving task
         if (getSavingMode() == Utils.SavingModes.PERIODIC) {
             getServer().getScheduler().runTaskTimerAsynchronously(this, () -> {
@@ -106,7 +103,7 @@ public final class Zones extends JavaPlugin {
         }
 
         if (getServer().getPluginManager().getPlugin("FastAsyncWorldEdit") != null) {
-            WEManager.weManager().addManager(new FAWEIntegration(this));
+            new FAWEIntegration(this).register();
             getLogger().info("FAWE Integration enabled.");
         } else if (getServer().getPluginManager().getPlugin("WorldEdit") != null) {
             WorldEdit.getInstance().getEventBus().register(new WorldEditSession(this));
@@ -127,13 +124,17 @@ public final class Zones extends JavaPlugin {
         regionManager.regions().clear();
         regionManager.loadedRegions.clear();
         regionManager.regionCache.clear();
-        permissionManager.invalidateAllCaches();
+        permissionManager.invalidateInteractionCaches();
+        permissionManager.invalidateCaches();
         getLogger().info("Zones plugin is disabling and regions are saved.");
     }
 
     // Getters
     public RegionManager getRegionManager() { return regionManager; }
-    public PermissionManager getPermissionManager() {return permissionManager; }
+
+    public PermissionManager getPermissionManager() {
+        return permissionManager;
+    }
 
     public Messages getMessages() {
         return messages;
@@ -153,5 +154,9 @@ public final class Zones extends JavaPlugin {
 
     public static Zones getInstance() {
         return instance;
+    }
+
+    public CommandListener getCommandListener() {
+        return commandListener;
     }
 }
