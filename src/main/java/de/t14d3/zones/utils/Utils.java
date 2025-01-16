@@ -1,7 +1,9 @@
 package de.t14d3.zones.utils;
 
 import de.t14d3.zones.Zones;
+import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Container;
 import org.bukkit.block.data.BlockData;
@@ -10,8 +12,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Utility methods for the plugin.
@@ -20,6 +21,9 @@ import java.util.Map;
  */
 public class Utils {
     private final Zones plugin;
+
+    public static List<OfflinePlayer> offlinePlayers = new ArrayList<>();
+    public static Map<UUID, String> playerNames = new HashMap<>();
 
     /**
      * Constructor for Utility methods.
@@ -75,4 +79,40 @@ public class Utils {
         flags.put("group", "Add a group to the player");
         return flags;
     }
+
+    public void populatePlayers() {
+        offlinePlayers.addAll(Arrays.asList(Bukkit.getOfflinePlayers()));
+        for (OfflinePlayer player : offlinePlayers) {
+            playerNames.put(player.getUniqueId(), player.getName());
+        }
+    }
+
+    public static OfflinePlayer getOfflinePlayer(UUID uuid) {
+        for (OfflinePlayer player : offlinePlayers) {
+            if (player.getUniqueId().equals(uuid)) {
+                return player;
+            }
+        }
+        offlinePlayers.add(Bukkit.getOfflinePlayer(uuid));
+        return Bukkit.getOfflinePlayer(uuid);
+    }
+
+    public static String getPlayerName(UUID uuid) {
+        if (playerNames.containsKey(uuid)) {
+            return playerNames.get(uuid);
+        }
+        OfflinePlayer player = getOfflinePlayer(uuid);
+        playerNames.put(uuid, player.getName());
+        return player.getName();
+    }
+
+    public static List<OfflinePlayer> getOfflinePlayers() {
+        return offlinePlayers;
+    }
+
+    public static List<String> getPlayerNames() {
+        return new ArrayList<>(playerNames.values());
+    }
+
+
 }

@@ -4,6 +4,7 @@ import de.t14d3.zones.PermissionManager;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.Zones;
+import de.t14d3.zones.integrations.WorldGuardImporter;
 import de.t14d3.zones.utils.Direction;
 import de.t14d3.zones.utils.Messages;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -128,6 +129,13 @@ public class CommandListener {
             case "rename":
                 if (sender.hasPermission("zones.rename")) {
                     handleRenameCommand(sender, args);
+                } else {
+                    sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
+                }
+                break;
+            case "import":
+                if (sender.hasPermission("zones.import")) {
+                    handleImportCommand(sender, args);
                 } else {
                     sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
                 }
@@ -275,14 +283,15 @@ public class CommandListener {
         if (sender instanceof Player) {
             player = (Player) sender;
         }
+        boolean perm = sender.hasPermission("zones.info.other");
         for (Map.Entry<String, Region> entry : regions.entrySet()) {
-            if (!sender.hasPermission("zones.info.other") && (player != null && !entry.getValue().isMember(player.getUniqueId()))) {
+            if (!perm && (player != null && !entry.getValue().isMember(player.getUniqueId()))) {
                 continue;
             }
 
             Component hoverText = regionInfo(
                     entry,
-                    (sender.hasPermission("zones.info.other") ||
+                    (perm ||
                             (player != null && this.plugin.getPermissionManager().isAdmin(player.getUniqueId().toString(), regions.get(entry.getKey())))))
                     .join();
             var mm = MiniMessage.miniMessage();
@@ -318,11 +327,11 @@ public class CommandListener {
         if (sender instanceof Player) {
             player = (Player) sender;
         }
-        if (!sender.hasPermission("zones.info.other") && (player != null && !this.plugin.getPermissionManager().isAdmin(player.getUniqueId().toString(), regions.get(regionKey)))) {
+        if (!sender.hasPermission("zones.info.other") && (player != null && !regions.get(regionKey).isMember(player.getUniqueId()))) {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
             return;
         }
-        regionInfo(regions.entrySet().stream().filter(entry -> entry.getKey().equals(regionKey)).findFirst().get(), true)
+        regionInfo(regions.entrySet().stream().filter(entry -> entry.getKey().equals(regionKey)).findFirst().get(), regions.get(regionKey).isAdmin(player.getUniqueId()))
                 .thenAccept(sender::sendMessage);
 
     }
@@ -427,7 +436,7 @@ public class CommandListener {
 
     public void handleLoadCommand(CommandSender sender) {
         regionManager.loadRegions();
-        int count = regionManager.loadedRegions.size();
+        int count = regionManager.regions().size();
         sender.sendMessage(miniMessage.deserialize(messages.get("commands.load"), parsed("count", String.valueOf(count))));
     }
 
@@ -457,6 +466,22 @@ public class CommandListener {
                 plugin.particles.remove(player.getUniqueId());
                 player.sendMessage(miniMessage.deserialize(messages.get("commands.select.deselected")));
             }
+        }
+    }
+
+    private void handleImportCommand(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage(miniMessage.deserialize(messages.get("commands.import.no-plugin")));
+            return;
+        }
+        if (args[1].equalsIgnoreCase("worldguard")) {
+            if (plugin.getServer().getPluginManager().getPlugin("WorldGuard") == null) {
+                sender.sendMessage(miniMessage.deserialize(messages.get("commands.import.not-loaded"), parsed("plugin", "WorldGuard")));
+                return;
+            }
+            WorldGuardImporter worldGuardImporter = new WorldGuardImporter(plugin);
+            worldGuardImporter.importRegions();
+            sender.sendMessage(miniMessage.deserialize(messages.get("commands.import.success")));
         }
     }
 

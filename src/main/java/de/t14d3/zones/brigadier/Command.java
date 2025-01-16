@@ -7,14 +7,13 @@ import de.t14d3.zones.PaperBootstrap;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.Zones;
 import de.t14d3.zones.utils.Flags;
+import de.t14d3.zones.utils.Utils;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.MessageComponentSerializer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
@@ -61,6 +60,10 @@ public class Command {
                                         case "LIST", "CANCEL", "CREATE", "SAVE", "LOAD" -> {
                                             return builder.buildFuture();
                                         }
+                                        case "IMPORT" -> {
+                                            builder.suggest("worldguard", MessageComponentSerializer.message().serialize(Component.text("Imports regions from WorldGuard")));
+                                            return builder.buildFuture();
+                                        }
                                         default -> {
                                         }
                                     }
@@ -88,22 +91,22 @@ public class Command {
                                                 return builder.buildFuture();
                                             }
                                             if (arg(ctx, 1).equalsIgnoreCase("SET")) {
-                                                for (OfflinePlayer offlinePlayer : Bukkit.getOfflinePlayers()) {
-                                                    if (ctx.getInput().split(" ").length <= 3 || (offlinePlayer.getName() != null ? offlinePlayer.getName() : offlinePlayer.getUniqueId().toString()).toLowerCase().startsWith(arg(ctx, 3).toLowerCase())) {
-                                                        builder.suggest(offlinePlayer.getName());
+                                                Utils.getPlayerNames().forEach(name -> {
+                                                    if (ctx.getInput().split(" ").length <= 3 || name.toLowerCase().startsWith(arg(ctx, 3).toLowerCase())) {
+                                                        builder.suggest(name);
                                                     }
-                                                }
+                                                });
+                                                boolean perm = ctx.getSource().getSender().hasPermission("zones.info.other");
                                                 for (Map.Entry<String, Region> region : Zones.getInstance().getRegionManager().regions().entrySet()) {
                                                     String[] args = ctx.getInput().split(" ");
                                                     if (args.length <= 2 || !args[2].equalsIgnoreCase(region.getKey())) {
                                                         continue;
                                                     }
-                                                    if (ctx.getSource().getSender().hasPermission("zones.info.other")
-                                                            || (ctx.getSource().getSender() instanceof Player player && region.getValue().isAdmin(player.getUniqueId()))) {
+                                                    if (perm || (ctx.getSource().getSender() instanceof Player player && region.getValue().isAdmin(player.getUniqueId()))) {
                                                         region.getValue().getGroupNames().forEach(group -> {
                                                             List<String> groupMembers = new ArrayList<>();
                                                             region.getValue().getGroupMembers(group).forEach(val -> {
-                                                                groupMembers.add(Bukkit.getOfflinePlayer(UUID.fromString(val)).getName());
+                                                                groupMembers.add(Utils.getPlayerName(UUID.fromString(val)));
                                                             });
                                                             if (ctx.getInput().split(" ").length <= 3
                                                                     || group.toLowerCase().startsWith(arg(ctx, 3).toLowerCase())
@@ -148,12 +151,12 @@ public class Command {
                                                                 case "IGNITE" -> types = List.of("TRUE", "FALSE");
                                                                 case "GROUP" -> {
                                                                     types = new ArrayList<>();
+                                                                    boolean perm = ctx.getSource().getSender().hasPermission("zones.info.other");
                                                                     for (Map.Entry<String, Region> region : Zones.getInstance().getRegionManager().regions().entrySet()) {
                                                                         if (!ctx.getInput().split(" ")[2].equalsIgnoreCase(region.getKey())) {
                                                                             continue;
                                                                         }
-                                                                        if (ctx.getSource().getSender().hasPermission("zones.info.other")
-                                                                                || (ctx.getSource().getSender() instanceof Player player && region.getValue().isAdmin(player.getUniqueId()))) {
+                                                                        if (perm || (ctx.getSource().getSender() instanceof Player player && region.getValue().isAdmin(player.getUniqueId()))) {
                                                                             types.addAll(region.getValue().getGroupNames());
                                                                         }
                                                                     }

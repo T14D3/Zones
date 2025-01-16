@@ -35,6 +35,7 @@ public final class Zones extends JavaPlugin {
     private static Zones instance;
     private CommandListener commandListener;
     private PaperBootstrap bootstrap;
+    private Utils utils;
 
     public Zones(PaperBootstrap bootstrap) {
         this.bootstrap = bootstrap;
@@ -56,6 +57,8 @@ public final class Zones extends JavaPlugin {
         this.beaconUtils = new BeaconUtils(this);
         this.particleHandler = new ParticleHandler(this);
         particleHandler.particleScheduler();
+        this.utils = new Utils(this);
+        utils.populatePlayers();
 
         // Load regions from regions.yml
         regionManager.loadRegions();
@@ -108,7 +111,6 @@ public final class Zones extends JavaPlugin {
             WorldEdit.getInstance().getEventBus().register(new WorldEditSession(this));
             getLogger().info("WorldEdit Integration enabled.");
         }
-
         getLogger().info("Zones plugin has been enabled! Loaded " + regionManager.loadedRegions.size() + " regions.");
     }
 
@@ -141,6 +143,10 @@ public final class Zones extends JavaPlugin {
 
     public Types getTypes() {
         return this.types;
+    }
+
+    public Utils getUtils() {
+        return utils;
     }
 
     public Utils.SavingModes getSavingMode() {
