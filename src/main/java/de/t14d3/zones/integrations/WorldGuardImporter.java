@@ -40,10 +40,10 @@ public class WorldGuardImporter {
                     String name = entry.getKey();
                     Location min = BukkitAdapter.adapt(world, region.getMinimumPoint());
                     Location max = BukkitAdapter.adapt(world, region.getMaximumPoint());
-                    Map<UUID, Map<String, String>> members = new HashMap<>();
+                    Map<String, Map<String, String>> members = new HashMap<>();
 
-                    region.getMembers().getUniqueIds().forEach(uuid -> members.put(uuid, Map.of("role", "member")));
-                    region.getOwners().getUniqueIds().forEach(uuid -> members.put(uuid, Map.of("role", "owner")));
+                    region.getMembers().getUniqueIds().forEach(uuid -> members.put(uuid.toString(), Map.of("role", "member")));
+                    region.getOwners().getUniqueIds().forEach(uuid -> members.put(uuid.toString(), Map.of("role", "owner")));
 
                     Region newRegion = plugin.getRegionManager().createNewRegion(key, name, min, max, members);
                     plugin.getRegionManager().addRegion(newRegion);

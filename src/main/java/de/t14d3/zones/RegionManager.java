@@ -223,7 +223,7 @@ public class RegionManager {
      * @param members The members of the new region.
      * @return The newly created region.
      */
-    public Region createNewRegion(String key, String name, Location min, Location max, Map<UUID, Map<String, String>> members) {
+    public Region createNewRegion(String key, String name, Location min, Location max, Map<String, Map<String, String>> members) {
         Region region = new Region(name, min, max, members, key);
         saveRegion(key, region);
         return region;
