@@ -184,14 +184,14 @@ public class PermissionManager {
                 return hasPermission(who, permission, type, region.getParentRegion(this.regionManager));
             }
             if (permissions.containsKey("group")) {
-                if (who.startsWith(":group-") && !Zones.getInstance().getConfig().getBoolean("allow-group-recursion", false)) {
+                if (who.startsWith("+group-") && !Zones.getInstance().getConfig().getBoolean("allow-group-recursion", false)) {
                     Zones.getInstance().getLogger().severe("Recursive group permissions detected!! Groups are not allowed to contain other groups!");
                     Zones.getInstance().getLogger().severe("Group '" + who.substring(7) + "' contains 'group' permission entry in region '" + region.getKey() + "'");
                     Zones.getInstance().getLogger().severe("If you are 100% sure this is fine, add 'allow-group-recursion: true' to your config.yml");
                     return false;
                 }
                 for (String group : permissions.get("group").split(",")) {
-                    return hasPermission(":group-" + group, permission, type, region);
+                    return hasPermission("+group-" + group, permission, type, region);
                 }
             }
             // Nothing found, deny access
@@ -203,6 +203,7 @@ public class PermissionManager {
         // Analyze permission values
         boolean explicitAllow = false;
         boolean explicitDeny = false;
+        boolean result = false;
 
         if (value != null) {
             for (String permittedValue : value.split(",")) {
@@ -210,31 +211,24 @@ public class PermissionManager {
 
                 // Check for wildcard allow
                 if ("*".equals(permittedValue) || "true".equalsIgnoreCase(permittedValue)) {
-                    explicitAllow = true;
+                    result = true;
                 }
                 // Check for wildcard deny
-                else if ("! *".equals(permittedValue) || "false".equalsIgnoreCase(permittedValue)) {
-                    explicitDeny = true;
+                else if ("!*".equals(permittedValue) || "false".equalsIgnoreCase(permittedValue)) {
+                    result = false;
                 }
                 // Check for specific type allow
                 else if (permittedValue.equalsIgnoreCase(type)) {
-                    explicitAllow = true;
+                    result = true;
                 }
                 // Check for specific type deny
                 else if (permittedValue.equalsIgnoreCase("!" + type)) {
-                    explicitDeny = true;
+                    result = false;
                 }
             }
         }
 
-        // Determine final access based on explicit allow/deny flags
-        if (explicitDeny) {
-            return false;
-        } else if (explicitAllow) {
-            return true;
-        }
-        // Deny by default
-        return false;
+        return result;
     }
 
     public boolean isAdmin(String who, Region region) {

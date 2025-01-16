@@ -4,10 +4,8 @@ import de.t14d3.zones.PermissionManager;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.Zones;
-import de.t14d3.zones.utils.Actions;
 import de.t14d3.zones.utils.Direction;
 import de.t14d3.zones.utils.Messages;
-import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import it.unimi.dsi.fastutil.Pair;
 import net.kyori.adventure.text.Component;
@@ -21,7 +19,6 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.util.BoundingBox;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -29,8 +26,7 @@ import java.util.concurrent.CompletableFuture;
 import static de.t14d3.zones.utils.BeaconUtils.resetBeacon;
 import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
 
-@SuppressWarnings("UnstableApiUsage")
-public class CommandListener implements BasicCommand {
+public class CommandListener {
 
     private final Zones plugin;
     private final RegionManager regionManager;
@@ -45,12 +41,9 @@ public class CommandListener implements BasicCommand {
         this.pm = plugin.getPermissionManager();
     }
 
-    @Override
-    public void execute(CommandSourceStack stack, String[] args) {
-        if (args.length < 1) {
-            stack.getSender().sendMessage(miniMessage.deserialize(messages.get("commands.invalid")));
-            return;
-        }
+    @SuppressWarnings("UnstableApiUsage")
+    public void execute(CommandSourceStack stack, String arg) {
+        String[] args = arg.replaceFirst("zone ", "").replaceFirst("zones:", "").split(" ");
         CommandSender sender = stack.getSender();
 
         String command = args[0].toLowerCase();
@@ -106,14 +99,14 @@ public class CommandListener implements BasicCommand {
                 break;
             case "save":
                 if (sender.hasPermission("zones.save")) {
-                    handleSaveCommand(sender, args);
+                    handleSaveCommand(sender);
                 } else {
                     sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
                 }
                 break;
             case "load":
                 if (sender.hasPermission("zones.load")) {
-                    handleLoadCommand(sender, args);
+                    handleLoadCommand(sender);
                 } else {
                     sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
                 }
@@ -140,111 +133,12 @@ public class CommandListener implements BasicCommand {
                 }
                 break;
             default:
-                stack.getSender().sendMessage(miniMessage.deserialize(messages.get("commands.invalid")));
+                sender.sendMessage(miniMessage.deserialize(messages.get("commands.invalid")));
                 break;
         }
     }
 
-    @Override
-    public @NotNull Collection<String> suggest(@NotNull CommandSourceStack stack, String[] args) {
-        if (args.length <= 1) {
-            List<String> suggestions = new ArrayList<>();
-            for (String command : List.of("info", "delete", "create", "subcreate", "cancel", "list", "set", "load", "save", "expand", "select")) {
-                if (stack.getSender().hasPermission("zones." + command)
-                        && (args.length == 0 || command.startsWith(args[0].toLowerCase()))) {
-                    suggestions.add(command);
-                }
-            }
-            return suggestions;
-        }
-        if (stack.getSender() instanceof Player player) {
-            if (args.length == 2 && (args[0].equalsIgnoreCase("info")
-                    || args[0].equalsIgnoreCase("delete")
-                    || args[0].equalsIgnoreCase("subcreate")
-                    || args[0].equalsIgnoreCase("expand")
-                    || args[0].equalsIgnoreCase("select")
-                    || args[0].equalsIgnoreCase("set")
-                    || args[0].equalsIgnoreCase("rename"))) {
-                List<String> suggestions = new ArrayList<>();
-                regionManager.regions().forEach((regionKey, region) -> {
-                    if (region.isAdmin(player.getUniqueId()) && regionKey.startsWith(args[1])) {
-                        suggestions.add(regionKey);
-                    }
-                });
-                return suggestions;
-            }
-            if (args[0].equalsIgnoreCase("set")) {
-                Region region = plugin.getRegionManager().regions().get(args[1]);
-                if (args.length == 3) {
-                    List<String> suggestions = new ArrayList<>();
-                    for (OfflinePlayer offlinePlayer : Bukkit.getOfflinePlayers()) {
-                        if (offlinePlayer.getName() != null && offlinePlayer.getName().toLowerCase().startsWith(args[2].toLowerCase())) {
-                            suggestions.add(offlinePlayer.getName());
-                        }
-                    }
-                    if (region != null && region.isAdmin(player.getUniqueId())) {
-                        suggestions.addAll(region.getGroupNames());
-                    }
-                    return suggestions;
-                }
-                if (args.length == 4) {
-                    List<String> suggestions = new ArrayList<>();
-                    for (Actions action : Actions.values()) {
-                        if (action.name().toLowerCase().startsWith(args[3].toLowerCase())) {
-                            String who;
-                            if (args[2].startsWith(":")) {
-                                who = args[2];
-                            } else {
-                                who = Bukkit.getOfflinePlayer(args[2]).getUniqueId().toString();
-                            }
-                            String temp = action.name();
-                            if (region.getMemberPermissions(who).get(action.name()) != null) {
-                                temp += " " + region.getMemberPermissions(who).get(action.name()).replace(",", "").toLowerCase();
-                            }
-                            suggestions.add(temp);
-                        }
-                    }
-                    return suggestions;
-                }
-                if (args.length >= 5) {
-                    List<String> suggestions = new ArrayList<>();
-                    List<String> types;
-                    switch (args[3].toUpperCase()) {
-                        case "PLACE", "BREAK" -> types = plugin.getTypes().blockTypes;
-                        case "CONTAINER" -> types = plugin.getTypes().containerTypes;
-                        case "REDSTONE" -> types = plugin.getTypes().redstoneTypes;
-                        case "ENTITY", "DAMAGE" -> types = plugin.getTypes().entityTypes;
-                        case "IGNITE" -> {
-                            types = List.of("TRUE", "FALSE");
-                        }
-                        default -> types = plugin.getTypes().allTypes;
-
-                    }
-                    for (String value : types) {
-                        if (value.toLowerCase().startsWith(args[4].toLowerCase())) {
-                            suggestions.add(value);
-                        }
-                    }
-                    return suggestions;
-                }
-            }
-            if (args[0].equalsIgnoreCase("expand")) {
-                if (args.length == 3) {
-                    List<String> suggestions = new ArrayList<>();
-                    for (int i = 1; i < 10; i++) {
-                        suggestions.add(String.valueOf(i));
-                    }
-                    return suggestions;
-                }
-                if (args.length == 4 && stack.getSender().hasPermission("zones.expand.overlap")) {
-                    return List.of("overlap");
-                }
-            }
-        }
-        return List.of();
-    }
-
-    private void handleDeleteCommand(CommandSender sender, String[] args) {
+    public void handleDeleteCommand(CommandSender sender, String[] args) {
         if (args.length < 2) {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.invalid-region")));
             return;
@@ -267,7 +161,7 @@ public class CommandListener implements BasicCommand {
         regionManager.triggerSave();
     }
 
-    private void handleCreateCommand(CommandSender sender) {
+    public void handleCreateCommand(CommandSender sender) {
         if (sender instanceof Player player) {
             if (!plugin.selection.containsKey(player.getUniqueId())) {
                 plugin.selection.put(player.getUniqueId(), Pair.of(null, null));
@@ -298,7 +192,7 @@ public class CommandListener implements BasicCommand {
         }
     }
 
-    private void handleSubCreateCommand(CommandSender sender, String[] args) {
+    public void handleSubCreateCommand(CommandSender sender, String[] args) {
         if (sender instanceof Player player) {
             if (!plugin.selection.containsKey(player.getUniqueId())) {
                 plugin.selection.put(player.getUniqueId(), Pair.of(null, null));
@@ -354,7 +248,7 @@ public class CommandListener implements BasicCommand {
         }
     }
 
-    private void handleCancelCommand(CommandSender sender) {
+    public void handleCancelCommand(CommandSender sender) {
         if (sender instanceof Player player) {
             if (plugin.selection.containsKey(player.getUniqueId())) {
                 Pair<Location, Location> selection = plugin.selection.get(player.getUniqueId());
@@ -371,7 +265,7 @@ public class CommandListener implements BasicCommand {
         }
     }
 
-    private void handleListCommand(CommandSender sender) {
+    public void handleListCommand(CommandSender sender) {
         Map<String, Region> regions = regionManager.regions();
         if (regions.isEmpty()) {
             sender.sendMessage(miniMessage.deserialize(messages.get("region.none-found")));
@@ -402,7 +296,7 @@ public class CommandListener implements BasicCommand {
         }
     }
 
-    private void handleInfoCommand(CommandSender sender, String[] args) {
+    public void handleInfoCommand(CommandSender sender, String[] args) {
         String regionKey;
         if (args.length < 2) {
             if (sender instanceof Player player) {
@@ -433,9 +327,9 @@ public class CommandListener implements BasicCommand {
 
     }
 
-    private void handleSetCommand(CommandSender sender, String[] args) {
+    public void handleSetCommand(CommandSender sender, String[] args) {
 
-        if (args.length < 4) {
+        if (args.length < 5) {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.set.invalid-usage")));
             return;
         }
@@ -445,13 +339,16 @@ public class CommandListener implements BasicCommand {
         if (sender instanceof Player) {
             player = (Player) sender;
         }
-        if (region == null || (player != null && !pm.hasPermission(player.getUniqueId(), "role", "owner", region))) {
+        if (region == null || (player != null && !pm.hasPermission(player.getUniqueId(), "role", "owner", region) && !player.hasPermission("zones.set.other"))) {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.invalid-region")));
             return;
         }
         OfflinePlayer target = Bukkit.getOfflinePlayer(args[2]);
         String permission = args[3];
-        String value = args[4];
+        // Yes, I know this is terrible.
+        // No, I will not change it.
+        List<String> arg = Arrays.stream(args).toList().subList(4, args.length);
+        String value = String.join(", ", arg);
         regionManager.addMemberPermission(target.getUniqueId(), permission, value, regionKey);
         regionManager.triggerSave();
         sender.sendMessage(miniMessage.deserialize(messages.get("commands.set.success"),
@@ -461,7 +358,7 @@ public class CommandListener implements BasicCommand {
                 parsed("value", value)));
     }
 
-    private void handleExpandCommand(CommandSender sender, String[] args) {
+    public void handleExpandCommand(CommandSender sender, String[] args) {
         if (args.length < 2) {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.invalid-region")));
             return;
@@ -495,7 +392,7 @@ public class CommandListener implements BasicCommand {
         }
     }
 
-    private void handleRenameCommand(CommandSender sender, String[] args) {
+    public void handleRenameCommand(CommandSender sender, String[] args) {
         if (args.length < 2) {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.invalid-region")));
             return;
@@ -514,26 +411,27 @@ public class CommandListener implements BasicCommand {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.rename.provide-name")));
             return;
         }
-        region.setName(args[2], regionManager);
+        String name = String.join(" ", args).substring(16).replace("\"", "").replace("'", "");
+        region.setName(name, regionManager);
         sender.sendMessage(miniMessage.deserialize(messages.get("commands.rename.success"),
                 parsed("region", regionKey),
-                parsed("name", args[2])));
+                parsed("name", name)));
 
     }
 
-    private void handleSaveCommand(CommandSender sender, String[] args) {
+    public void handleSaveCommand(CommandSender sender) {
         regionManager.saveRegions();
         int count = regionManager.regions().size();
         sender.sendMessage(miniMessage.deserialize(messages.get("commands.save"), parsed("count", String.valueOf(count))));
     }
 
-    private void handleLoadCommand(CommandSender sender, String[] args) {
+    public void handleLoadCommand(CommandSender sender) {
         regionManager.loadRegions();
         int count = regionManager.loadedRegions.size();
         sender.sendMessage(miniMessage.deserialize(messages.get("commands.load"), parsed("count", String.valueOf(count))));
     }
 
-    private void handleSelectCommand(CommandSender sender, String[] args) {
+    public void handleSelectCommand(CommandSender sender, String[] args) {
         if (sender instanceof Player player) {
             Region region;
             if (args.length == 1) {
@@ -545,7 +443,12 @@ public class CommandListener implements BasicCommand {
                     return;
                 }
             } else {
+
                 region = regionManager.regions().get(args[1]);
+            }
+            if (region == null) {
+                player.sendMessage(miniMessage.deserialize(messages.get("commands.invalid-region")));
+                return;
             }
             if (!plugin.particles.containsKey(player.getUniqueId()) || args.length >= 2) {
                 plugin.particles.put(player.getUniqueId(), BoundingBox.of(region.getMin(), region.getMax()));

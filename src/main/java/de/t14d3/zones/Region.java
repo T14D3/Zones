@@ -122,14 +122,37 @@ public class Region {
         return members;
     }
 
+    /**
+     * Get the names of all groups in this region
+     *
+     * @return List of group names
+     * @since 0.1.5
+     */
     public List<String> getGroupNames() {
         List<String> groupNames = new ArrayList<>();
         for (Map.Entry<String, Map<String, String>> entry : members.entrySet()) {
-            if (entry.getKey().startsWith(":group-")) {
+            if (entry.getKey().startsWith("+group-")) {
                 groupNames.add(entry.getKey());
             }
         }
         return groupNames;
+    }
+
+    /**
+     * Get the members of a group in this region
+     *
+     * @param group Group name
+     * @return List of members
+     * @since 0.1.6
+     */
+    public List<String> getGroupMembers(String group) {
+        List<String> groupMembers = new ArrayList<>();
+        for (Map.Entry<String, Map<String, String>> entry : members.entrySet()) {
+            if (entry.getValue().containsKey("group") && entry.getValue().get("group").contains(group.substring(7))) {
+                groupMembers.add(entry.getKey());
+            }
+        }
+        return groupMembers;
     }
 
     void setMembers(Map<String, Map<String, String>> members, RegionManager regionManager, String key) {

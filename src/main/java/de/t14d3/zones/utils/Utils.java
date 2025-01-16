@@ -10,6 +10,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Utility methods for the plugin.
  * <p>
@@ -57,5 +60,19 @@ public class Utils {
             }
             return mode;
         }
+    }
+
+    public static Map<String, String> defaultFlags() {
+        Map<String, String> flags = new HashMap<>();
+        flags.put("break", "Allows breaking blocks");
+        flags.put("place", "Allows placing blocks");
+        flags.put("interact", "Allows interacting");
+        flags.put("container", "Allows opening containers");
+        flags.put("redstone", "Allows interacting with redstone");
+        flags.put("entity", "Allows interacting with entities");
+        flags.put("ignite", "Allows igniting tnt");
+        flags.put("damage", "Allows damaging entities");
+        flags.put("group", "Add a group to the player");
+        return flags;
     }
 }
