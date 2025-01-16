@@ -283,14 +283,15 @@ public class CommandListener {
         if (sender instanceof Player) {
             player = (Player) sender;
         }
+        boolean perm = sender.hasPermission("zones.info.other");
         for (Map.Entry<String, Region> entry : regions.entrySet()) {
-            if (!sender.hasPermission("zones.info.other") && (player != null && !entry.getValue().isMember(player.getUniqueId()))) {
+            if (!perm && (player != null && !entry.getValue().isMember(player.getUniqueId()))) {
                 continue;
             }
 
             Component hoverText = regionInfo(
                     entry,
-                    (sender.hasPermission("zones.info.other") ||
+                    (perm ||
                             (player != null && this.plugin.getPermissionManager().isAdmin(player.getUniqueId().toString(), regions.get(entry.getKey())))))
                     .join();
             var mm = MiniMessage.miniMessage();

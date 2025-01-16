@@ -6,11 +6,11 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.Zones;
 import de.t14d3.zones.utils.Messages;
+import de.t14d3.zones.utils.Utils;
 import io.papermc.paper.command.brigadier.argument.CustomArgumentType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.Bukkit;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
@@ -58,7 +58,7 @@ public class RegionKeyArgument implements CustomArgumentType.Converted<Region, S
         for (Map.Entry<String, Map<String, String>> member : entry.getValue().getMembers().entrySet()) {
             String playerName = null;
             try {
-                playerName = Bukkit.getOfflinePlayer(UUID.fromString(member.getKey())).getName();
+                playerName = Utils.getPlayerName(UUID.fromString(member.getKey()));
             } catch (IllegalArgumentException ignored) {
             }
             if (playerName == null) {
