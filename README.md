@@ -22,59 +22,85 @@ The plugin provides the following commands:
 
 * `/zone create`: Creates a new region using the currently selected locations.
     * Usage: `/zone create`
-    * Requires two locations to be selected using left and right click.
-* `/zone subcreate [regionKey]`: Creates a new sub-region within an existing region using the currently selected
+  * Requires two locations to be selected using left and right click, starts selection if not present.
+  * Prevents creation if the new region would overlap an existing region, unless the `zones.create.overlap`
+    permission is set.
+* `/zone subcreate`: Creates a new sub-region within an existing region using the currently selected
   locations.
     * Usage: `/zone subcreate [regionKey]`
     * `regionKey` is optional, if not provided, the region at the player's location will be used.
-    * Requires two locations to be selected using left and right click.
-* `/zone delete <regionKey>`: Deletes an existing region.
+  * Requires two locations to be selected using left and right click, starts selection if not present.
+  * Player needs to be considered an admin in the region, or have the `zones.subcreate.other` permission
+* `/zone delete`: Deletes an existing region.
     * Usage: `/zone delete <regionKey>`
     * Requires the `regionKey` of the region to be deleted.
-* `/zone info [regionKey]`: Displays information about a region.
+  * Player needs to be the owner of the region, or have the `zones.delete.other` permission
+* `/zone expand`: Expands an existing region by a specified amount.
+  * Usage: `/zone expand <regionKey> <amount> [overlap]`
+  * Player needs to be an admin of the region, or have the `zones.expand.other` permission
+  * If `overlap` is set to `true` and the player has the `zones.expand.overlap` permission,
+  * the region will be expanded even if it overlaps with other regions.
+* `/zone info`: Displays information about a region.
     * Usage: `/zone info [regionKey]`
     * If `regionKey` is not provided, the region at the player's location will be used.
+  * To show region members, the player needs to be an admin of the region, or have the `zones.info.other` permission
 * `/zone list`: Lists all regions the player is a member of.
     * Usage: `/zone list`
+  * Only shows regions the player is a member of, unless the player has the `zones.list.other` permission
 * `/zone cancel`: Cancels the current region selection.
     * Usage: `/zone cancel`
-* `/zone set <regionKey> <player> <permission> <value>`: Sets a permission for a member of a region.
-  * Usage: `/zone set <regionKey> <player> <permission> <value>`
+* `/zone set`: Sets a permission for a member of a region.
+  * Usage: `/zone set <regionKey> <who> <permission> <value>`
   * `<regionKey>` is the key of the region.
-  * `<player>` is the name of the player.
-    * `<permission>` is the permission to set (e.g., `role`, `break`, `place`, `interact`).
-    * `<value>` is the value to set for the permission (
-      e.g., `owner`, `true`, `false`, `*`, `!*`, `GRASS_BLOCK`, `!GRASS_BLOCK`).
+  * `<who>` who to set the permission for.
+    * e.g., `Player1` - to create or modify a group, use `+group-GROUPNAME`, where GROUPNAME can be any name.
+  * `<permission>` is the permission to set (e.g., `role`, `break`, `place`, `interact`).
+  * `<value>` is the value to set for the permission (
+    * e.g., `owner`, `true`, `false`, `*`, `!*`, `GRASS_BLOCK`, `!GRASS_BLOCK`).
+* `/zone rename`: Renames a region.
+  * Usage: `/zone rename <regionKey> <newName>`
+  * `<regionKey>` is the key of the region, `<newName>` is the new name of the region.
+  * Player needs to be an admin of the region, or have the `zones.rename.other` permission
+* `/zone select`: Selects a region.
+  * Usage: `/zone select [regionKey]`
+  * If `regionKey` is not provided, the region at the player's location will be used.
+  * Visually highlights the region in the world using particles.
+  * Player needs to be a member of the region, or have the `zones.select.other` permission
+* `/zone mode`: Changes the selection mode.
+  * Usage: `/zone mode <mode>`
+  * `<mode>` is the new mode to set the player to.
+    * e.g., `3d` for 3D selection mode, `2d` for 2D selection mode.
 
-## Code Structure
-
-The plugin's code is organized as follows:
-
-* `de.t14d3.zones`: Contains the main plugin class (`Zones.java`), region management (`RegionManager.java`), permission
-  management (`PermissionManager.java`), and the `Region.java` class.
-* `de.t14d3.zones.listeners`: Contains event listeners for player interactions (`PlayerInteractListener.java`), command
-  handling (`CommandListener.java`), and player quit events (`PlayerQuitListener.java`).
-* `de.t14d3.zones.utils`: Contains utility classes such as `Utils.java` for general helper functions, `BeaconUtils.java`
-  for beacon visualization, `Types.java` for defining possible type values (Blocks, Entities, etc.), and `Actions.java`
-* for defining different actions.
+* `/zone save`: Manually saves all regions to file.
+  * Usage: `/zone save`
+  * Admin only, requires the `zones.save` permission (not given by default)
+* `/zone load`: Manually loads all regions from file.
+  * Usage: `/zone load`
+  * Admin only, requires the `zones.load` permission (not given by default)
+* `/zone import`: Imports regions from another plugin.
+  * Usage: `/zone import <pluginName>`
+  * Currently only supports WorldGuard.
+  * Admin only, requires the `zones.import` permission (not given by default)
 
 ## Usage
 
 ### Creating a Region
 
-1. Use left-click on a block to set the first corner of the region. A green beacon will appear.
-2. Use right-click on a block to set the second corner of the region. A red beacon will appear.
-3. Use the `/zone create` command to create the region.
+1. Use the `/zone create` command to start the creation process.
+2. Use left-click on a block to set the first corner of the region. A green beacon will appear.
+3. Use right-click on a block to set the second corner of the region. A red beacon will appear.
+4. Use the `/zone create` command to create the region.
 
 ### Creating a Sub-Region
 
-1. Select the two corners of the sub-region as described above.
-2. Use the `/zone subcreate` command to create the sub-region within the region you are standing in or
+1. Use the `/zone subcreate` command to start the creation process.
+2. Select the two corners of the sub-region as described above.
+3. Use the `/zone subcreate` command to create the sub-region within the region you are standing in or
    use `/zone subcreate <regionKey>` to create a sub-region within the specified region.
 
 ### Setting Permissions
 
-1. Use the `/zone set <regionKey> <permission> <value>` command to set permissions for a member of a region.
+1. Use the `/zone set <regionKey> <player> <permission> <value>` command to set permissions for a member of a region.
   * Example: `/zone set <key> Player1 break true` allows "Player1" to break blocks in the specified region.
   * Example: `/zone set <key> Player2 break GRASS_BLOCK` allows "Player2" to break only `GRASS_BLOCK` blocks
     in the specified region.
@@ -82,11 +108,51 @@ The plugin's code is organized as follows:
     the specified region.
   * Example: `/zone set <key> Player4 place *` allows "Player4" to place all blocks in the specified region.
   * Example: `/zone set <key> Player5 break !*` denies "Player5" to break all blocks in the specified region.
+* Groups:
+  * To assign a group, set the value of the permission `group` to the group name.
+  * e.g.: Create a group and assign permission: `/zone set <regionKey> +group-some-group-name break true`
+  * e.g. `/zone set <regionKey> ExamplePlayer group some-group-name`
+  * ExamplePlayer now inherits the permission `break` from the group `some-group-name`
 
 ### Viewing Region Information
 
 1. Use the `/zone info` command to view information about the region you are standing in.
 2. Use the `/zone info <regionKey>` command to view information about a specific region.
+
+## Integrations
+
+### WorldGuard
+
+Zones supports importing WorldGuard regions via the `/zone import WorldGuard` command. To use this feature,
+you must have WorldGuard installed and enabled. Zones will automatically import all Cuboid regions, including
+their members.
+
+### WorldEdit
+
+WorldEdit can only be used to modify blocks in a region if the executing player would be allowed to manually
+modify the region.
+
+### PlaceholderAPI
+
+Zones provides multiple placeholders for use with the PlaceholderAPI plugin, displaying region information for the
+region the player is standing in. It currently supports the following placeholders:
+
+* `%zones_get_name%`
+* `%zones_get_key%`
+* `%zones_get_members%`
+* `%zones_get_owner%`
+* `%zones_get_min%`
+* `%zones_get_min_x%`
+* `%zones_get_min_y%`
+* `%zones_get_min_z%`
+* `%zones_get_max%`
+* `%zones_get_max_x%`
+* `%zones_get_max_y%`
+* `%zones_get_max_z%`
+* `%zones_is_member%`
+* `%zones_can_place_hand%`
+* `%zones_can_break_target%`
+* `%zones_can_<action>_<type>%`
 
 ## Design Choices
 
