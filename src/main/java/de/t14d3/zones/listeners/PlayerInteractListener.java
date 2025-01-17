@@ -27,6 +27,7 @@ import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.util.BoundingBox;
 
 import java.util.ArrayList;
@@ -65,6 +66,9 @@ public class PlayerInteractListener implements Listener {
         UUID playerUUID = player.getUniqueId();
 
         if (plugin.selection.containsKey(playerUUID)) {
+            if (event.getHand() == EquipmentSlot.OFF_HAND) {
+                return;
+            }
             event.setCancelled(true);
 
             Pair<Location, Location> selection = plugin.selection.get(playerUUID);
@@ -75,12 +79,20 @@ public class PlayerInteractListener implements Listener {
                 resetBeacon(player, min);
                 min = location;
                 beaconUtils.createBeacon(player, min, DyeColor.GREEN);
-                player.sendMessage("First Location set to " + location);
+                player.sendMessage(miniMessage.deserialize(messages.get("create.primary")
+                        , parsed("x", String.valueOf(location.getBlockX()))
+                        , parsed("y", String.valueOf(location.getBlockY()))
+                        , parsed("z", String.valueOf(location.getBlockZ()))
+                ));
             } else if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
                 resetBeacon(player, max);
                 max = location;
                 beaconUtils.createBeacon(player, max, DyeColor.RED);
-                player.sendMessage("Second Location set to " + location);
+                player.sendMessage(miniMessage.deserialize(messages.get("create.secondary")
+                        , parsed("x", String.valueOf(location.getBlockX()))
+                        , parsed("y", String.valueOf(location.getBlockY()))
+                        , parsed("z", String.valueOf(location.getBlockZ()))
+                ));
             }
 
             plugin.selection.put(playerUUID, Pair.of(min, max));
