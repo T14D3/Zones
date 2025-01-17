@@ -62,8 +62,8 @@ public class ParticleHandler {
         List<Location> outlineLocations = new ArrayList<>();
 
         // Add corners to the outline
-        outlineLocations.add(new Location(player.getWorld(), x1, y2, z1));
-        outlineLocations.add(new Location(player.getWorld(), x2, y2, z1));
+        outlineLocations.add(new Location(player.getWorld(), x1, y1, z1));
+        outlineLocations.add(new Location(player.getWorld(), x2, y1, z1));
         outlineLocations.add(new Location(player.getWorld(), x2, y1, z2));
         outlineLocations.add(new Location(player.getWorld(), x1, y1, z2));
 
@@ -88,6 +88,7 @@ public class ParticleHandler {
                     particleLocation.setY(k);
                     if (particleLocation.distance(player.getLocation()) < range) {
                         particleBuilder.location(particleLocation);
+                        particleBuilder.receivers(player);
                         particleBuilder.count(1);
                         particleBuilder.extra(0);
                         particleBuilder.force(true);
@@ -102,6 +103,7 @@ public class ParticleHandler {
                 Location particleLocation = new Location(player.getWorld(), corner.getX(), y, corner.getZ());
                 if (particleLocation.distance(player.getLocation()) < range) {
                     particleBuilder2.location(particleLocation);
+                    particleBuilder2.receivers(player);
                     particleBuilder2.count(1);
                     particleBuilder2.extra(0);
                     particleBuilder2.force(true);
