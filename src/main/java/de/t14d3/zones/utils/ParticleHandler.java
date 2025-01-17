@@ -54,16 +54,16 @@ public class ParticleHandler {
         double x1 = min.getX();
         double y1 = min.getY();
         double z1 = min.getZ();
-        double x2 = max.getX();
-        double y2 = max.getY();
-        double z2 = max.getZ();
+        double x2 = max.getX() + 1;
+        double y2 = max.getY() + 1;
+        double z2 = max.getZ() + 1;
 
         // Create a list of locations for the outline
         List<Location> outlineLocations = new ArrayList<>();
 
         // Add corners to the outline
-        outlineLocations.add(new Location(player.getWorld(), x1, y1, z1));
-        outlineLocations.add(new Location(player.getWorld(), x2, y1, z1));
+        outlineLocations.add(new Location(player.getWorld(), x1, y2, z1));
+        outlineLocations.add(new Location(player.getWorld(), x2, y2, z1));
         outlineLocations.add(new Location(player.getWorld(), x2, y1, z2));
         outlineLocations.add(new Location(player.getWorld(), x1, y1, z2));
 

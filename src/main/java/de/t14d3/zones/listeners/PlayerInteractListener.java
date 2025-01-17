@@ -97,7 +97,7 @@ public class PlayerInteractListener implements Listener {
 
             plugin.selection.put(playerUUID, Pair.of(min, max));
             if (min != null && max != null) {
-                plugin.particles.put(playerUUID, BoundingBox.of(min.toBlockLocation().add(1, 1, 1), max.toBlockLocation()));
+                plugin.particles.put(playerUUID, BoundingBox.of(min.toBlockLocation(), max.toBlockLocation()));
             }
             return;
         }
