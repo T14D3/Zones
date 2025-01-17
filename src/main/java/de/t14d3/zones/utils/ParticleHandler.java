@@ -25,6 +25,9 @@ public class ParticleHandler {
 
 
     public void particleScheduler() {
+        if (!plugin.getConfig().getBoolean("selection-particles.enabled", false)) {
+            return;
+        }
         Particle primary = Particle.valueOf(plugin.getConfig().getString("selection-particles.primary", "WAX_OFF"));
         Particle secondary = Particle.valueOf(plugin.getConfig().getString("selection-particles.secondary", "WAX_ON"));
         double range = plugin.getConfig().getDouble("selection-particles.range", 15);

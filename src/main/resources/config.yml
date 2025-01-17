@@ -1,4 +1,5 @@
 selection-particles:
+  enabled: true
   # Available particles: https://jd.papermc.io/paper/1.21.4/org/bukkit/Particle.html
   primary: WAX_OFF
   secondary: WAX_ON
