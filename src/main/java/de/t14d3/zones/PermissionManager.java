@@ -38,7 +38,7 @@ public class PermissionManager {
             ConcurrentLinkedQueue<CacheEntry> entries = interactionCache.get(playerUUID);
             for (CacheEntry entry : entries) {
                 if (entry.isEqual(location, action.name(), type)) {
-                    return entry.result;
+                    return entry.result.equals(Result.TRUE);
                 }
             }
         }
@@ -47,10 +47,10 @@ public class PermissionManager {
             BoundingBox box = BoundingBox.of(region.getMin(), region.getMax());
 
             if (box.contains(location.toVector())) {
-                boolean hasPermission = hasPermission(playerUUID, action.name(), type, region);
+                Result hasPermission = hasPermission(playerUUID.toString(), action.name(), type, region);
                 interactionCache.computeIfAbsent(playerUUID, k -> new ConcurrentLinkedQueue<>()).add(new CacheEntry(location, action.name(), type, hasPermission));
 
-                return hasPermission;
+                return hasPermission.equals(Result.TRUE);
             }
         }
 
@@ -120,7 +120,7 @@ public class PermissionManager {
     }
 
     /**
-     * hasPermission(UUID, String, String, Region) overload
+     * hasPermission(String, String, String, Region) overload / bool
      *
      * @param uuid       The UUID of the player whose permission is being checked.
      * @param permission The permission being checked (e.g., "break", "place").
@@ -130,7 +130,7 @@ public class PermissionManager {
      * @see #hasPermission(String, String, String, Region)
      */
     public boolean hasPermission(UUID uuid, String permission, String type, Region region) {
-        return hasPermission(uuid.toString(), permission, type, region);
+        return hasPermission(uuid.toString(), permission, type, region).equals(Result.TRUE);
     }
     /**
      * Checks if a player has a specific permission for a given type in the provided region.
@@ -139,9 +139,9 @@ public class PermissionManager {
      * @param permission The permission being checked (e.g., "break", "place").
      * @param type    The type of object the permission applies to (e.g., "GRASS_BLOCK").
      * @param region  The region in which the permission is being checked.
-     * @return True if the player has the specified permission for the type, false otherwise.
+     * @return {@link Result}
      */
-    public boolean hasPermission(String who, String permission, String type, Region region) {
+    public Result hasPermission(String who, String permission, String type, Region region) {
         if (permissionCache.containsKey(who)) {
             ConcurrentLinkedQueue<CacheEntry> entries = permissionCache.get(who);
             for (CacheEntry entry : entries) {
@@ -150,12 +150,13 @@ public class PermissionManager {
                 }
             }
         }
-        boolean result = calculatePermission(who, permission, type, region);
+        Result result = Result.UNDEFINED; // Initialize result as null
+        result = calculatePermission(who, permission, type, region);
         permissionCache.computeIfAbsent(who, k -> new ConcurrentLinkedQueue<>()).add(new CacheEntry(permission, type, region.getKey(), result));
         return result;
     }
 
-    private boolean calculatePermission(String who, String permission, String type, Region region) {
+    private Result calculatePermission(String who, String permission, String type, Region region) {
         permission = permission.toLowerCase();
         Player player = null;
         try {
@@ -165,7 +166,17 @@ public class PermissionManager {
 
         // Check if player has a global bypass permission
         if (player != null && player.hasPermission("zones.bypass.claimed")) {
-            return true;
+            return Result.TRUE;
+        }
+
+        Result result = Result.UNDEFINED; // Initialize result as null
+
+        // Check if player is an admin, but only if not checking
+        // for "role" permission (StackOverflowException prevention)
+        if (!permission.equalsIgnoreCase("role")) {
+            if (isAdmin(who, region)) {
+                result = Result.TRUE;
+            }
         }
 
         // Retrieve the permissions for the player in the specified region
@@ -174,7 +185,7 @@ public class PermissionManager {
         // Get the permissions for the player
         Map<String, String> permissions = members.get(who);
         if (permissions == null) {
-            return false;
+            return Result.UNDEFINED; // Return null if no permission was set
         }
         String value = permissions.get(permission);
 
@@ -188,22 +199,19 @@ public class PermissionManager {
                     Zones.getInstance().getLogger().severe("Recursive group permissions detected!! Groups are not allowed to contain other groups!");
                     Zones.getInstance().getLogger().severe("Group '" + who.substring(7) + "' contains 'group' permission entry in region '" + region.getKey() + "'");
                     Zones.getInstance().getLogger().severe("If you are 100% sure this is fine, add 'allow-group-recursion: true' to your config.yml");
-                    return false;
+                    return Result.FALSE;
                 }
                 for (String group : permissions.get("group").split(",")) {
-                    return hasPermission("+group-" + group, permission, type, region);
+                    if (hasPermission(group, permission, type, region).equals(Result.TRUE)) {
+                        result = Result.TRUE;
+                    }
                 }
             }
-            // Nothing found, deny access
+            // Nothing found
             else {
-                return false;
+                return result; // Return initial result
             }
         }
-
-        // Analyze permission values
-        boolean explicitAllow = false;
-        boolean explicitDeny = false;
-        boolean result = false;
 
         if (value != null) {
             for (String permittedValue : value.split(",")) {
@@ -211,28 +219,29 @@ public class PermissionManager {
 
                 // Check for wildcard allow
                 if ("*".equals(permittedValue) || "true".equalsIgnoreCase(permittedValue)) {
-                    result = true;
+                    result = Result.TRUE;
                 }
                 // Check for wildcard deny
                 else if ("!*".equals(permittedValue) || "false".equalsIgnoreCase(permittedValue)) {
-                    result = false;
+                    result = Result.FALSE;
                 }
                 // Check for specific type allow
                 else if (permittedValue.equalsIgnoreCase(type)) {
-                    result = true;
+                    result = Result.TRUE;
                 }
                 // Check for specific type deny
                 else if (permittedValue.equalsIgnoreCase("!" + type)) {
-                    result = false;
+                    result = Result.FALSE;
                 }
             }
         }
 
-        return result;
+        return result; // Return null if no permission was set
     }
 
     public boolean isAdmin(String who, Region region) {
-        return hasPermission(who, "role", "owner", region) || hasPermission(who, "role", "admin", region);
+        return hasPermission(who, "role", "owner", region).equals(Result.TRUE)
+                || hasPermission(who, "role", "admin", region).equals(Result.TRUE);
     }
 
     public static class CacheEntry {
@@ -240,9 +249,9 @@ public class PermissionManager {
         private final String value;
         private final String key;
 
-        public boolean result;
+        public Result result;
 
-        public CacheEntry(Object flag, String value, String key, boolean result) {
+        public CacheEntry(Object flag, String value, String key, Result result) {
             this.flag = flag;
             this.value = value;
             this.key = key;
@@ -265,5 +274,15 @@ public class PermissionManager {
         public boolean isEqual(Object flag, String value, String key) {
             return this.flag.equals(flag) && this.value.equals(value) && this.key.equals(key);
         }
+    }
+
+    /**
+     * The result of a permission check
+     * TRUE/FALSE overwrite UNDEFINED
+     */
+    public enum Result {
+        TRUE,
+        FALSE,
+        UNDEFINED
     }
 }
