@@ -6,12 +6,16 @@ bootstrapper: de.t14d3.zones.PaperBootstrap
 dependencies:
   server:
     WorldGuard:
+      required: false
       join-classpath: true
     PlaceholderAPI:
+      required: false
       join-classpath: true
     WorldEdit:
+      required: false
       join-classpath: true
     FastAsyncWorldEdit:
+      required: false
       join-classpath: true
 
 
@@ -19,23 +23,15 @@ permissions:
   zones.info:
     description: Allow players to view region information
     default: true
-    children:
-      zones.info.other: true
   zones.delete:
     description: Allow players to delete regions
     default: true
-    children:
-      zones.delete.other: true
   zones.create:
     description: Allow players to create regions
     default: true
-    children:
-      zones.create.overlap: true
   zones.subcreate:
     description: Allow players to create sub-regions
     default: true
-    children:
-      zones.subcreate.other: true
   zones.cancel:
     description: Allow players to cancel the current operation
     default: true
@@ -45,30 +41,24 @@ permissions:
   zones.set:
     description: Allow players to set permissions for regions
     default: true
-    children:
-      zones.set.other: true
   zones.expand:
     description: Allow players to expand regions
     default: true
-    children:
-      zones.expand.other: true
-      zones.expand.overlap: true
   zones.select:
     description: Allow players to select regions
     default: true
-    children:
-      zones.select.other: true
   zones.rename:
     description: Allow players to rename regions
     default: true
-    children:
-      zones.rename.other: true
 
   zones.save:
     description: Allow players to save all regions to file
     default: op
   zones.load:
     description: Allow players to load all regions from file
+    default: op
+  zones.import:
+    description: Allow players to use the import function
     default: op
 
   zones.info.other:
