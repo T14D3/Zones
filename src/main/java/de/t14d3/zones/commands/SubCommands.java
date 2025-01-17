@@ -1,4 +1,4 @@
-package de.t14d3.zones.brigadier;
+package de.t14d3.zones.commands;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -16,7 +16,8 @@ public enum SubCommands {
     SUBCREATE(Component.text("Creates a sub-region").color(NamedTextColor.DARK_PURPLE)),
     SAVE(Component.text("Saves all regions to file").color(NamedTextColor.DARK_GREEN)),
     LOAD(Component.text("Loads all regions from file").color(NamedTextColor.DARK_AQUA)),
-    IMPORT(Component.text("Imports regions from another plugin").color(NamedTextColor.DARK_PURPLE));
+    IMPORT(Component.text("Imports regions from another plugin").color(NamedTextColor.DARK_PURPLE)),
+    MODE(Component.text("Change your region creation mode").color(NamedTextColor.DARK_BLUE));
 
 
     private final Component info;

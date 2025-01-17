@@ -1,4 +1,4 @@
-package de.t14d3.zones.listeners;
+package de.t14d3.zones.commands;
 
 import de.t14d3.zones.PermissionManager;
 import de.t14d3.zones.Region;
@@ -7,6 +7,7 @@ import de.t14d3.zones.Zones;
 import de.t14d3.zones.integrations.WorldGuardImporter;
 import de.t14d3.zones.utils.Direction;
 import de.t14d3.zones.utils.Messages;
+import de.t14d3.zones.utils.Utils;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import it.unimi.dsi.fastutil.Pair;
 import net.kyori.adventure.text.Component;
@@ -16,9 +17,12 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.util.BoundingBox;
 
 import java.util.*;
@@ -27,7 +31,7 @@ import java.util.concurrent.CompletableFuture;
 import static de.t14d3.zones.utils.BeaconUtils.resetBeacon;
 import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
 
-public class CommandListener {
+public class CommandExecutor {
 
     private final Zones plugin;
     private final RegionManager regionManager;
@@ -35,7 +39,7 @@ public class CommandListener {
     private final Messages messages;
     private final PermissionManager pm;
 
-    public CommandListener(Zones plugin, RegionManager regionManager) {
+    public CommandExecutor(Zones plugin, RegionManager regionManager) {
         this.plugin = plugin;
         this.regionManager = regionManager;
         this.messages = plugin.getMessages();
@@ -140,6 +144,13 @@ public class CommandListener {
                     sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
                 }
                 break;
+            case "mode":
+                if (sender.hasPermission("zones.mode")) {
+                    handleModeCommand(sender, args);
+                } else {
+                    sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
+                }
+                break;
             default:
                 sender.sendMessage(miniMessage.deserialize(messages.get("commands.invalid")));
                 break;
@@ -186,8 +197,13 @@ public class CommandListener {
 
                 Map<String, String> perms = new HashMap<>();
                 perms.put("role", "owner");
-
-                String key = regionManager.create2DRegion(sender.getName(), selectionPair.first(), selectionPair.second(), player.getUniqueId(), perms);
+                Utils.Modes mode = Utils.Modes.getPlayerMode(player);
+                String key;
+                if (mode == Utils.Modes.CUBOID_3D && player.hasPermission("zones.mode.3d.main")) {
+                    key = regionManager.createNewRegion(sender.getName(), selectionPair.first(), selectionPair.second(), player.getUniqueId(), perms);
+                } else {
+                    key = regionManager.create2DRegion(sender.getName(), selectionPair.first(), selectionPair.second(), player.getUniqueId(), perms);
+                }
                 resetBeacon(player, selectionPair.first());
                 resetBeacon(player, selectionPair.second());
                 sender.sendMessage(miniMessage.deserialize(messages.get("commands.create.success"), parsed("region", key)));
@@ -482,6 +498,20 @@ public class CommandListener {
             WorldGuardImporter worldGuardImporter = new WorldGuardImporter(plugin);
             worldGuardImporter.importRegions();
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.import.success")));
+        }
+    }
+
+    private void handleModeCommand(CommandSender sender, String[] args) {
+        if (sender instanceof Player player) {
+            PersistentDataContainer pdc = player.getPersistentDataContainer();
+            if (args.length < 2) {
+                pdc.set(new NamespacedKey("zones", "mode"), PersistentDataType.STRING, Utils.Modes.CUBOID_2D.name());
+                sender.sendMessage(miniMessage.deserialize(messages.get("commands.mode.set"), parsed("mode", Utils.Modes.CUBOID_2D.name())));
+            } else {
+                Utils.Modes mode = Utils.Modes.getMode(args[1]);
+                pdc.set(new NamespacedKey("zones", "mode"), PersistentDataType.STRING, mode.name());
+                sender.sendMessage(miniMessage.deserialize(messages.get("commands.mode.set"), parsed("mode", mode.name())));
+            }
         }
     }
 

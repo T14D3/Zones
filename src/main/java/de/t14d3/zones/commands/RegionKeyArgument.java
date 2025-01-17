@@ -1,4 +1,4 @@
-package de.t14d3.zones.brigadier;
+package de.t14d3.zones.commands;
 
 import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;

@@ -1,16 +1,18 @@
 package de.t14d3.zones;
 
 import com.sk89q.worldedit.WorldEdit;
+import de.t14d3.zones.commands.CommandExecutor;
 import de.t14d3.zones.integrations.FAWEIntegration;
 import de.t14d3.zones.integrations.PlaceholderAPI;
 import de.t14d3.zones.integrations.WorldEditSession;
 import de.t14d3.zones.listeners.ChunkEventListener;
-import de.t14d3.zones.listeners.CommandListener;
 import de.t14d3.zones.listeners.PlayerInteractListener;
 import de.t14d3.zones.listeners.PlayerQuitListener;
 import de.t14d3.zones.utils.*;
 import it.unimi.dsi.fastutil.Pair;
 import org.bukkit.Location;
+import org.bukkit.permissions.Permission;
+import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.BoundingBox;
 
@@ -33,7 +35,7 @@ public final class Zones extends JavaPlugin {
     private Types types;
     private Messages messages;
     private static Zones instance;
-    private CommandListener commandListener;
+    private CommandExecutor commandExecutor;
     private PaperBootstrap bootstrap;
     private Utils utils;
 
@@ -89,8 +91,14 @@ public final class Zones extends JavaPlugin {
         types = new Types();
         types.populateTypes();
 
+        // Register mode permissions
+        for (Utils.Modes mode : Utils.Modes.values()) {
+            getServer().getPluginManager().addPermission(new Permission("zones.mode." + mode.getName().toLowerCase() + ".main", PermissionDefault.OP));
+            getServer().getPluginManager().addPermission(new Permission("zones.mode." + mode.getName().toLowerCase() + ".sub", PermissionDefault.OP));
+        }
 
-        this.commandListener = new CommandListener(this, regionManager);
+
+        this.commandExecutor = new CommandExecutor(this, regionManager);
         // Register saving task
         if (getSavingMode() == Utils.SavingModes.PERIODIC) {
             getServer().getScheduler().runTaskTimerAsynchronously(this, () -> {
@@ -157,7 +165,7 @@ public final class Zones extends JavaPlugin {
         return instance;
     }
 
-    public CommandListener getCommandListener() {
-        return commandListener;
+    public CommandExecutor getCommandListener() {
+        return commandExecutor;
     }
 }

@@ -1,6 +1,6 @@
 package de.t14d3.zones;
 
-import de.t14d3.zones.brigadier.Command;
+import de.t14d3.zones.commands.CommandNode;
 import de.t14d3.zones.utils.Flags;
 import de.t14d3.zones.utils.Utils;
 import io.papermc.paper.command.brigadier.Commands;
@@ -26,7 +26,7 @@ public class PaperBootstrap implements PluginBootstrap {
         for (Map.Entry<String, String> entry : Utils.defaultFlags().entrySet()) {
             flags.registerFlag(entry.getKey(), entry.getValue());
         }
-        Command cmd = new Command(this);
+        CommandNode cmd = new CommandNode(this);
         LifecycleEventManager<@NotNull BootstrapContext> eventManager = context.getLifecycleManager();
         eventManager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
             final Commands commands = event.registrar();

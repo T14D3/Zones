@@ -1,4 +1,4 @@
-package de.t14d3.zones.brigadier;
+package de.t14d3.zones.commands;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
@@ -22,10 +22,10 @@ import java.util.Map;
 import java.util.UUID;
 
 @SuppressWarnings("UnstableApiUsage")
-public class Command {
+public class CommandNode {
     private final PaperBootstrap context;
 
-    public Command(PaperBootstrap context) {
+    public CommandNode(PaperBootstrap context) {
         this.context = context;
     }
 
@@ -62,6 +62,12 @@ public class Command {
                                         }
                                         case "IMPORT" -> {
                                             builder.suggest("worldguard", MessageComponentSerializer.message().serialize(Component.text("Imports regions from WorldGuard")));
+                                            return builder.buildFuture();
+                                        }
+                                        case "MODE" -> {
+                                            for (Utils.Modes mode : Utils.Modes.values()) {
+                                                builder.suggest(mode.name());
+                                            }
                                             return builder.buildFuture();
                                         }
                                         default -> {

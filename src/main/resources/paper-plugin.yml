@@ -50,6 +50,9 @@ permissions:
   zones.rename:
     description: Allow players to rename regions
     default: true
+  zones.mode:
+    description: Allow players to change their selection mode
+    default: true
 
   zones.save:
     description: Allow players to save all regions to file

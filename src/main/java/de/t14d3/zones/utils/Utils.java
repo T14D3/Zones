@@ -114,5 +114,40 @@ public class Utils {
         return new ArrayList<>(playerNames.values());
     }
 
+    public enum Modes {
+        CUBOID_2D("2D"),
+        CUBOID_3D("3D");
+
+        final String name;
+
+        Modes(String name) {
+            this.name = name;
+        }
+
+        public static Modes getPlayerMode(Player player) {
+            Modes mode;
+            try {
+                mode = Modes.valueOf(player.getPersistentDataContainer().get(new NamespacedKey("zones", "mode"), PersistentDataType.STRING));
+            } catch (IllegalArgumentException e) {
+                mode = Modes.CUBOID_2D;
+            }
+            return mode;
+        }
+
+        public static Modes getMode(String mode) {
+            Modes modes;
+            try {
+                modes = Modes.valueOf(mode.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                modes = Modes.CUBOID_2D;
+            }
+            return modes;
+        }
+
+        public String getName() {
+            return this.name;
+        }
+    }
+
 
 }
