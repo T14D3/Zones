@@ -8,6 +8,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.util.BoundingBox;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -402,9 +403,9 @@ public class RegionManager {
      * Gets the region with the highest priority at the given location
      *
      * @param location Location to check
-     * @return Region at location
+     * @return Region at location, or null if no region found
      */
-    public Region getEffectiveRegionAt(Location location) {
+    public @Nullable Region getEffectiveRegionAt(Location location) {
         List<Region> regions = getRegionsAt(location);
         int priority = Integer.MIN_VALUE;
         Region effectiveRegion = null;
