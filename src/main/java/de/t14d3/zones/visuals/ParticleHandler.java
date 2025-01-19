@@ -1,4 +1,4 @@
-package de.t14d3.zones.utils;
+package de.t14d3.zones.visuals;
 
 import com.destroystokyo.paper.ParticleBuilder;
 import de.t14d3.zones.Zones;

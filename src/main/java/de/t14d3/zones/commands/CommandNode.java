@@ -57,7 +57,7 @@ public class CommandNode {
                         .then(Commands.argument("key", new RegionKeyArgument())
                                 .suggests((ctx, builder) -> {
                                     switch (arg(ctx, 1).toUpperCase()) {
-                                        case "LIST", "CANCEL", "CREATE", "SAVE", "LOAD" -> {
+                                        case "LIST", "CANCEL", "CREATE", "SAVE", "LOAD", "FIND" -> {
                                             return builder.buildFuture();
                                         }
                                         case "IMPORT" -> {
@@ -98,6 +98,9 @@ public class CommandNode {
                                             }
                                             if (arg(ctx, 1).equalsIgnoreCase("SET")) {
                                                 Utils.getPlayerNames().forEach(name -> {
+                                                    if (name == null) {
+                                                        return;
+                                                    }
                                                     if (ctx.getInput().split(" ").length <= 3 || name.toLowerCase().startsWith(arg(ctx, 3).toLowerCase())) {
                                                         builder.suggest(name);
                                                     }

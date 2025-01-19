@@ -10,6 +10,7 @@ import de.t14d3.zones.utils.Messages;
 import de.t14d3.zones.utils.Utils;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import it.unimi.dsi.fastutil.Pair;
+import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -28,7 +29,7 @@ import org.bukkit.util.BoundingBox;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
-import static de.t14d3.zones.utils.BeaconUtils.resetBeacon;
+import static de.t14d3.zones.visuals.BeaconUtils.resetBeacon;
 import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
 
 public class CommandExecutor {
@@ -147,6 +148,13 @@ public class CommandExecutor {
             case "mode":
                 if (sender.hasPermission("zones.mode")) {
                     handleModeCommand(sender, args);
+                } else {
+                    sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
+                }
+                break;
+            case "find":
+                if (sender.hasPermission("zones.find")) {
+                    handleFindCommand(sender, args);
                 } else {
                     sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
                 }
@@ -511,6 +519,19 @@ public class CommandExecutor {
                 Utils.Modes mode = Utils.Modes.getMode(args[1]);
                 pdc.set(new NamespacedKey("zones", "mode"), PersistentDataType.STRING, mode.name());
                 sender.sendMessage(miniMessage.deserialize(messages.get("commands.mode.set"), parsed("mode", mode.name())));
+            }
+        }
+    }
+
+    private void handleFindCommand(CommandSender sender, String[] args) {
+        if (sender instanceof Player player) {
+            if (plugin.getFindBossbar().players.containsKey(player)) {
+                player.hideBossBar(plugin.getFindBossbar().players.get(player));
+                plugin.getFindBossbar().players.remove(player);
+            } else {
+                BossBar bossbar = BossBar.bossBar(Component.text("Finding Regions..."), 1.0f, BossBar.Color.GREEN, BossBar.Overlay.PROGRESS);
+                plugin.getFindBossbar().players.put(player, bossbar);
+                player.showBossBar(bossbar);
             }
         }
     }

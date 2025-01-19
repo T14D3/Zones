@@ -17,7 +17,8 @@ public enum SubCommands {
     SAVE(Component.text("Saves all regions to file").color(NamedTextColor.DARK_GREEN)),
     LOAD(Component.text("Loads all regions from file").color(NamedTextColor.DARK_AQUA)),
     IMPORT(Component.text("Imports regions from another plugin").color(NamedTextColor.DARK_PURPLE)),
-    MODE(Component.text("Change your region creation mode").color(NamedTextColor.DARK_BLUE));
+    MODE(Component.text("Change your region creation mode").color(NamedTextColor.DARK_BLUE)),
+    FIND(Component.text("Finds regions").color(NamedTextColor.GREEN));
 
 
     private final Component info;

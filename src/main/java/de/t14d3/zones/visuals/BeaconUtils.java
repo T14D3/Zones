@@ -1,4 +1,4 @@
-package de.t14d3.zones.utils;
+package de.t14d3.zones.visuals;
 
 import de.t14d3.zones.Zones;
 import org.bukkit.*;

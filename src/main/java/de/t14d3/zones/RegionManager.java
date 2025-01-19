@@ -45,6 +45,7 @@ public class RegionManager {
             String key = entry.getKey();
             Region region = entry.getValue();
             regionsConfig.set("regions." + key + ".name", region.getName());
+            regionsConfig.set("regions." + key + ".priority", region.getPriority());
             saveLocation("regions." + key + ".min", region.getMin());
             saveLocation("regions." + key + ".max", region.getMax());
             if (region.getParent() != null) {
@@ -81,13 +82,13 @@ public class RegionManager {
             loadedRegions.clear();
             for (String key : Objects.requireNonNull(regionsConfig.getConfigurationSection("regions")).getKeys(false)) {
                 String name = regionsConfig.getString("regions." + key + ".name");
-                int priority = regionsConfig.getInt("regions." + key + ".priority");
+                int priority = regionsConfig.getInt("regions." + key + ".priority", 0);
                 Location min = loadLocation("regions." + key + ".min");
                 Location max = loadLocation("regions." + key + ".max");
                 String parent = regionsConfig.getString("regions." + key + ".parent");
 
                 Map<String, Map<String, String>> members = loadMembers(key);
-                Region region = new Region(name != null ? name : "Invalid Name", min, max, members, key, parent, 0);
+                Region region = new Region(name != null ? name : "Invalid Name", min, max, members, key, parent, priority);
                 loadedRegions.put(key, region);
             }
             regionCache.clear();

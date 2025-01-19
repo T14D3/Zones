@@ -53,6 +53,9 @@ permissions:
   zones.mode:
     description: Allow players to change their selection mode
     default: true
+  zones.find:
+    description: Allow players to find regions
+    default: true
 
   zones.save:
     description: Allow players to save all regions to file

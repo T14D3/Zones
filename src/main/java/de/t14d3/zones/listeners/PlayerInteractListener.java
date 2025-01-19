@@ -5,9 +5,9 @@ import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.Zones;
 import de.t14d3.zones.utils.Actions;
-import de.t14d3.zones.utils.BeaconUtils;
 import de.t14d3.zones.utils.Messages;
 import de.t14d3.zones.utils.Utils;
+import de.t14d3.zones.visuals.BeaconUtils;
 import it.unimi.dsi.fastutil.Pair;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.DyeColor;
@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static de.t14d3.zones.utils.BeaconUtils.resetBeacon;
+import static de.t14d3.zones.visuals.BeaconUtils.resetBeacon;
 import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
 
 public class PlayerInteractListener implements Listener {

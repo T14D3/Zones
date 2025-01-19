@@ -8,7 +8,12 @@ import de.t14d3.zones.integrations.WorldEditSession;
 import de.t14d3.zones.listeners.ChunkEventListener;
 import de.t14d3.zones.listeners.PlayerInteractListener;
 import de.t14d3.zones.listeners.PlayerQuitListener;
-import de.t14d3.zones.utils.*;
+import de.t14d3.zones.utils.Messages;
+import de.t14d3.zones.utils.Types;
+import de.t14d3.zones.utils.Utils;
+import de.t14d3.zones.visuals.BeaconUtils;
+import de.t14d3.zones.visuals.FindBossbar;
+import de.t14d3.zones.visuals.ParticleHandler;
 import it.unimi.dsi.fastutil.Pair;
 import org.bukkit.Location;
 import org.bukkit.permissions.Permission;
@@ -39,6 +44,7 @@ public final class Zones extends JavaPlugin {
     private CommandExecutor commandExecutor;
     private PaperBootstrap bootstrap;
     private Utils utils;
+    private FindBossbar findBossbar;
 
     public Zones(PaperBootstrap bootstrap) {
         this.bootstrap = bootstrap;
@@ -107,6 +113,10 @@ public final class Zones extends JavaPlugin {
                 getLogger().info("Zones have been saved.");
             }, 20L, getConfig().getInt("zone-saving.period", 60) * 20L);
         }
+        // Find bossbar
+        this.findBossbar = new FindBossbar(this);
+
+
         // PlaceholderAPI integration
         if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
             new PlaceholderAPI(this).register();
@@ -168,5 +178,9 @@ public final class Zones extends JavaPlugin {
 
     public CommandExecutor getCommandListener() {
         return commandExecutor;
+    }
+
+    public FindBossbar getFindBossbar() {
+        return findBossbar;
     }
 }
