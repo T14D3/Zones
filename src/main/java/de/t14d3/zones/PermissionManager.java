@@ -66,7 +66,7 @@ public class PermissionManager {
                 else if (region.getPriority() == priority) {
                     Result hasPermission = hasPermission(playerUUID.toString(), action.name(), type, region);
                     if (hasPermission.equals(Result.FALSE) || result.equals(Result.FALSE)) {
-                        result = hasPermission;
+                        result = Result.FALSE;
                         priority = region.getPriority();
                         continue;
                     }
