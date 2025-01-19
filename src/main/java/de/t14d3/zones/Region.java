@@ -22,41 +22,46 @@ public class Region {
     private Map<String, Map<String, String>> members;
     private String key;
     private String parent;
+    private int priority;
 
     // Constructor
     /**
      * Constructs a new region with the given name, minimum and maximum locations, members and parent.
-     * @param name The name of the region (not unique).
-     * @param min The minimum location of the region.
-     * @param max The maximum location of the region.
-     * @param members The members of the region.
-     * @param key The key of the region.
-     * @param parent The parent (if any) of the region.
      *
-     * @see #Region(String, Location, Location, Map, String)
+     * @param name     The name of the region (not unique).
+     * @param min      The minimum location of the region.
+     * @param max      The maximum location of the region.
+     * @param members  The members of the region.
+     * @param key      The key of the region.
+     * @param parent   The parent (if any) of the region.
+     * @param priority The priority of the region.
+     * @see #Region(String, Location, Location, Map, String, int)
      */
-    Region(@NotNull String name, @NotNull Location min, @NotNull Location max, Map<String, Map<String, String>> members, @NotNull String key, @Nullable String parent) {
+    Region(@NotNull String name, @NotNull Location min, @NotNull Location max, Map<String, Map<String, String>> members, @NotNull String key, @Nullable String parent, int priority) {
         this.name = name;
         this.min = min;
         this.max = max;
         this.members = (members != null) ? members : new HashMap<>();
         this.key = key;
         this.parent = parent;
+        this.priority = priority;
     }
 
     // Constructor overload for regions without parent
     /**
      * Constructs a new region with the given name, minimum and maximum locations, and members.
-     * @param name The name of the region (not unique).
-     * @param min The minimum location of the region.
-     * @param max The maximum location of the region.
-     * @param members The members of the region.
-     * @param key The key of the region.
      *
-     * @see #Region(String, Location, Location, Map, String)
+     * @param name     The name of the region (not unique).
+     * @param min      The minimum location of the region.
+     * @param max      The maximum location of the region.
+     * @param members  The members of the region.
+     * @param key      The key of the region.
+     * @param priority The priority of the region.
+     *
+     * @see #Region(String, Location, Location, Map, String, int)
      */
-    Region(String name, Location min, Location max, Map<String, Map<String, String>> members, String key) {
-        this(name, min, max, members, key, null);
+    Region(String name, Location min, Location max, Map<String, Map<String, String>> members, String key, int priority) {
+        this(name, min, max, members, key, null, priority);
     }
 
     // Getters and Setters
@@ -238,6 +243,14 @@ public class Region {
             }
         }
         return null;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
     }
 
 

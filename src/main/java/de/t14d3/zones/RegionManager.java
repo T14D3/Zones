@@ -85,7 +85,7 @@ public class RegionManager {
                 String parent = regionsConfig.getString("regions." + key + ".parent");
 
                 Map<String, Map<String, String>> members = loadMembers(key);
-                Region region = new Region(name != null ? name : "Invalid Name", min, max, members, key, parent);
+                Region region = new Region(name != null ? name : "Invalid Name", min, max, members, key, parent, 0);
                 loadedRegions.put(key, region);
             }
             regionCache.clear();
@@ -186,7 +186,7 @@ public class RegionManager {
         } while (regions().containsKey(regionKey));
 
         Map<String, Map<String, String>> members = new HashMap<>();
-        Region newRegion = new Region(name, min, max, members, regionKey);
+        Region newRegion = new Region(name, min, max, members, regionKey, 0);
 
         ownerPermissions.forEach((permission, value) -> {
             newRegion.addMemberPermission(playerUUID, permission, value, this);
@@ -224,7 +224,7 @@ public class RegionManager {
      * @return The newly created region.
      */
     public Region createNewRegion(String key, String name, Location min, Location max, Map<String, Map<String, String>> members) {
-        Region region = new Region(name, min, max, members, key);
+        Region region = new Region(name, min, max, members, key, 0);
         saveRegion(key, region);
         return region;
     }
@@ -261,7 +261,7 @@ public class RegionManager {
         } while (regions().containsKey(regionKey));
 
         Map<String, Map<String, String>> members = new HashMap<>();
-        Region newRegion = new Region(name, min, max, members, regionKey, parentRegion.getKey());
+        Region newRegion = new Region(name, min, max, members, regionKey, parentRegion.getKey(), 0);
 
         ownerPermissions.forEach((permission, value) -> {
             newRegion.addMemberPermission(playerUUID, permission, value, this);
