@@ -55,6 +55,8 @@ public class PlaceholderAPI extends PlaceholderExpansion {
                 "%zones_get_max_x%",
                 "%zones_get_max_y%",
                 "%zones_get_max_z%",
+                "%zones_get_priority%",
+                "%zones_get_parent%",
                 "%zones_is_member%",
                 "%zones_can_place_hand%",
                 "%zones_can_break_target%",
@@ -188,6 +190,18 @@ public class PlaceholderAPI extends PlaceholderExpansion {
                 return plugin.getPermissionManager().canInteract(player.getLocation(), player.getUniqueId(), Actions.valueOf(action), type) ? "true" : "false";
             }
             return "false";
+        }
+        if (params.equalsIgnoreCase("get_priority")) {
+            if (!regions.isEmpty()) {
+                return String.valueOf(regions.get(0).getPriority());
+            }
+            return "0";
+        }
+        if (params.equalsIgnoreCase("get_parent")) {
+            if (!regions.isEmpty()) {
+                return regions.get(0).getParent();
+            }
+            return "";
         }
         return null;
     }
