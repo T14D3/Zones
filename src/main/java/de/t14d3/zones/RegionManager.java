@@ -225,8 +225,8 @@ public class RegionManager {
      * @param members The members of the new region.
      * @return The newly created region.
      */
-    public Region createNewRegion(String key, String name, Location min, Location max, Map<String, Map<String, String>> members) {
-        Region region = new Region(name, min, max, members, key, 0);
+    public Region createNewRegion(String key, String name, Location min, Location max, Map<String, Map<String, String>> members, int priority) {
+        Region region = new Region(name, min, max, members, key, priority);
         saveRegion(key, region);
         return region;
     }
@@ -494,7 +494,7 @@ public class RegionManager {
 
     /**
      * Adds a region to the loaded regions map.
-     * Requires an existing region object, to create a new region use {@link #createNewRegion(String, String, Location, Location, Map)}.
+     * Requires an existing region object, to create a new region use {@link #createNewRegion(String, String, Location, Location, Map, int)}.
      *
      * @param region The region to add.
      *

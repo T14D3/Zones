@@ -47,7 +47,7 @@ public class WorldGuardImporter {
                     region.getMembers().getUniqueIds().forEach(uuid -> members.put(uuid.toString(), Map.of("group", "member")));
                     region.getOwners().getUniqueIds().forEach(uuid -> members.put(uuid.toString(), Map.of("role", "owner")));
 
-                    Region newRegion = plugin.getRegionManager().createNewRegion(key, name, min, max, members);
+                    Region newRegion = plugin.getRegionManager().createNewRegion(key, name, min, max, members, region.getPriority());
                     plugin.getRegionManager().addRegion(newRegion);
                     count[0]++;
                 }
