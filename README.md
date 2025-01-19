@@ -70,6 +70,9 @@ The plugin provides the following commands:
   * Usage: `/zone mode <mode>`
   * `<mode>` is the new mode to set the player to.
     * e.g., `3d` for 3D selection mode, `2d` for 2D selection mode.
+* `/zone find`: Finds regions.
+  * Usage: `/zone find`
+  * Displays a bossbar with the name(s) of all regions at the player's location.
 
 * `/zone save`: Manually saves all regions to file.
   * Usage: `/zone save`
