@@ -388,14 +388,33 @@ public class RegionManager {
             return foundRegions;
         }
         for (Region region : regions().values()) {
-            BoundingBox regionBox = BoundingBox.of(region.getMin(), region.getMax());
-            // Check if the location's bounding box overlaps with the region's bounding box
-            if (regionBox.contains(location.toVector())) {
+            if (region.contains(location)) {
                 foundRegions.add(region);
+                regionCache.computeIfAbsent(location, k -> new ArrayList<>()).add(region.getKey());
             }
         }
 
+
         return foundRegions;
+    }
+
+    /**
+     * Gets the region with the highest priority at the given location
+     *
+     * @param location Location to check
+     * @return Region at location
+     */
+    public Region getEffectiveRegionAt(Location location) {
+        List<Region> regions = getRegionsAt(location);
+        int priority = Integer.MIN_VALUE;
+        Region effectiveRegion = null;
+        for (Region region : regions) {
+            if (region.getPriority() > priority) {
+                effectiveRegion = region;
+                priority = region.getPriority();
+            }
+        }
+        return effectiveRegion;
     }
 
     /**
