@@ -227,6 +227,7 @@ public class Region {
 
     public boolean contains(Location location) {
         BoundingBox box = BoundingBox.of(min, max);
+        box.expand(1); // Expand by 1 to encompass the full block
         return box.contains(location.toVector());
     }
 
