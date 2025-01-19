@@ -80,6 +80,7 @@ public class RegionManager {
             loadedRegions.clear();
             for (String key : Objects.requireNonNull(regionsConfig.getConfigurationSection("regions")).getKeys(false)) {
                 String name = regionsConfig.getString("regions." + key + ".name");
+                int priority = regionsConfig.getInt("regions." + key + ".priority");
                 Location min = loadLocation("regions." + key + ".min");
                 Location max = loadLocation("regions." + key + ".max");
                 String parent = regionsConfig.getString("regions." + key + ".parent");
@@ -120,6 +121,7 @@ public class RegionManager {
     // Save a region to the YAML file
     public void saveRegion(String key, Region region) {
         regionsConfig.set("regions." + key + ".name", region.getName());
+        regionsConfig.set("regions." + key + ".priority", region.getPriority());
         saveLocation("regions." + key + ".min", region.getMin());
         saveLocation("regions." + key + ".max", region.getMax());
         if (region.getParent() != null) {
