@@ -300,21 +300,21 @@ public class CommandExecutor {
             player = (Player) sender;
         }
         boolean perm = sender.hasPermission("zones.info.other");
-        for (Map.Entry<String, Region> entry : regions.entrySet()) {
-            if (!perm && (player != null && !entry.getValue().isMember(player.getUniqueId()))) {
+        for (Region region : regions.values()) {
+            if (!perm && (player != null && !region.isMember(player.getUniqueId()))) {
                 continue;
             }
 
             Component hoverText = regionInfo(
-                    entry,
+                    region,
                     (perm ||
-                            (player != null && this.plugin.getPermissionManager().isAdmin(player.getUniqueId().toString(), regions.get(entry.getKey())))))
+                            (player != null && this.plugin.getPermissionManager().isAdmin(player.getUniqueId().toString(), region))))
                     .join();
             var mm = MiniMessage.miniMessage();
 
-            Component comp = mm.deserialize(messages.get("region.info.name"), parsed("name", entry.getValue().getName()), parsed("key", entry.getKey()));
+            Component comp = mm.deserialize(messages.get("region.info.name"), parsed("name", region.getName()), parsed("key", region.getKey()));
             HoverEvent<Component> hover = hoverText.asHoverEvent();
-            ClickEvent click = ClickEvent.runCommand("/zone info " + entry.getKey());
+            ClickEvent click = ClickEvent.runCommand("/zone info " + region.getKey());
             comp = comp.hoverEvent(hover);
             comp = comp.clickEvent(click);
             sender.sendMessage(comp);
@@ -347,7 +347,8 @@ public class CommandExecutor {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
             return;
         }
-        regionInfo(regions.entrySet().stream().filter(entry -> entry.getKey().equals(regionKey)).findFirst().get(), regions.get(regionKey).isAdmin(player.getUniqueId()))
+        Region region = regions.get(regionKey);
+        regionInfo(region, region.isAdmin(player.getUniqueId()))
                 .thenAccept(sender::sendMessage);
 
     }
@@ -460,9 +461,8 @@ public class CommandExecutor {
         if (sender instanceof Player player) {
             Region region;
             if (args.length == 1) {
-                try {
-                    region = regionManager.getRegionsAt(player.getLocation()).get(0);
-                } catch (IndexOutOfBoundsException e) {
+                region = regionManager.getEffectiveRegionAt(player.getLocation());
+                if (region == null) {
                     plugin.particles.remove(player.getUniqueId());
                     player.sendMessage(miniMessage.deserialize(messages.get("commands.select.deselected")));
                     return;
@@ -515,21 +515,21 @@ public class CommandExecutor {
         }
     }
 
-    private CompletableFuture<Component> regionInfo(Map.Entry<String, Region> entry, boolean showMembers) {
+    private CompletableFuture<Component> regionInfo(Region region, boolean showMembers) {
         var mm = MiniMessage.miniMessage();
         Component comp = Component.text("");
-        comp = comp.append(mm.deserialize(messages.get("region.info.name"), parsed("name", entry.getValue().getName())));
+        comp = comp.append(mm.deserialize(messages.get("region.info.name"), parsed("name", region.getName())));
         comp = comp.appendNewline();
-        if (entry.getValue().getParent() != null) {
-            comp = comp.append(mm.deserialize(messages.get("region.info.parent"), parsed("parent", entry.getValue().getParent())));
+        if (region.getParent() != null) {
+            comp = comp.append(mm.deserialize(messages.get("region.info.parent"), parsed("parent", region.getParent())));
         }
-        comp = comp.append(mm.deserialize(messages.get("region.info.min"), parsed("min", entry.getValue().getMinString())));
+        comp = comp.append(mm.deserialize(messages.get("region.info.min"), parsed("min", region.getMinString())));
         comp = comp.appendNewline();
-        comp = comp.append(mm.deserialize(messages.get("region.info.max"), parsed("max", entry.getValue().getMaxString())));
+        comp = comp.append(mm.deserialize(messages.get("region.info.max"), parsed("max", region.getMaxString())));
 
         if (showMembers) {
             // Iterate over members to format permissions
-            for (Map.Entry<String, Map<String, String>> member : entry.getValue().getMembers().entrySet()) {
+            for (Map.Entry<String, Map<String, String>> member : region.getMembers().entrySet()) {
                 String playerName = null;
                 try {
                     playerName = Bukkit.getOfflinePlayer(UUID.fromString(member.getKey())).getName();
@@ -583,7 +583,7 @@ public class CommandExecutor {
                         .append(permissionsComponent);
             }
         }
-        comp = comp.append(mm.deserialize(messages.get("region.info.key"), parsed("key", entry.getKey())));
+        comp = comp.append(mm.deserialize(messages.get("region.info.key"), parsed("key", region.getKey())));
 
         return CompletableFuture.completedFuture(comp);
     }

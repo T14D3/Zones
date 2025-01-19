@@ -8,6 +8,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.util.BoundingBox;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -80,12 +81,13 @@ public class RegionManager {
             loadedRegions.clear();
             for (String key : Objects.requireNonNull(regionsConfig.getConfigurationSection("regions")).getKeys(false)) {
                 String name = regionsConfig.getString("regions." + key + ".name");
+                int priority = regionsConfig.getInt("regions." + key + ".priority");
                 Location min = loadLocation("regions." + key + ".min");
                 Location max = loadLocation("regions." + key + ".max");
                 String parent = regionsConfig.getString("regions." + key + ".parent");
 
                 Map<String, Map<String, String>> members = loadMembers(key);
-                Region region = new Region(name != null ? name : "Invalid Name", min, max, members, key, parent);
+                Region region = new Region(name != null ? name : "Invalid Name", min, max, members, key, parent, 0);
                 loadedRegions.put(key, region);
             }
             regionCache.clear();
@@ -120,6 +122,7 @@ public class RegionManager {
     // Save a region to the YAML file
     public void saveRegion(String key, Region region) {
         regionsConfig.set("regions." + key + ".name", region.getName());
+        regionsConfig.set("regions." + key + ".priority", region.getPriority());
         saveLocation("regions." + key + ".min", region.getMin());
         saveLocation("regions." + key + ".max", region.getMax());
         if (region.getParent() != null) {
@@ -186,7 +189,7 @@ public class RegionManager {
         } while (regions().containsKey(regionKey));
 
         Map<String, Map<String, String>> members = new HashMap<>();
-        Region newRegion = new Region(name, min, max, members, regionKey);
+        Region newRegion = new Region(name, min, max, members, regionKey, 0);
 
         ownerPermissions.forEach((permission, value) -> {
             newRegion.addMemberPermission(playerUUID, permission, value, this);
@@ -223,8 +226,8 @@ public class RegionManager {
      * @param members The members of the new region.
      * @return The newly created region.
      */
-    public Region createNewRegion(String key, String name, Location min, Location max, Map<String, Map<String, String>> members) {
-        Region region = new Region(name, min, max, members, key);
+    public Region createNewRegion(String key, String name, Location min, Location max, Map<String, Map<String, String>> members, int priority) {
+        Region region = new Region(name, min, max, members, key, priority);
         saveRegion(key, region);
         return region;
     }
@@ -261,7 +264,7 @@ public class RegionManager {
         } while (regions().containsKey(regionKey));
 
         Map<String, Map<String, String>> members = new HashMap<>();
-        Region newRegion = new Region(name, min, max, members, regionKey, parentRegion.getKey());
+        Region newRegion = new Region(name, min, max, members, regionKey, parentRegion.getKey(), 0);
 
         ownerPermissions.forEach((permission, value) -> {
             newRegion.addMemberPermission(playerUUID, permission, value, this);
@@ -386,14 +389,33 @@ public class RegionManager {
             return foundRegions;
         }
         for (Region region : regions().values()) {
-            BoundingBox regionBox = BoundingBox.of(region.getMin(), region.getMax());
-            // Check if the location's bounding box overlaps with the region's bounding box
-            if (regionBox.contains(location.toVector())) {
+            if (region.contains(location)) {
                 foundRegions.add(region);
+                regionCache.computeIfAbsent(location, k -> new ArrayList<>()).add(region.getKey());
             }
         }
 
+
         return foundRegions;
+    }
+
+    /**
+     * Gets the region with the highest priority at the given location
+     *
+     * @param location Location to check
+     * @return Region at location, or null if no region found
+     */
+    public @Nullable Region getEffectiveRegionAt(Location location) {
+        List<Region> regions = getRegionsAt(location);
+        int priority = Integer.MIN_VALUE;
+        Region effectiveRegion = null;
+        for (Region region : regions) {
+            if (region.getPriority() > priority) {
+                effectiveRegion = region;
+                priority = region.getPriority();
+            }
+        }
+        return effectiveRegion;
     }
 
     /**
@@ -473,7 +495,7 @@ public class RegionManager {
 
     /**
      * Adds a region to the loaded regions map.
-     * Requires an existing region object, to create a new region use {@link #createNewRegion(String, String, Location, Location, Map)}.
+     * Requires an existing region object, to create a new region use {@link #createNewRegion(String, String, Location, Location, Map, int)}.
      *
      * @param region The region to add.
      *

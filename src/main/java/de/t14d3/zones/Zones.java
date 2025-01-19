@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class Zones extends JavaPlugin {
 
@@ -31,7 +32,7 @@ public final class Zones extends JavaPlugin {
     private BeaconUtils beaconUtils;
     private ParticleHandler particleHandler;
     public Map<UUID, Pair<Location, Location>> selection = new HashMap<>();
-    public Map<UUID, BoundingBox> particles = new HashMap<>();
+    public ConcurrentHashMap<UUID, BoundingBox> particles = new ConcurrentHashMap<>();
     private Types types;
     private Messages messages;
     private static Zones instance;

@@ -4,7 +4,6 @@ import de.t14d3.zones.utils.Actions;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
-import org.bukkit.util.BoundingBox;
 
 import java.util.Map;
 import java.util.UUID;
@@ -34,6 +33,12 @@ public class PermissionManager {
      * @return True if the player can interact with the region, false otherwise.
      */
     public boolean canInteract(Location location, UUID playerUUID, Actions action, String type) {
+
+        // Skip checking if player has global bypass permission
+        Player player = Bukkit.getPlayer(playerUUID);
+        if (player != null && player.hasPermission("zones.bypass.claimed")) {
+            return true;
+        }
         if (interactionCache.containsKey(playerUUID)) {
             ConcurrentLinkedQueue<CacheEntry> entries = interactionCache.get(playerUUID);
             for (CacheEntry entry : entries) {
@@ -42,19 +47,35 @@ public class PermissionManager {
                 }
             }
         }
-        for (Map.Entry<String, Region> entry : regionManager.regions().entrySet()) {
-            Region region = entry.getValue();
-            BoundingBox box = BoundingBox.of(region.getMin(), region.getMax());
+        if (!regionManager.getRegionsAt(location).isEmpty()) {
+            Result result = Result.UNDEFINED;
+            int priority = Integer.MIN_VALUE;
 
-            if (box.contains(location.toVector())) {
-                Result hasPermission = hasPermission(playerUUID.toString(), action.name(), type, region);
-                interactionCache.computeIfAbsent(playerUUID, k -> new ConcurrentLinkedQueue<>()).add(new CacheEntry(location, action.name(), type, hasPermission));
+            for (Region region : regionManager.getRegionsAt(location)) {
 
-                return hasPermission.equals(Result.TRUE);
+                // Only check regions with a higher priority than the current value
+                if (region.getPriority() > priority) {
+                    Result hasPermission = hasPermission(playerUUID.toString(), action.name(), type, region);
+                    if (!hasPermission.equals(Result.UNDEFINED)) {
+                        result = hasPermission;
+                        priority = region.getPriority();
+                        continue;
+                    }
+                }
+                // If same priority, both have to be true, otherwise will assume false
+                else if (region.getPriority() == priority) {
+                    Result hasPermission = hasPermission(playerUUID.toString(), action.name(), type, region);
+                    if (hasPermission.equals(Result.FALSE) || result.equals(Result.FALSE)) {
+                        result = hasPermission;
+                        priority = region.getPriority();
+                        continue;
+                    }
+                }
             }
-        }
 
-        Player player = Bukkit.getPlayer(playerUUID);
+            return result.equals(Result.TRUE);
+        }
+        // If no region found, check for unclaimed bypass perm and return false if not found
         return player != null && player.hasPermission("zones.bypass.unclaimed");
     }
 
@@ -162,11 +183,6 @@ public class PermissionManager {
         try {
             player = Bukkit.getPlayer(UUID.fromString(who));
         } catch (IllegalArgumentException ignored) {
-        }
-
-        // Check if player has a global bypass permission
-        if (player != null && player.hasPermission("zones.bypass.claimed")) {
-            return Result.TRUE;
         }
 
         Result result = Result.UNDEFINED; // Initialize result as null
