@@ -185,11 +185,6 @@ public class PermissionManager {
         } catch (IllegalArgumentException ignored) {
         }
 
-        // Check if player has a global bypass permission
-        if (player != null && player.hasPermission("zones.bypass.claimed")) {
-            return Result.TRUE;
-        }
-
         Result result = Result.UNDEFINED; // Initialize result as null
 
         // Check if player is an admin, but only if not checking
