@@ -6,6 +6,7 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import de.t14d3.zones.PaperBootstrap;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.Zones;
+import de.t14d3.zones.utils.Flag;
 import de.t14d3.zones.utils.Flags;
 import de.t14d3.zones.utils.Utils;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -136,10 +137,10 @@ public class CommandNode {
                                                 .suggests((ctx, builder) -> {
                                                     Flags flags = context.getFlags();
                                                     MiniMessage mm = MiniMessage.miniMessage();
-                                                    for (Map.Entry<String, String> entry : flags.getFlags().entrySet()) {
-                                                        builder.suggest(entry.getKey(),
+                                                    for (Flag entry : Flags.getFlags()) {
+                                                        builder.suggest(entry.name(),
                                                                 MessageComponentSerializer.message().serialize(
-                                                                        mm.deserialize(Zones.getInstance().getMessages().getOrDefault("flags." + entry.getKey(), entry.getValue()))
+                                                                        mm.deserialize(Zones.getInstance().getMessages().getOrDefault("flags." + entry.name(), entry.getDescription()))
                                                                 ));
                                                     }
                                                     return builder.buildFuture();

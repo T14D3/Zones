@@ -4,7 +4,8 @@ import de.t14d3.zones.PermissionManager;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.Zones;
-import de.t14d3.zones.utils.Actions;
+import de.t14d3.zones.utils.Flag;
+import de.t14d3.zones.utils.Flags;
 import de.t14d3.zones.utils.Messages;
 import de.t14d3.zones.utils.Utils;
 import de.t14d3.zones.visuals.BeaconUtils;
@@ -110,24 +111,24 @@ public class PlayerInteractListener implements Listener {
             return;
         }
 
-        List<Actions> requiredPermissions = new ArrayList<>(); // Collect required permissions
+        List<Flag> requiredPermissions = new ArrayList<>(); // Collect required permissions
 
         // Interactable blocks
         if ((Utils.isContainer(event.getClickedBlock().getState(false)) || Utils.isPowerable(event.getClickedBlock().getBlockData())) && event.getAction() == Action.RIGHT_CLICK_BLOCK) {
-            requiredPermissions.add(Actions.INTERACT);
+            requiredPermissions.add(Flags.INTERACT);
             if (Utils.isContainer(event.getClickedBlock().getState(false))) {
-                requiredPermissions.add(Actions.CONTAINER);
+                requiredPermissions.add(Flags.CONTAINER);
             }
             if (Utils.isPowerable(event.getClickedBlock().getBlockData())) {
-                requiredPermissions.add(Actions.REDSTONE);
+                requiredPermissions.add(Flags.REDSTONE);
             }
             if (event.getClickedBlock().getType() == Material.TNT) {
-                requiredPermissions.add(Actions.IGNITE);
+                requiredPermissions.add(Flags.IGNITE);
             }
         }
         else return;
-        for (Actions action : requiredPermissions) {
-            if (!permissionManager.canInteract(location, playerUUID, action, event.getClickedBlock().getType().name())) {
+        for (Flag action : requiredPermissions) {
+            if (!permissionManager.checkAction(location, playerUUID, action, event.getClickedBlock().getType().name())) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, event.getClickedBlock().getType().name());
             }
@@ -139,16 +140,16 @@ public class PlayerInteractListener implements Listener {
         Player player = event.getPlayer();
         String type = event.getBlockPlaced().getType().name();
         Location location = event.getBlockPlaced().getLocation();
-        List<Actions> requiredPermissions = new ArrayList<>();
-        requiredPermissions.add(Actions.PLACE);
+        List<Flag> requiredPermissions = new ArrayList<>();
+        requiredPermissions.add(Flags.PLACE);
         if (Utils.isContainer(event.getBlockPlaced().getState(false))) {
-            requiredPermissions.add(Actions.CONTAINER);
+            requiredPermissions.add(Flags.CONTAINER);
         }
         if (Utils.isPowerable(event.getBlockPlaced().getBlockData())) {
-            requiredPermissions.add(Actions.REDSTONE);
+            requiredPermissions.add(Flags.REDSTONE);
         }
-        for (Actions action : requiredPermissions) {
-            if (!permissionManager.canInteract(event.getBlockPlaced().getLocation(), player.getUniqueId(), action, type)) {
+        for (Flag action : requiredPermissions) {
+            if (!permissionManager.checkAction(event.getBlockPlaced().getLocation(), player.getUniqueId(), action, type)) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, type);
             }
@@ -161,16 +162,16 @@ public class PlayerInteractListener implements Listener {
         Player player = event.getPlayer();
         String type = event.getBlock().getType().name();
         Location location = event.getBlock().getLocation();
-        List<Actions> requiredPermissions = new ArrayList<>();
-        requiredPermissions.add(Actions.BREAK);
+        List<Flag> requiredPermissions = new ArrayList<>();
+        requiredPermissions.add(Flags.BREAK);
         if (Utils.isContainer(event.getBlock().getState(false))) {
-            requiredPermissions.add(Actions.CONTAINER);
+            requiredPermissions.add(Flags.CONTAINER);
         }
         if (Utils.isPowerable(event.getBlock().getBlockData())) {
-            requiredPermissions.add(Actions.REDSTONE);
+            requiredPermissions.add(Flags.REDSTONE);
         }
-        for (Actions action : requiredPermissions) {
-            if (!permissionManager.canInteract(event.getBlock().getLocation(), player.getUniqueId(), action, type)) {
+        for (Flag action : requiredPermissions) {
+            if (!permissionManager.checkAction(event.getBlock().getLocation(), player.getUniqueId(), action, type)) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, type);
             }
@@ -183,12 +184,12 @@ public class PlayerInteractListener implements Listener {
     private void onEntityInteract(PlayerInteractEntityEvent event) {
         Player player = event.getPlayer();
         Location location = event.getRightClicked().getLocation();
-        List<Actions> requiredPermissions = new ArrayList<>();
-        requiredPermissions.add(Actions.INTERACT);
-        requiredPermissions.add(Actions.ENTITY);
+        List<Flag> requiredPermissions = new ArrayList<>();
+        requiredPermissions.add(Flags.INTERACT);
+        requiredPermissions.add(Flags.ENTITY);
         String type = event.getRightClicked().getType().name();
-        for (Actions action : requiredPermissions) {
-            if (!permissionManager.canInteract(location, player.getUniqueId(), action, type)) {
+        for (Flag action : requiredPermissions) {
+            if (!permissionManager.checkAction(location, player.getUniqueId(), action, type)) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, type);
             }
@@ -199,11 +200,11 @@ public class PlayerInteractListener implements Listener {
     private void onEntityDamage(EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof Player player) {
             Location location = event.getEntity().getLocation();
-            List<Actions> requiredPermissions = new ArrayList<>();
-            requiredPermissions.add(Actions.DAMAGE);
+            List<Flag> requiredPermissions = new ArrayList<>();
+            requiredPermissions.add(Flags.DAMAGE);
             String type = event.getEntity().getType().name();
-            for (Actions action : requiredPermissions) {
-                if (!permissionManager.canInteract(location, player.getUniqueId(), action, type)) {
+            for (Flag action : requiredPermissions) {
+                if (!permissionManager.checkAction(location, player.getUniqueId(), action, type)) {
                     event.setCancelled(true);
                     actionBar(player, location, requiredPermissions, type);
                 }
@@ -215,11 +216,11 @@ public class PlayerInteractListener implements Listener {
     private void onVehicleDamage(VehicleDamageEvent event) {
         if (event.getAttacker() instanceof Player player) {
             Location location = event.getVehicle().getLocation();
-            List<Actions> requiredPermissions = new ArrayList<>();
-            requiredPermissions.add(Actions.DAMAGE);
+            List<Flag> requiredPermissions = new ArrayList<>();
+            requiredPermissions.add(Flags.DAMAGE);
             String type = event.getVehicle().getType().name();
-            for (Actions action : requiredPermissions) {
-                if (!permissionManager.canInteract(location, player.getUniqueId(), action, type)) {
+            for (Flag action : requiredPermissions) {
+                if (!permissionManager.checkAction(location, player.getUniqueId(), action, type)) {
                     event.setCancelled(true);
                     actionBar(player, location, requiredPermissions, type);
                 }
@@ -231,12 +232,12 @@ public class PlayerInteractListener implements Listener {
     private void onArmorStandManipulate(PlayerArmorStandManipulateEvent event) {
         Player player = event.getPlayer();
         Location location = event.getRightClicked().getLocation();
-        List<Actions> requiredPermissions = new ArrayList<>();
-        requiredPermissions.add(Actions.ENTITY);
+        List<Flag> requiredPermissions = new ArrayList<>();
+        requiredPermissions.add(Flags.ENTITY);
         String type = event.getRightClicked().getType().name();
-        requiredPermissions.add(Actions.CONTAINER);
-        for (Actions action : requiredPermissions) {
-            if (!permissionManager.canInteract(location, player.getUniqueId(), action, type)) {
+        requiredPermissions.add(Flags.CONTAINER);
+        for (Flag action : requiredPermissions) {
+            if (!permissionManager.checkAction(location, player.getUniqueId(), action, type)) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, type);
             }
@@ -250,11 +251,11 @@ public class PlayerInteractListener implements Listener {
         }
         Player player = event.getPlayer();
         Location location = event.getEntity().getLocation();
-        List<Actions> requiredPermissions = new ArrayList<>();
-        requiredPermissions.add(Actions.PLACE);
+        List<Flag> requiredPermissions = new ArrayList<>();
+        requiredPermissions.add(Flags.PLACE);
         String type = event.getEntity().getType().name();
-        for (Actions action : requiredPermissions) {
-            if (!permissionManager.canInteract(location, player.getUniqueId(), action, type)) {
+        for (Flag action : requiredPermissions) {
+            if (!permissionManager.checkAction(location, player.getUniqueId(), action, type)) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, type);
             }
@@ -265,12 +266,12 @@ public class PlayerInteractListener implements Listener {
     private void onHangingBreak(HangingBreakByEntityEvent event) {
         Player player = (Player) event.getRemover();
         Location location = event.getEntity().getLocation();
-        List<Actions> requiredPermissions = new ArrayList<>();
-        requiredPermissions.add(Actions.BREAK);
-        requiredPermissions.add(Actions.ENTITY);
+        List<Flag> requiredPermissions = new ArrayList<>();
+        requiredPermissions.add(Flags.BREAK);
+        requiredPermissions.add(Flags.ENTITY);
         String type = event.getEntity().getType().name();
-        for (Actions action : requiredPermissions) {
-            if (!permissionManager.canInteract(location, player.getUniqueId(), action, type)) {
+        for (Flag action : requiredPermissions) {
+            if (!permissionManager.checkAction(location, player.getUniqueId(), action, type)) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, type);
             }
@@ -284,12 +285,12 @@ public class PlayerInteractListener implements Listener {
         }
         Player player = event.getPlayer();
         Location location = event.getEntity().getLocation();
-        List<Actions> requiredPermissions = new ArrayList<>();
-        requiredPermissions.add(Actions.PLACE);
-        requiredPermissions.add(Actions.ENTITY);
+        List<Flag> requiredPermissions = new ArrayList<>();
+        requiredPermissions.add(Flags.PLACE);
+        requiredPermissions.add(Flags.ENTITY);
         String type = event.getEntity().getType().name();
-        for (Actions action : requiredPermissions) {
-            if (!permissionManager.canInteract(location, player.getUniqueId(), action, type)) {
+        for (Flag action : requiredPermissions) {
+            if (!permissionManager.checkAction(location, player.getUniqueId(), action, type)) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, type);
             }
@@ -297,13 +298,13 @@ public class PlayerInteractListener implements Listener {
     }
 
     // Small util for message
-    private void actionBar(Player player, Location location, List<Actions> actions, String type) {
+    private void actionBar(Player player, Location location, List<Flag> actions, String type) {
         List<Region> regions = regionManager.getRegionsAt(location);
         String regionNames = regions.stream().map(Region::getName).collect(Collectors.joining(", "));
 
         StringBuilder permissionsString = new StringBuilder();
-        for (Actions action : actions) {
-            permissionsString.append(action).append(", ");
+        for (Flag action : actions) {
+            permissionsString.append(action.name()).append(", ");
         }
         permissionsString.deleteCharAt(permissionsString.length() - 2); // Remove trailing ", "
         permissionsString.deleteCharAt(permissionsString.length() - 1); // Remove trailing ", "

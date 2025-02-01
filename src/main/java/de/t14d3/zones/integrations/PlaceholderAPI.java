@@ -2,7 +2,7 @@ package de.t14d3.zones.integrations;
 
 import de.t14d3.zones.Region;
 import de.t14d3.zones.Zones;
-import de.t14d3.zones.utils.Actions;
+import de.t14d3.zones.utils.Flags;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -166,16 +166,16 @@ public class PlaceholderAPI extends PlaceholderExpansion {
         }
         if (params.equalsIgnoreCase("can_place_hand")) {
             if (!regions.isEmpty()) {
-                return plugin.getPermissionManager().canInteract(player.getLocation(), player.getUniqueId(), Actions.PLACE, player.getInventory().getItemInMainHand().getType().name()) ? "true" : "false";
+                return plugin.getPermissionManager().checkAction(player.getLocation(), player.getUniqueId(), Flags.PLACE, player.getInventory().getItemInMainHand().getType().name()) ? "true" : "false";
             }
             return "false";
         }
         if (params.equalsIgnoreCase("can_break_target")) {
             if (!regions.isEmpty()) {
-                return plugin.getPermissionManager().canInteract(
+                return plugin.getPermissionManager().checkAction(
                         player.getLocation(),
                         player.getUniqueId(),
-                        Actions.BREAK,
+                        Flags.BREAK,
                         player.getTargetBlockExact(5) != null
                                 ? player.getTargetBlockExact(5).getType().name() : "")
                         ? "true" : "false";
@@ -187,7 +187,7 @@ public class PlaceholderAPI extends PlaceholderExpansion {
             // There's definitely a better way to do this, but it works and I'm too lazy to find a better one
             String type = params.substring(params.indexOf('_', params.indexOf('_') + 1) + 1);
             if (!regions.isEmpty()) {
-                return plugin.getPermissionManager().canInteract(player.getLocation(), player.getUniqueId(), Actions.valueOf(action), type) ? "true" : "false";
+                return plugin.getPermissionManager().checkAction(player.getLocation(), player.getUniqueId(), Flags.getFlag(action), type) ? "true" : "false";
             }
             return "false";
         }

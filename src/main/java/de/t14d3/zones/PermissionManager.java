@@ -1,6 +1,6 @@
 package de.t14d3.zones;
 
-import de.t14d3.zones.utils.Actions;
+import de.t14d3.zones.utils.Flag;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -14,7 +14,7 @@ public class PermissionManager {
 
     private RegionManager regionManager;
 
-    private final ConcurrentHashMap<UUID, ConcurrentLinkedQueue<CacheEntry>> interactionCache = new ConcurrentHashMap<UUID, ConcurrentLinkedQueue<CacheEntry>>();
+    private final ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>> interactionCache = new ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>>();
     private final ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>> permissionCache = new ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>>();
 
     public PermissionManager() {}
@@ -24,23 +24,33 @@ public class PermissionManager {
         this.regionManager = regionManager;
     }
 
+
+    public boolean checkAction(Location location, UUID playerUUID, Flag action, String type, Object... extra) {
+        return checkAction(location, playerUUID.toString(), action, type, extra);
+    }
+
     /**
      * Checks if a player can interact with a region.
      * @param location The location of the interaction.
-     * @param playerUUID The UUID of the player.
+     * @param who The UUID of the player.
      * @param action The action the player wants to perform.
      * @param type The type of the block or entity the interaction happened with.
      * @return True if the player can interact with the region, false otherwise.
      */
-    public boolean canInteract(Location location, UUID playerUUID, Actions action, String type) {
+    public boolean checkAction(Location location, String who, Flag action, String type, Object... extra) {
 
         // Skip checking if player has global bypass permission
-        Player player = Bukkit.getPlayer(playerUUID);
-        if (player != null && player.hasPermission("zones.bypass.claimed")) {
-            return true;
+        Player player = null;
+        try {
+            player = Bukkit.getPlayer(UUID.fromString(who));
+            if (player != null && player.hasPermission("zones.bypass.claimed")) {
+                return true;
+            }
+        } catch (IllegalArgumentException ignored) {
         }
-        if (interactionCache.containsKey(playerUUID)) {
-            ConcurrentLinkedQueue<CacheEntry> entries = interactionCache.get(playerUUID);
+        boolean base = extra[0] == null;
+        if (base && interactionCache.containsKey(who)) {
+            ConcurrentLinkedQueue<CacheEntry> entries = interactionCache.get(who);
             for (CacheEntry entry : entries) {
                 if (entry.isEqual(location, action.name(), type)) {
                     return entry.result.equals(Result.TRUE);
@@ -55,7 +65,7 @@ public class PermissionManager {
 
                 // Only check regions with a higher priority than the current value
                 if (region.getPriority() > priority) {
-                    Result hasPermission = hasPermission(playerUUID.toString(), action.name(), type, region);
+                    Result hasPermission = hasPermission(who, action.name(), type, region);
                     if (!hasPermission.equals(Result.UNDEFINED)) {
                         result = hasPermission;
                         priority = region.getPriority();
@@ -64,7 +74,7 @@ public class PermissionManager {
                 }
                 // If same priority, both have to be true, otherwise will assume false
                 else if (region.getPriority() == priority) {
-                    Result hasPermission = hasPermission(playerUUID.toString(), action.name(), type, region);
+                    Result hasPermission = hasPermission(who, action.name(), type, region);
                     if (hasPermission.equals(Result.FALSE) || result.equals(Result.FALSE)) {
                         result = Result.FALSE;
                         priority = region.getPriority();
@@ -73,6 +83,9 @@ public class PermissionManager {
                 }
             }
 
+            if (base) {
+                interactionCache.computeIfAbsent(who, k -> new ConcurrentLinkedQueue<>()).add(new CacheEntry(location, action.name(), type, result));
+            }
             return result.equals(Result.TRUE);
         }
         // If no region found, check for unclaimed bypass perm and return false if not found
@@ -86,7 +99,7 @@ public class PermissionManager {
      * @param target The player to invalidate the cache for.
      */
     public void invalidateInteractionCache(UUID target) {
-        interactionCache.remove(target);
+        interactionCache.remove(target.toString());
     }
 
     /**
@@ -148,10 +161,10 @@ public class PermissionManager {
      * @param type       The type of object the permission applies to (e.g., "GRASS_BLOCK").
      * @param region     The region in which the permission is being checked.
      * @return true if the player has the specified permission for the type, false otherwise.
-     * @see #hasPermission(String, String, String, Region)
+     * @see #hasPermission(String, String, String, Region, Object...)
      */
-    public boolean hasPermission(UUID uuid, String permission, String type, Region region) {
-        return hasPermission(uuid.toString(), permission, type, region).equals(Result.TRUE);
+    public boolean hasPermission(UUID uuid, String permission, String type, Region region, Object... extra) {
+        return hasPermission(uuid.toString(), permission, type, region, extra).equals(Result.TRUE);
     }
     /**
      * Checks if a player has a specific permission for a given type in the provided region.
@@ -160,9 +173,10 @@ public class PermissionManager {
      * @param permission The permission being checked (e.g., "break", "place").
      * @param type    The type of object the permission applies to (e.g., "GRASS_BLOCK").
      * @param region  The region in which the permission is being checked.
+     * @param extra   Additional, optional information, for example a spawn reason.
      * @return {@link Result}
      */
-    public Result hasPermission(String who, String permission, String type, Region region) {
+    public Result hasPermission(String who, String permission, String type, Region region, Object... extra) {
         if (permissionCache.containsKey(who)) {
             ConcurrentLinkedQueue<CacheEntry> entries = permissionCache.get(who);
             for (CacheEntry entry : entries) {
@@ -172,18 +186,13 @@ public class PermissionManager {
             }
         }
         Result result = Result.UNDEFINED; // Initialize result as null
-        result = calculatePermission(who, permission, type, region);
+        result = calculatePermission(who, permission, type, region, extra);
         permissionCache.computeIfAbsent(who, k -> new ConcurrentLinkedQueue<>()).add(new CacheEntry(permission, type, region.getKey(), result));
         return result;
     }
 
-    private Result calculatePermission(String who, String permission, String type, Region region) {
+    private Result calculatePermission(String who, String permission, String type, Region region, Object... extra) {
         permission = permission.toLowerCase();
-        Player player = null;
-        try {
-            player = Bukkit.getPlayer(UUID.fromString(who));
-        } catch (IllegalArgumentException ignored) {
-        }
 
         Result result = Result.UNDEFINED; // Initialize result as null
 

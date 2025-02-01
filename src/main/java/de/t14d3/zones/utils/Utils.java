@@ -66,20 +66,6 @@ public class Utils {
         }
     }
 
-    public static Map<String, String> defaultFlags() {
-        Map<String, String> flags = new HashMap<>();
-        flags.put("break", "Allows breaking blocks");
-        flags.put("place", "Allows placing blocks");
-        flags.put("interact", "Allows interacting");
-        flags.put("container", "Allows opening containers");
-        flags.put("redstone", "Allows interacting with redstone");
-        flags.put("entity", "Allows interacting with entities");
-        flags.put("ignite", "Allows igniting tnt");
-        flags.put("damage", "Allows damaging entities");
-        flags.put("group", "Add a group to the player");
-        return flags;
-    }
-
     public void populatePlayers() {
         offlinePlayers.addAll(Arrays.asList(Bukkit.getOfflinePlayers()));
         for (OfflinePlayer player : offlinePlayers) {

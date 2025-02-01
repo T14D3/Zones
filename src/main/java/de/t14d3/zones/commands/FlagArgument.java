@@ -10,14 +10,12 @@ import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("UnstableApiUsage")
 public class FlagArgument implements CustomArgumentType.Converted<String, String> {
-    private final Flags flags;
 
     public FlagArgument(PaperBootstrap context) {
-        this.flags = context.getFlags();
     }
     @Override
-    public @NotNull String convert(@NotNull String nativeType) throws CommandSyntaxException {
-        return flags.getFlags().get(nativeType);
+    public String convert(@NotNull String nativeType) throws CommandSyntaxException {
+        return Flags.getFlag(nativeType).name();
     }
 
     @Override
