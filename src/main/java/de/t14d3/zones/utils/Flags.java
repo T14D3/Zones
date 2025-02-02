@@ -27,6 +27,7 @@ public class Flags {
     public static Flag SPREAD;
     public static Flag RELOCATE;
     public static Flag PHYSICS;
+
     private static List<Flag> flags;
 
     public Flags() {

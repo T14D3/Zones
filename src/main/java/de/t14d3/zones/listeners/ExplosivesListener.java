@@ -31,8 +31,7 @@ public class ExplosivesListener {
         String explosionMode =
                 plugin.getConfig().getString("events.explosion.explosion-mode", "ALL").toUpperCase();
         limit = plugin.getConfig().getInt("events.explosion.limit", 10);
-        limitExceededCancel =
-                plugin
+        limitExceededCancel = plugin
                         .getConfig()
                         .getString("events.explosion.limit-exceeded-action", "CANCEL")
                         .equalsIgnoreCase("CANCEL");

@@ -1,7 +1,5 @@
 package de.t14d3.zones;
 
-import com.google.gson.JsonObject;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.util.BlockVector;
 import org.bukkit.util.BoundingBox;
@@ -20,8 +18,9 @@ public class Region {
     private Location min;
     private Location max;
     private Map<String, Map<String, String>> members;
-    private String key;
-    private String parent;
+    private final Set<ChunkKey> overlappingChunks = new HashSet<>();
+    private RegionKey key;
+    private RegionKey parent;
     private int priority;
 
     // Constructor
@@ -36,9 +35,9 @@ public class Region {
      * @param key      The key of the region.
      * @param parent   The parent (if any) of the region.
      * @param priority The priority of the region.
-     * @see #Region(String, Location, Location, Map, String, int)
+     * @see #Region(String, Location, Location, Map, RegionKey, int)
      */
-    Region(@NotNull String name, @NotNull Location min, @NotNull Location max, Map<String, Map<String, String>> members, @NotNull String key, @Nullable String parent, int priority) {
+    Region(@NotNull String name, @NotNull Location min, @NotNull Location max, Map<String, Map<String, String>> members, @NotNull RegionKey key, @Nullable RegionKey parent, int priority) {
         this.name = name;
         this.min = min;
         this.max = max;
@@ -59,9 +58,9 @@ public class Region {
      * @param members  The members of the region.
      * @param key      The key of the region.
      * @param priority The priority of the region.
-     * @see #Region(String, Location, Location, Map, String, int)
+     * @see #Region(String, Location, Location, Map, RegionKey, int)
      */
-    Region(String name, Location min, Location max, Map<String, Map<String, String>> members, String key, int priority) {
+    Region(String name, Location min, Location max, Map<String, Map<String, String>> members, RegionKey key, int priority) {
         this(name, min, max, members, key, null, priority);
     }
 
@@ -161,17 +160,17 @@ public class Region {
         return groupMembers;
     }
 
-    void setMembers(Map<String, Map<String, String>> members, RegionManager regionManager, String key) {
+    void setMembers(Map<String, Map<String, String>> members, RegionManager regionManager) {
         this.members = members;
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
-    void addMember(UUID uuid, Map<String, String> permissions, RegionManager regionManager, String key) {
+    void addMember(UUID uuid, Map<String, String> permissions, RegionManager regionManager) {
         this.members.put(uuid.toString(), permissions);
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
-    void removeMember(UUID uuid, RegionManager regionManager, String key) {
+    void removeMember(UUID uuid, RegionManager regionManager) {
         this.members.remove(uuid.toString());
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
@@ -192,11 +191,11 @@ public class Region {
         return this.members.get(who);
     }
 
-    public String getParent() {
+    public RegionKey getParent() {
         return this.parent;
     }
 
-    void setParent(String parent, RegionManager regionManager, String key) {
+    void setParent(RegionKey parent, RegionManager regionManager) {
         this.parent = parent;
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
@@ -215,14 +214,14 @@ public class Region {
         return children;
     }
 
-    public String getKey() {
+    public RegionKey getKey() {
         return key;
     }
 
     /**
      * Careful, can easily break things.
      */
-    void setKey(String key, RegionManager regionManager) {
+    void setKey(RegionKey key, RegionManager regionManager) {
         this.key = key;
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
@@ -257,24 +256,7 @@ public class Region {
         this.priority = priority;
     }
 
-
-    JsonObject getAsJson() {
-        JsonObject json = new JsonObject();
-        json.addProperty("name", getName());
-        JsonObject membersJson = new JsonObject();
-        for (Map.Entry<String, Map<String, String>> member : getMembers().entrySet()) {
-            JsonObject memberJson = new JsonObject();
-            memberJson.addProperty("player",
-                    Bukkit.getPlayer(member.getKey()) != null ? Bukkit.getPlayer(member.getKey())
-                            .getName() : member.getKey());
-            JsonObject permissions = new JsonObject();
-            for (Map.Entry<String, String> perm : member.getValue().entrySet()) {
-                permissions.addProperty(perm.getKey(), perm.getValue());
-            }
-            memberJson.add("permissions", permissions);
-            membersJson.add(member.getKey(), memberJson);
-        }
-        json.add("members", membersJson);
-        return json;
+    public Set<ChunkKey> getOverlappingChunks() {
+        return overlappingChunks;
     }
 }

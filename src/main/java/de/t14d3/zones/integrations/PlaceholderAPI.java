@@ -76,7 +76,7 @@ public class PlaceholderAPI extends PlaceholderExpansion {
         if (params.equalsIgnoreCase("get_key")) {
             String key = "";
             if (!regions.isEmpty()) {
-                key = regions.get(0).getKey();
+                key = regions.get(0).getKey().toString();
             }
             return key;
         }
@@ -204,7 +204,7 @@ public class PlaceholderAPI extends PlaceholderExpansion {
         }
         if (params.equalsIgnoreCase("get_parent")) {
             if (!regions.isEmpty()) {
-                return regions.get(0).getParent();
+                return regions.get(0).getParent().toString();
             }
             return "";
         }

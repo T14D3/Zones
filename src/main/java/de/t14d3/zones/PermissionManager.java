@@ -310,11 +310,11 @@ public class PermissionManager {
     public static class CacheEntry {
         private final Object flag;
         private final String value;
-        private final String key;
+        private final Object key;
 
         public Result result;
 
-        public CacheEntry(Object flag, String value, String key, Result result) {
+        public CacheEntry(Object flag, String value, Object key, Result result) {
             this.flag = flag;
             this.value = value;
             this.key = key;
@@ -330,11 +330,11 @@ public class PermissionManager {
             return value;
         }
 
-        public String getKey() {
+        public Object getKey() {
             return key;
         }
 
-        public boolean isEqual(Object flag, String value, String key) {
+        public boolean isEqual(Object flag, String value, Object key) {
             return this.flag.equals(flag) && this.value.equals(value) && this.key.equals(key);
         }
     }

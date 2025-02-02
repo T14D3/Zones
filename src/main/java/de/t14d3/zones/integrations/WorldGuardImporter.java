@@ -6,6 +6,7 @@ import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import com.sk89q.worldguard.protection.regions.RegionType;
 import de.t14d3.zones.Region;
+import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.Zones;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -34,9 +35,9 @@ public class WorldGuardImporter {
                     if (!region.getType().equals(RegionType.CUBOID)) {
                         continue;
                     }
-                    String key;
+                    RegionKey key;
                     do {
-                        key = UUID.randomUUID().toString().substring(0, 8);
+                        key = RegionKey.fromString(UUID.randomUUID().toString().substring(0, 8));
                     } while (plugin.getRegionManager().regions().containsKey(key));
                     String name = entry.getKey();
                     Location min = BukkitAdapter.adapt(world, region.getMinimumPoint());

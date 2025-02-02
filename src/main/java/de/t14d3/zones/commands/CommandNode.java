@@ -5,6 +5,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import de.t14d3.zones.PaperBootstrap;
 import de.t14d3.zones.Region;
+import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.Zones;
 import de.t14d3.zones.utils.Flag;
 import de.t14d3.zones.utils.Flags;
@@ -92,13 +93,13 @@ public class CommandNode {
                                     }
                                     boolean hasPerm = ctx.getSource().getSender()
                                             .hasPermission("zones." + arg(ctx, 1).toLowerCase() + ".other");
-                                    for (Map.Entry<String, Region> region : Zones.getInstance().getRegionManager()
+                                    for (Map.Entry<RegionKey, Region> region : Zones.getInstance().getRegionManager()
                                             .regions().entrySet()) {
                                         if (hasPerm || ctx.getSource()
                                                 .getSender() instanceof Player player && region.getValue()
                                                 .isAdmin(player.getUniqueId())) {
                                             builder.suggest(
-                                                    region.getKey(),
+                                                    region.getKey().toString(),
                                                     MessageComponentSerializer.message().serialize(
                                                             RegionKeyArgument.regionInfo(
                                                                     Map.entry(region.getKey(), region.getValue()))
@@ -131,11 +132,11 @@ public class CommandNode {
                                                 });
                                                 boolean perm = ctx.getSource().getSender()
                                                         .hasPermission("zones.info.other");
-                                                for (Map.Entry<String, Region> region : Zones.getInstance()
+                                                for (Map.Entry<RegionKey, Region> region : Zones.getInstance()
                                                         .getRegionManager().regions().entrySet()) {
                                                     String[] args = ctx.getInput().split(" ");
                                                     if (args.length <= 2 || !args[2].equalsIgnoreCase(
-                                                            region.getKey())) {
+                                                            region.getKey().toString())) {
                                                         continue;
                                                     }
                                                     if (perm || (ctx.getSource()
@@ -200,11 +201,11 @@ public class CommandNode {
                                                                     types = new ArrayList<>();
                                                                     boolean perm = ctx.getSource().getSender()
                                                                             .hasPermission("zones.info.other");
-                                                                    for (Map.Entry<String, Region> region : Zones.getInstance()
+                                                                    for (Map.Entry<RegionKey, Region> region : Zones.getInstance()
                                                                             .getRegionManager().regions().entrySet()) {
                                                                         if (!ctx.getInput()
                                                                                 .split(" ")[2].equalsIgnoreCase(
-                                                                                region.getKey())) {
+                                                                                region.getKey().toString())) {
                                                                             continue;
                                                                         }
                                                                         if (perm || (ctx.getSource()

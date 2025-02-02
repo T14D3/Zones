@@ -4,6 +4,7 @@ import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import de.t14d3.zones.Region;
+import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.Zones;
 import de.t14d3.zones.utils.Messages;
 import de.t14d3.zones.utils.Utils;
@@ -24,7 +25,7 @@ public class RegionKeyArgument implements CustomArgumentType.Converted<Region, S
 
     }
 
-    public static Component regionInfo(Map.Entry<String, Region> entry) {
+    public static Component regionInfo(Map.Entry<RegionKey, Region> entry) {
         Messages messages = Zones.getInstance().getMessages();
         var mm = MiniMessage.miniMessage();
         Component comp = Component.empty();
@@ -33,7 +34,7 @@ public class RegionKeyArgument implements CustomArgumentType.Converted<Region, S
                         parsed("name", entry.getValue().getName())));
         if (entry.getValue().getParent() != null) {
             comp = comp.append(mm.deserialize(messages.get("region.info.parent") + " ",
-                    parsed("parent", entry.getValue().getParent())));
+                    parsed("parent", entry.getValue().getParent().toString())));
         }
         comp = comp.append(mm.deserialize("<green>(</green>" + messages.get("region.info.min") + " - ",
                 parsed("min", entry.getValue().getMinString())));
@@ -56,7 +57,8 @@ public class RegionKeyArgument implements CustomArgumentType.Converted<Region, S
             comp = comp.append(playerComponent);
         }
 
-        comp = comp.append(mm.deserialize(" " + messages.get("region.info.key"), parsed("key", entry.getKey())));
+        comp = comp.append(
+                mm.deserialize(" " + messages.get("region.info.key"), parsed("key", entry.getKey().toString())));
         return comp;
     }
 
