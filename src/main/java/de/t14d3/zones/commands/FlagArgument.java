@@ -13,6 +13,7 @@ public class FlagArgument implements CustomArgumentType.Converted<String, String
 
     public FlagArgument(PaperBootstrap context) {
     }
+
     @Override
     public String convert(@NotNull String nativeType) throws CommandSyntaxException {
         return Flags.getFlag(nativeType).name();

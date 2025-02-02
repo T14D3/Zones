@@ -1,22 +1,23 @@
 package de.t14d3.zones;
 
 import de.t14d3.zones.utils.Flag;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
-public class PermissionManager {
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
-    private RegionManager regionManager;
+public class PermissionManager {
 
     private final ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>> interactionCache = new ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>>();
     private final ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>> permissionCache = new ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>>();
+    private RegionManager regionManager;
 
-    public PermissionManager() {}
+    public PermissionManager() {
+    }
 
     // Setter for RegionManager to avoid circular dependency
     public void setRegionManager(RegionManager regionManager) {
@@ -28,18 +29,18 @@ public class PermissionManager {
         return checkAction(location, playerUUID.toString(), action, type, extra);
     }
 
-  /**
-   * Checks if a player can interact with a region.
-   *
-   * @param location The location of the interaction.
-   * @param who The UUID of the player.
-   * @param action The action the player wants to perform.
-   * @param type The type of the block or entity the interaction happened with.
-   * @param extra Additional, optional information, for example a spawn reason.
-   * @return True if the player can interact with the region, false otherwise.
-   */
-  public boolean checkAction(
-      Location location, String who, Flag action, String type, Object... extra) {
+    /**
+     * Checks if a player can interact with a region.
+     *
+     * @param location The location of the interaction.
+     * @param who      The UUID of the player.
+     * @param action   The action the player wants to perform.
+     * @param type     The type of the block or entity the interaction happened with.
+     * @param extra    Additional, optional information, for example a spawn reason.
+     * @return True if the player can interact with the region, false otherwise.
+     */
+    public boolean checkAction(
+            Location location, String who, Flag action, String type, Object... extra) {
 
         // Skip checking if player has global bypass permission
         Player player = null;
@@ -86,22 +87,23 @@ public class PermissionManager {
             }
 
             if (base) {
-                interactionCache.computeIfAbsent(who, k -> new ConcurrentLinkedQueue<>()).add(new CacheEntry(location, action.name(), type, result));
+                interactionCache.computeIfAbsent(who, k -> new ConcurrentLinkedQueue<>())
+                        .add(new CacheEntry(location, action.name(), type, result));
             }
-      if (result.equals(Result.UNDEFINED)) {
-        result = Result.valueOf(action.getDefaultValue());
-      }
+            if (result.equals(Result.UNDEFINED)) {
+                result = Result.valueOf(action.getDefaultValue());
+            }
             return result.equals(Result.TRUE);
 
-    } else {
-      // If no region found, check for player or universal type
-      if (who.equalsIgnoreCase("universal")) {
-        // If universal type, return default flag value
-        return action.getDefaultValue();
-      }
-      // Else, test player for bypass permission
-      return player != null && player.hasPermission("zones.bypass.unclaimed");
-    }
+        } else {
+            // If no region found, check for player or universal type
+            if (who.equalsIgnoreCase("universal")) {
+                // If universal type, return default flag value
+                return action.getDefaultValue();
+            }
+            // Else, test player for bypass permission
+            return player != null && player.hasPermission("zones.bypass.unclaimed");
+        }
     }
 
     /**
@@ -146,6 +148,7 @@ public class PermissionManager {
             }
         });
     }
+
     /**
      * Invalidates the flag/permission cache for a player.
      * Should be called when a region's permissions are changed
@@ -165,34 +168,34 @@ public class PermissionManager {
         permissionCache.clear();
     }
 
-  /**
-   * hasPermission(String, String, String, Region) overload / bool
-   *
-   * @param uuid The UUID of the player whose permission is being checked.
-   * @param permission The permission being checked (e.g., "break", "place").
-   * @param type The type of object the permission applies to (e.g., "GRASS_BLOCK").
-   * @param region The region in which the permission is being checked.
-   * @param extra Additional, optional information, for example a spawn reason.
-   * @return true if the player has the specified permission for the type, false otherwise.
-   * @see #hasPermission(String, String, String, Region, Object...)
-   */
-  public boolean hasPermission(
-      UUID uuid, String permission, String type, Region region, Object... extra) {
+    /**
+     * hasPermission(String, String, String, Region) overload / bool
+     *
+     * @param uuid       The UUID of the player whose permission is being checked.
+     * @param permission The permission being checked (e.g., "break", "place").
+     * @param type       The type of object the permission applies to (e.g., "GRASS_BLOCK").
+     * @param region     The region in which the permission is being checked.
+     * @param extra      Additional, optional information, for example a spawn reason.
+     * @return true if the player has the specified permission for the type, false otherwise.
+     * @see #hasPermission(String, String, String, Region, Object...)
+     */
+    public boolean hasPermission(
+            UUID uuid, String permission, String type, Region region, Object... extra) {
         return hasPermission(uuid.toString(), permission, type, region, extra).equals(Result.TRUE);
     }
 
-  /**
-   * Checks if a player has a specific permission for a given type in the provided region.
-   *
-   * @param who Who to check the permission for
-   * @param permission The permission being checked (e.g., "break", "place").
-   * @param type The type of object the permission applies to (e.g., "GRASS_BLOCK").
-   * @param region The region in which the permission is being checked.
-   * @param extra Additional, optional information, for example a spawn reason.
-   * @return {@link Result}
-   */
-  public Result hasPermission(
-      String who, String permission, String type, Region region, Object... extra) {
+    /**
+     * Checks if a player has a specific permission for a given type in the provided region.
+     *
+     * @param who        Who to check the permission for
+     * @param permission The permission being checked (e.g., "break", "place").
+     * @param type       The type of object the permission applies to (e.g., "GRASS_BLOCK").
+     * @param region     The region in which the permission is being checked.
+     * @param extra      Additional, optional information, for example a spawn reason.
+     * @return {@link Result}
+     */
+    public Result hasPermission(
+            String who, String permission, String type, Region region, Object... extra) {
         if (permissionCache.containsKey(who)) {
             ConcurrentLinkedQueue<CacheEntry> entries = permissionCache.get(who);
             for (CacheEntry entry : entries) {
@@ -203,7 +206,8 @@ public class PermissionManager {
         }
         Result result = Result.UNDEFINED; // Initialize result as null
         result = calculatePermission(who, permission, type, region, extra);
-        permissionCache.computeIfAbsent(who, k -> new ConcurrentLinkedQueue<>()).add(new CacheEntry(permission, type, region.getKey(), result));
+        permissionCache.computeIfAbsent(who, k -> new ConcurrentLinkedQueue<>())
+                .add(new CacheEntry(permission, type, region.getKey(), result));
         return result;
     }
 
@@ -236,10 +240,14 @@ public class PermissionManager {
                 return hasPermission(who, permission, type, region.getParentRegion(this.regionManager));
             }
             if (permissions.containsKey("group")) {
-                if (who.startsWith("+group-") && !Zones.getInstance().getConfig().getBoolean("allow-group-recursion", false)) {
-                    Zones.getInstance().getLogger().severe("Recursive group permissions detected!! Groups are not allowed to contain other groups!");
-                    Zones.getInstance().getLogger().severe("Group '" + who.substring(7) + "' contains 'group' permission entry in region '" + region.getKey() + "'");
-                    Zones.getInstance().getLogger().severe("If you are 100% sure this is fine, add 'allow-group-recursion: true' to your config.yml");
+                if (who.startsWith("+group-") && !Zones.getInstance().getConfig()
+                        .getBoolean("allow-group-recursion", false)) {
+                    Zones.getInstance().getLogger()
+                            .severe("Recursive group permissions detected!! Groups are not allowed to contain other groups!");
+                    Zones.getInstance().getLogger().severe("Group '" + who.substring(
+                            7) + "' contains 'group' permission entry in region '" + region.getKey() + "'");
+                    Zones.getInstance().getLogger()
+                            .severe("If you are 100% sure this is fine, add 'allow-group-recursion: true' to your config.yml");
                     return Result.FALSE;
                 }
                 for (String group : permissions.get("group").split(",")) {
@@ -285,6 +293,20 @@ public class PermissionManager {
                 || hasPermission(who, "role", "admin", region).equals(Result.TRUE);
     }
 
+    /**
+     * The result of a permission check
+     * TRUE/FALSE overwrite UNDEFINED
+     */
+    public enum Result {
+        TRUE,
+        FALSE,
+        UNDEFINED;
+
+        public static Result valueOf(boolean value) {
+            return value ? TRUE : FALSE;
+        }
+    }
+
     public static class CacheEntry {
         private final Object flag;
         private final String value;
@@ -315,19 +337,5 @@ public class PermissionManager {
         public boolean isEqual(Object flag, String value, String key) {
             return this.flag.equals(flag) && this.value.equals(value) && this.key.equals(key);
         }
-    }
-
-    /**
-     * The result of a permission check
-     * TRUE/FALSE overwrite UNDEFINED
-     */
-    public enum Result {
-        TRUE,
-        FALSE,
-    UNDEFINED;
-
-    public static Result valueOf(boolean value) {
-      return value ? TRUE : FALSE;
-    }
     }
 }

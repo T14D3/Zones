@@ -1,14 +1,32 @@
 package de.t14d3.zones.utils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import org.bukkit.Material;
 import org.bukkit.entity.EntityType;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 public class Flags {
 
+    public static Flag BREAK;
+    public static Flag PLACE;
+    public static Flag INTERACT;
+    public static Flag CONTAINER;
+    public static Flag REDSTONE;
+    public static Flag ENTITY;
+    public static Flag IGNITE;
+    public static Flag DAMAGE;
+    public static Flag GROUP;
+    public static Flag SPAWN;
+    public static Flag EXPLOSION;
+    public static Flag CREATE;
+    public static Flag DESTROY;
+    public static Flag TRANSFORM;
+    public static Flag SPREAD;
+    public static Flag RELOCATE;
+    public static Flag PHYSICS;
     private static List<Flag> flags;
 
     public Flags() {
@@ -27,51 +45,17 @@ public class Flags {
         GROUP = registerFlag(new Flag("group", "Add a group to the player"));
 
         SPAWN = registerFlag(new Flag("spawn", "Controls the spawning of entities", true));
-    EXPLOSION =
-        registerFlag(
-            new Flag(
-                "explosion",
-                "Controls the explosion of entities",
-                true,
-                new Class[] {Material.class, EntityType.class}));
-    CREATE =
-        registerFlag(
-            new Flag("create", "Controls the creation of blocks through world events", true));
-    DESTROY =
-        registerFlag(
-            new Flag("destroy", "Controls the removal of blocks through world events", true));
-    TRANSFORM =
-        registerFlag(
-            new Flag("transform", "Controls the transformation of blocks into other blocks", true));
-    SPREAD =
-        registerFlag(
-            new Flag("spread", "Controls the spread of blocks through world events", true));
-    RELOCATE =
-        registerFlag(
-            new Flag("relocate", "Controls the ability for blocks to change their location", true));
+        EXPLOSION = registerFlag(new Flag("explosion", "Controls the explosion of entities", true,
+                new Class[]{Material.class, EntityType.class}));
+        CREATE = registerFlag(new Flag("create", "Controls the creation of blocks through world events", true));
+        DESTROY = registerFlag(new Flag("destroy", "Controls the removal of blocks through world events", true));
+        TRANSFORM = registerFlag(
+                new Flag("transform", "Controls the transformation of blocks into other blocks", true));
+        SPREAD = registerFlag(new Flag("spread", "Controls the spread of blocks through world events", true));
+        RELOCATE = registerFlag(new Flag("relocate", "Controls the ability for blocks to change their location", true));
 
-    PHYSICS = registerFlag(new Flag("physics", "Controls the physics of blocks", true));
+        PHYSICS = registerFlag(new Flag("physics", "Controls the physics of blocks", true));
     }
-
-    public static Flag BREAK;
-    public static Flag PLACE;
-    public static Flag INTERACT;
-    public static Flag CONTAINER;
-    public static Flag REDSTONE;
-    public static Flag ENTITY;
-    public static Flag IGNITE;
-    public static Flag DAMAGE;
-    public static Flag GROUP;
-
-    public static Flag SPAWN;
-  public static Flag EXPLOSION;
-  public static Flag CREATE;
-  public static Flag DESTROY;
-  public static Flag TRANSFORM;
-  public static Flag SPREAD;
-  public static Flag RELOCATE;
-
-  public static Flag PHYSICS;
 
     /**
      * Register a flag with a fallback description
@@ -133,7 +117,6 @@ public class Flags {
     public static Flag getFlag(String name) {
         return flags.stream().filter(f -> f.name().equals(name)).findFirst().orElse(new Flag(name, "Unknown"));
     }
-
 
 
 }

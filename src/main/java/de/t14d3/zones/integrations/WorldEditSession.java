@@ -36,21 +36,6 @@ public class WorldEditSession {
     }
 
     public class WorldEditUtils {
-        public HashSet<CuboidRegion> getMask(Player player) {
-            HashSet<CuboidRegion> mask = new HashSet<>();
-            for (Region region : plugin.getRegionManager().regions().values()) {
-                if ((plugin.getPermissionManager().hasPermission(player.getUniqueId(), "PLACE", "true", region)
-                        && plugin.getPermissionManager().hasPermission(player.getUniqueId(), "BREAK", "true", region))
-                        || region.isAdmin(player.getUniqueId())) {
-                    mask.add(new CuboidRegion(
-                            BukkitAdapter.asBlockVector(region.getMin()),
-                            BukkitAdapter.asBlockVector(region.getMax().clone().subtract(1, 1, 1)) // Don't ask me why, but it works
-                    ));
-                }
-            }
-            return mask;
-        }
-
         public static boolean cuboidRegionContains(CuboidRegion region, int x, int y, int z) {
             return region.getMinimumPoint().x() <= x && region.getMaximumPoint().x() >= x &&
                     region.getMinimumPoint().y() <= y && region.getMaximumPoint().y() >= y &&
@@ -64,6 +49,22 @@ public class WorldEditSession {
                 }
             }
             return false;
+        }
+
+        public HashSet<CuboidRegion> getMask(Player player) {
+            HashSet<CuboidRegion> mask = new HashSet<>();
+            for (Region region : plugin.getRegionManager().regions().values()) {
+                if ((plugin.getPermissionManager().hasPermission(player.getUniqueId(), "PLACE", "true", region)
+                        && plugin.getPermissionManager().hasPermission(player.getUniqueId(), "BREAK", "true", region))
+                        || region.isAdmin(player.getUniqueId())) {
+                    mask.add(new CuboidRegion(
+                            BukkitAdapter.asBlockVector(region.getMin()),
+                            BukkitAdapter.asBlockVector(region.getMax().clone().subtract(1, 1, 1))
+                            // Don't ask me why, but it works
+                    ));
+                }
+            }
+            return mask;
         }
     }
 

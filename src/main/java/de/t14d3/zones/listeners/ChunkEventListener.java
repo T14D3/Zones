@@ -15,6 +15,8 @@ public class ChunkEventListener implements Listener {
 
     @EventHandler
     public void onChunkUnload(ChunkUnloadEvent event) {
-        plugin.getPermissionManager().invalidateInteractionCacheForChunk(event.getChunk().getX(), event.getChunk().getZ(), event.getWorld().getName());
+        plugin.getPermissionManager()
+                .invalidateInteractionCacheForChunk(event.getChunk().getX(), event.getChunk().getZ(),
+                        event.getWorld().getName());
     }
 }

@@ -18,12 +18,12 @@ import java.util.concurrent.Future;
 
 public class RegionManager {
 
+    private final PermissionManager pm;
     private final File regionsFile;
     private final FileConfiguration regionsConfig;
-    final PermissionManager pm;
     private final Zones plugin;
-    Map<String, Region> loadedRegions = new HashMap<>();
-    public Map<Location, List<String>> regionCache = new HashMap<>();
+    Map<Location, List<String>> regionCache = new HashMap<>();
+    private final Map<String, Region> loadedRegions = new HashMap<>();
 
     public RegionManager(Zones plugin, PermissionManager permissionManager) {
         this.pm = permissionManager;
@@ -88,7 +88,8 @@ public class RegionManager {
                 String parent = regionsConfig.getString("regions." + key + ".parent");
 
                 Map<String, Map<String, String>> members = loadMembers(key);
-                Region region = new Region(name != null ? name : "Invalid Name", min, max, members, key, parent, priority);
+                Region region = new Region(name != null ? name : "Invalid Name", min, max, members, key, parent,
+                        priority);
                 loadedRegions.put(key, region);
             }
             regionCache.clear();
@@ -111,8 +112,10 @@ public class RegionManager {
         if (regionsConfig.contains("regions." + key + ".members")) {
             for (String uuidStr : regionsConfig.getConfigurationSection("regions." + key + ".members").getKeys(false)) {
                 Map<String, String> permissions = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-                for (String perm : regionsConfig.getConfigurationSection("regions." + key + ".members." + uuidStr).getKeys(false)) {
-                    permissions.put(perm, regionsConfig.getString("regions." + key + ".members." + uuidStr + "." + perm));
+                for (String perm : regionsConfig.getConfigurationSection("regions." + key + ".members." + uuidStr)
+                        .getKeys(false)) {
+                    permissions.put(perm,
+                            regionsConfig.getString("regions." + key + ".members." + uuidStr + "." + perm));
                 }
                 members.put(uuidStr, permissions);
             }
@@ -164,6 +167,7 @@ public class RegionManager {
 
     /**
      * Deletes an existing region
+     *
      * @param regionKey The key of the region to delete
      */
     public void deleteRegion(String regionKey) {
@@ -175,12 +179,11 @@ public class RegionManager {
     /**
      * Creates a new region from two Locations, a UUID for the owner and the owner's permissions
      *
-     * @param name Name of the new Region
-     * @param min First corner of the region
-     * @param max Second corner of the region
-     * @param playerUUID Region owner's UUID
+     * @param name             Name of the new Region
+     * @param min              First corner of the region
+     * @param max              Second corner of the region
+     * @param playerUUID       Region owner's UUID
      * @param ownerPermissions Owner's permissions map
-     *
      * @return The key of the newly created region
      */
     public String createNewRegion(String name, Location min, Location max, UUID playerUUID, Map<String, String> ownerPermissions) {
@@ -244,7 +247,6 @@ public class RegionManager {
         max.setY(319);
         return createNewRegion(name, min, max, playerUUID, ownerPermissions);
     }
-
 
 
     /**
@@ -446,7 +448,7 @@ public class RegionManager {
     /**
      * Expands the bounds of a region in a given direction by a given amount.
      * Only succeeds if the region does not overlap with any other regions
-     * or the <code>allowOverlap</code> parameter is set to true.
+     * or the {@code allowOverlap} parameter is set to true.
      *
      * @param region       The region to expand.
      * @param direction    The direction to expand in.
@@ -499,7 +501,6 @@ public class RegionManager {
      * Requires an existing region object, to create a new region use {@link #createNewRegion(String, String, Location, Location, Map, int)}.
      *
      * @param region The region to add.
-     *
      * @see #createNewRegion
      */
     public void addRegion(Region region) {

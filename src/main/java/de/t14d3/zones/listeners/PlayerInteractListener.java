@@ -48,14 +48,15 @@ public class PlayerInteractListener implements Listener {
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
     private final Messages messages;
 
-    public PlayerInteractListener(RegionManager regionManager, PermissionManager permissionManager, Zones plugin) {
+    public PlayerInteractListener(Zones plugin) {
         this.plugin = plugin;
-        this.regionManager = regionManager;
-        this.permissionManager = permissionManager;
+        this.regionManager = plugin.getRegionManager();
+        this.permissionManager = plugin.getPermissionManager();
         this.beaconUtils = plugin.getBeaconUtils();
         this.messages = plugin.getMessages();
 
     }
+
     @EventHandler
     private void onPlayerInteract(PlayerInteractEvent event) {
         Player player = event.getPlayer();
@@ -114,7 +115,8 @@ public class PlayerInteractListener implements Listener {
         List<Flag> requiredPermissions = new ArrayList<>(); // Collect required permissions
 
         // Interactable blocks
-        if ((Utils.isContainer(event.getClickedBlock().getState(false)) || Utils.isPowerable(event.getClickedBlock().getBlockData())) && event.getAction() == Action.RIGHT_CLICK_BLOCK) {
+        if ((Utils.isContainer(event.getClickedBlock().getState(false)) || Utils.isPowerable(
+                event.getClickedBlock().getBlockData())) && event.getAction() == Action.RIGHT_CLICK_BLOCK) {
             requiredPermissions.add(Flags.INTERACT);
             if (Utils.isContainer(event.getClickedBlock().getState(false))) {
                 requiredPermissions.add(Flags.CONTAINER);
@@ -125,10 +127,10 @@ public class PlayerInteractListener implements Listener {
             if (event.getClickedBlock().getType() == Material.TNT) {
                 requiredPermissions.add(Flags.IGNITE);
             }
-        }
-        else return;
+        } else return;
         for (Flag action : requiredPermissions) {
-            if (!permissionManager.checkAction(location, playerUUID, action, event.getClickedBlock().getType().name())) {
+            if (!permissionManager.checkAction(location, playerUUID, action,
+                    event.getClickedBlock().getType().name())) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, event.getClickedBlock().getType().name());
             }
@@ -149,7 +151,8 @@ public class PlayerInteractListener implements Listener {
             requiredPermissions.add(Flags.REDSTONE);
         }
         for (Flag action : requiredPermissions) {
-            if (!permissionManager.checkAction(event.getBlockPlaced().getLocation(), player.getUniqueId(), action, type)) {
+            if (!permissionManager.checkAction(event.getBlockPlaced().getLocation(), player.getUniqueId(), action,
+                    type)) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, type);
             }

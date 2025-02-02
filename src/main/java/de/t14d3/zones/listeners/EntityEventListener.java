@@ -17,7 +17,7 @@ public class EntityEventListener implements Listener {
     private final RegionManager regionManager;
     private final PermissionManager permissionManager;
 
-  public EntityEventListener(Zones plugin) {
+    public EntityEventListener(Zones plugin) {
         this.plugin = plugin;
         this.regionManager = plugin.getRegionManager();
         this.permissionManager = plugin.getPermissionManager();
@@ -28,28 +28,29 @@ public class EntityEventListener implements Listener {
         if (event.getSpawnReason().equals(CreatureSpawnEvent.SpawnReason.SPAWNER_EGG)) {
             return;
         }
-        if (!permissionManager.checkAction(event.getLocation(), "universal", Flags.SPAWN, event.getEntity().getType().name(), event.getSpawnReason().name())) {
+        if (!permissionManager.checkAction(event.getLocation(), "universal", Flags.SPAWN,
+                event.getEntity().getType().name(), event.getSpawnReason().name())) {
             event.setCancelled(true);
         }
     }
 
-  @EventHandler
-  public void onEntityExplode(EntityExplodeEvent event) {
-    boolean allowed = true;
-    for (Block block : event.blockList()) {
-      Location location = block.getLocation();
-      if (!permissionManager.checkAction(
-          location,
-          "universal",
-          Flags.EXPLOSION,
-          block.getType().name(),
-          event.getEntity().getType().name())) {
-        allowed = false;
-        break;
-      }
+    @EventHandler
+    public void onEntityExplode(EntityExplodeEvent event) {
+        boolean allowed = true;
+        for (Block block : event.blockList()) {
+            Location location = block.getLocation();
+            if (!permissionManager.checkAction(
+                    location,
+                    "universal",
+                    Flags.EXPLOSION,
+                    block.getType().name(),
+                    event.getEntity().getType().name())) {
+                allowed = false;
+                break;
+            }
+        }
+        if (!allowed) {
+            event.setCancelled(true);
+        }
     }
-    if (!allowed) {
-      event.setCancelled(true);
-    }
-  }
 }

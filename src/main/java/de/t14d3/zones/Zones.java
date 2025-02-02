@@ -5,11 +5,7 @@ import de.t14d3.zones.commands.CommandExecutor;
 import de.t14d3.zones.integrations.FAWEIntegration;
 import de.t14d3.zones.integrations.PlaceholderAPI;
 import de.t14d3.zones.integrations.WorldEditSession;
-import de.t14d3.zones.listeners.BlockEventListener;
-import de.t14d3.zones.listeners.ChunkEventListener;
-import de.t14d3.zones.listeners.ExplosivesListener;
-import de.t14d3.zones.listeners.PlayerInteractListener;
-import de.t14d3.zones.listeners.PlayerQuitListener;
+import de.t14d3.zones.listeners.*;
 import de.t14d3.zones.utils.Messages;
 import de.t14d3.zones.utils.Types;
 import de.t14d3.zones.utils.Utils;
@@ -17,6 +13,12 @@ import de.t14d3.zones.visuals.BeaconUtils;
 import de.t14d3.zones.visuals.FindBossbar;
 import de.t14d3.zones.visuals.ParticleHandler;
 import it.unimi.dsi.fastutil.Pair;
+import org.bukkit.Location;
+import org.bukkit.permissions.Permission;
+import org.bukkit.permissions.PermissionDefault;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.util.BoundingBox;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -25,30 +27,29 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import org.bukkit.Location;
-import org.bukkit.permissions.Permission;
-import org.bukkit.permissions.PermissionDefault;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.util.BoundingBox;
 
 public final class Zones extends JavaPlugin {
 
+    private static Zones instance;
+    public Map<UUID, Pair<Location, Location>> selection = new HashMap<>();
+    public ConcurrentHashMap<UUID, BoundingBox> particles = new ConcurrentHashMap<>();
     private RegionManager regionManager;
     private PermissionManager permissionManager;
     private BeaconUtils beaconUtils;
     private ParticleHandler particleHandler;
-    public Map<UUID, Pair<Location, Location>> selection = new HashMap<>();
-    public ConcurrentHashMap<UUID, BoundingBox> particles = new ConcurrentHashMap<>();
     private Types types;
     private Messages messages;
-    private static Zones instance;
     private CommandExecutor commandExecutor;
-    private PaperBootstrap bootstrap;
+    private final PaperBootstrap bootstrap;
     private Utils utils;
     private FindBossbar findBossbar;
 
     public Zones(PaperBootstrap bootstrap) {
         this.bootstrap = bootstrap;
+    }
+
+    public static Zones getInstance() {
+        return instance;
     }
 
     @Override
@@ -91,11 +92,11 @@ public final class Zones extends JavaPlugin {
 
 
         // Register listeners
-        this.getServer().getPluginManager().registerEvents(new PlayerInteractListener(regionManager, permissionManager, this), this);
+        this.getServer().getPluginManager().registerEvents(new PlayerInteractListener(this), this);
         this.getServer().getPluginManager().registerEvents(new PlayerQuitListener(this), this);
         this.getServer().getPluginManager().registerEvents(new ChunkEventListener(this), this);
-    ExplosivesListener explosivesListener = new ExplosivesListener(this);
-    BlockEventListener blockEventListener = new BlockEventListener(this);
+        ExplosivesListener explosivesListener = new ExplosivesListener(this);
+        BlockEventListener blockEventListener = new BlockEventListener(this);
 
         // Populate Types
         types = new Types();
@@ -133,7 +134,7 @@ public final class Zones extends JavaPlugin {
             WorldEdit.getInstance().getEventBus().register(new WorldEditSession(this));
             getLogger().info("WorldEdit Integration enabled.");
         }
-        getLogger().info("Zones plugin has been enabled! Loaded " + regionManager.loadedRegions.size() + " regions.");
+        getLogger().info("Zones plugin has been enabled! Loaded " + regionManager.regions().size() + " regions.");
     }
 
     @Override
@@ -141,7 +142,7 @@ public final class Zones extends JavaPlugin {
         // Save regions to regions.yml before plugin shutdown
         regionManager.saveRegions();
         regionManager.regions().clear();
-        regionManager.loadedRegions.clear();
+        regionManager.regions().clear();
         regionManager.regionCache.clear();
         permissionManager.invalidateInteractionCaches();
         permissionManager.invalidateCaches();
@@ -149,7 +150,9 @@ public final class Zones extends JavaPlugin {
     }
 
     // Getters
-    public RegionManager getRegionManager() { return regionManager; }
+    public RegionManager getRegionManager() {
+        return regionManager;
+    }
 
     public PermissionManager getPermissionManager() {
         return permissionManager;
@@ -158,7 +161,11 @@ public final class Zones extends JavaPlugin {
     public Messages getMessages() {
         return messages;
     }
-    public BeaconUtils getBeaconUtils() { return beaconUtils; }
+
+    public BeaconUtils getBeaconUtils() {
+        return beaconUtils;
+    }
+
     public ParticleHandler getParticleHandler() {
         return particleHandler;
     }
@@ -173,10 +180,6 @@ public final class Zones extends JavaPlugin {
 
     public Utils.SavingModes getSavingMode() {
         return Utils.SavingModes.fromString(this.getConfig().getString("zone-saving.mode", "MODIFIED"));
-    }
-
-    public static Zones getInstance() {
-        return instance;
     }
 
     public CommandExecutor getCommandListener() {

@@ -23,35 +23,6 @@ public class ParticleHandler {
 
     }
 
-
-    public void particleScheduler() {
-        if (!plugin.getConfig().getBoolean("selection-particles.enabled", false)) {
-            return;
-        }
-        Particle primary = Particle.valueOf(plugin.getConfig().getString("selection-particles.primary", "WAX_OFF"));
-        Particle secondary = Particle.valueOf(plugin.getConfig().getString("selection-particles.secondary", "WAX_ON"));
-        double range = plugin.getConfig().getDouble("selection-particles.range", 15);
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                for (Map.Entry<UUID, BoundingBox> entry : plugin.particles.entrySet()) {
-                    Player player = Bukkit.getPlayer(entry.getKey());
-                    BoundingBox box = entry.getValue();
-                    if (player != null) {
-                        spawnParticleOutline(
-                                primary,
-                                secondary,
-                                player,
-                                new Location(player.getWorld(), box.getMin().getBlockX(), box.getMin().getBlockY(), box.getMin().getBlockZ()),
-                                new Location(player.getWorld(), box.getMax().getBlockX(), box.getMax().getBlockY(), box.getMax().getBlockZ()),
-                                range);
-                    }
-
-                }
-            }
-        }.runTaskTimerAsynchronously(plugin, 0, 2);
-    }
-
     static void spawnParticleOutline(Particle primary, Particle secondary, Player player, Location min, Location max, double range) {
         // Get the corners of the box
         double x1 = min.getX();
@@ -114,5 +85,35 @@ public class ParticleHandler {
                 }
             }
         }
+    }
+
+    public void particleScheduler() {
+        if (!plugin.getConfig().getBoolean("selection-particles.enabled", false)) {
+            return;
+        }
+        Particle primary = Particle.valueOf(plugin.getConfig().getString("selection-particles.primary", "WAX_OFF"));
+        Particle secondary = Particle.valueOf(plugin.getConfig().getString("selection-particles.secondary", "WAX_ON"));
+        double range = plugin.getConfig().getDouble("selection-particles.range", 15);
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (Map.Entry<UUID, BoundingBox> entry : plugin.particles.entrySet()) {
+                    Player player = Bukkit.getPlayer(entry.getKey());
+                    BoundingBox box = entry.getValue();
+                    if (player != null) {
+                        spawnParticleOutline(
+                                primary,
+                                secondary,
+                                player,
+                                new Location(player.getWorld(), box.getMin().getBlockX(), box.getMin().getBlockY(),
+                                        box.getMin().getBlockZ()),
+                                new Location(player.getWorld(), box.getMax().getBlockX(), box.getMax().getBlockY(),
+                                        box.getMax().getBlockZ()),
+                                range);
+                    }
+
+                }
+            }
+        }.runTaskTimerAsynchronously(plugin, 0, 2);
     }
 }

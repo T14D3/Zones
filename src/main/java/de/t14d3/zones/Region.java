@@ -25,6 +25,7 @@ public class Region {
     private int priority;
 
     // Constructor
+
     /**
      * Constructs a new region with the given name, minimum and maximum locations, members and parent.
      *
@@ -48,6 +49,7 @@ public class Region {
     }
 
     // Constructor overload for regions without parent
+
     /**
      * Constructs a new region with the given name, minimum and maximum locations, and members.
      *
@@ -57,7 +59,6 @@ public class Region {
      * @param members  The members of the region.
      * @param key      The key of the region.
      * @param priority The priority of the region.
-     *
      * @see #Region(String, Location, Location, Map, String, int)
      */
     Region(String name, Location min, Location max, Map<String, Map<String, String>> members, String key, int priority) {
@@ -78,6 +79,14 @@ public class Region {
         return min;
     }
 
+    void setMin(Location min) {
+        this.min = min;
+    }
+
+    void setMin(BlockVector min) {
+        this.min.set(min.getBlockX(), min.getBlockY(), min.getBlockZ());
+    }
+
     public String getMinString() {
         return min.getBlockX() + "," + min.getBlockY() + "," + min.getBlockZ();
     }
@@ -87,16 +96,16 @@ public class Region {
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
-    void setMin(Location min) {
-        this.min = min;
-    }
-
-    void setMin(BlockVector min) {
-        this.min.set(min.getBlockX(), min.getBlockY(), min.getBlockZ());
-    }
-
     public Location getMax() {
         return max;
+    }
+
+    void setMax(Location max) {
+        this.max = max;
+    }
+
+    void setMax(BlockVector max) {
+        this.max.set(max.getBlockX(), max.getBlockY(), max.getBlockZ());
     }
 
     public String getMaxString() {
@@ -106,14 +115,6 @@ public class Region {
     void setMax(Location max, RegionManager regionManager) {
         this.max = max;
         regionManager.saveRegion(key, this); // Ensure changes are saved
-    }
-
-    void setMax(Location max) {
-        this.max = max;
-    }
-
-    void setMax(BlockVector max) {
-        this.max.set(max.getBlockX(), max.getBlockY(), max.getBlockZ());
     }
 
     /**
@@ -181,7 +182,8 @@ public class Region {
 
     public boolean isAdmin(UUID uuid) {
         if (this.members.containsKey(uuid.toString()) && this.members.get(uuid.toString()).containsKey("role")) {
-            return this.members.get(uuid.toString()).get("role").equals("admin") || this.members.get(uuid.toString()).get("role").equals("owner");
+            return this.members.get(uuid.toString()).get("role").equals("admin") || this.members.get(uuid.toString())
+                    .get("role").equals("owner");
         }
         return false; // Default to false
     }
@@ -232,7 +234,8 @@ public class Region {
     }
 
     void addMemberPermission(UUID uuid, String permission, String value, RegionManager regionManager) {
-        this.members.computeIfAbsent(uuid.toString(), k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)).put(permission, value);
+        this.members.computeIfAbsent(uuid.toString(), k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER))
+                .put(permission, value);
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
@@ -261,7 +264,9 @@ public class Region {
         JsonObject membersJson = new JsonObject();
         for (Map.Entry<String, Map<String, String>> member : getMembers().entrySet()) {
             JsonObject memberJson = new JsonObject();
-            memberJson.addProperty("player", Bukkit.getPlayer(member.getKey()) != null ? Bukkit.getPlayer(member.getKey()).getName() : member.getKey().toString());
+            memberJson.addProperty("player",
+                    Bukkit.getPlayer(member.getKey()) != null ? Bukkit.getPlayer(member.getKey())
+                            .getName() : member.getKey());
             JsonObject permissions = new JsonObject();
             for (Map.Entry<String, String> perm : member.getValue().entrySet()) {
                 permissions.addProperty(perm.getKey(), perm.getValue());

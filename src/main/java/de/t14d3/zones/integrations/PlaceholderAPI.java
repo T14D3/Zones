@@ -86,7 +86,8 @@ public class PlaceholderAPI extends PlaceholderExpansion {
                 String member;
                 try {
                     UUID uuid = UUID.fromString(val);
-                    member = Bukkit.getOfflinePlayer(uuid).getName() != null ? Bukkit.getOfflinePlayer(uuid).getName() : String.valueOf(uuid);
+                    member = Bukkit.getOfflinePlayer(uuid).getName() != null ? Bukkit.getOfflinePlayer(uuid)
+                            .getName() : String.valueOf(uuid);
                 } catch (IllegalArgumentException ignored) {
                     member = val;
                 }
@@ -166,7 +167,9 @@ public class PlaceholderAPI extends PlaceholderExpansion {
         }
         if (params.equalsIgnoreCase("can_place_hand")) {
             if (!regions.isEmpty()) {
-                return plugin.getPermissionManager().checkAction(player.getLocation(), player.getUniqueId(), Flags.PLACE, player.getInventory().getItemInMainHand().getType().name()) ? "true" : "false";
+                return plugin.getPermissionManager()
+                        .checkAction(player.getLocation(), player.getUniqueId(), Flags.PLACE,
+                                player.getInventory().getItemInMainHand().getType().name()) ? "true" : "false";
             }
             return "false";
         }
@@ -187,7 +190,9 @@ public class PlaceholderAPI extends PlaceholderExpansion {
             // There's definitely a better way to do this, but it works and I'm too lazy to find a better one
             String type = params.substring(params.indexOf('_', params.indexOf('_') + 1) + 1);
             if (!regions.isEmpty()) {
-                return plugin.getPermissionManager().checkAction(player.getLocation(), player.getUniqueId(), Flags.getFlag(action), type) ? "true" : "false";
+                return plugin.getPermissionManager()
+                        .checkAction(player.getLocation(), player.getUniqueId(), Flags.getFlag(action),
+                                type) ? "true" : "false";
             }
             return "false";
         }
