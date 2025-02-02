@@ -5,7 +5,9 @@ import de.t14d3.zones.commands.CommandExecutor;
 import de.t14d3.zones.integrations.FAWEIntegration;
 import de.t14d3.zones.integrations.PlaceholderAPI;
 import de.t14d3.zones.integrations.WorldEditSession;
+import de.t14d3.zones.listeners.BlockEventListener;
 import de.t14d3.zones.listeners.ChunkEventListener;
+import de.t14d3.zones.listeners.ExplosivesListener;
 import de.t14d3.zones.listeners.PlayerInteractListener;
 import de.t14d3.zones.listeners.PlayerQuitListener;
 import de.t14d3.zones.utils.Messages;
@@ -15,12 +17,6 @@ import de.t14d3.zones.visuals.BeaconUtils;
 import de.t14d3.zones.visuals.FindBossbar;
 import de.t14d3.zones.visuals.ParticleHandler;
 import it.unimi.dsi.fastutil.Pair;
-import org.bukkit.Location;
-import org.bukkit.permissions.Permission;
-import org.bukkit.permissions.PermissionDefault;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.util.BoundingBox;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -29,6 +25,11 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import org.bukkit.Location;
+import org.bukkit.permissions.Permission;
+import org.bukkit.permissions.PermissionDefault;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.util.BoundingBox;
 
 public final class Zones extends JavaPlugin {
 
@@ -93,6 +94,8 @@ public final class Zones extends JavaPlugin {
         this.getServer().getPluginManager().registerEvents(new PlayerInteractListener(regionManager, permissionManager, this), this);
         this.getServer().getPluginManager().registerEvents(new PlayerQuitListener(this), this);
         this.getServer().getPluginManager().registerEvents(new ChunkEventListener(this), this);
+    ExplosivesListener explosivesListener = new ExplosivesListener(this);
+    BlockEventListener blockEventListener = new BlockEventListener(this);
 
         // Populate Types
         types = new Types();

@@ -1,14 +1,13 @@
 package de.t14d3.zones;
 
 import de.t14d3.zones.utils.Flag;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.entity.Player;
-
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.entity.Player;
 
 public class PermissionManager {
 
@@ -29,15 +28,18 @@ public class PermissionManager {
         return checkAction(location, playerUUID.toString(), action, type, extra);
     }
 
-    /**
-     * Checks if a player can interact with a region.
-     * @param location The location of the interaction.
-     * @param who The UUID of the player.
-     * @param action The action the player wants to perform.
-     * @param type The type of the block or entity the interaction happened with.
-     * @return True if the player can interact with the region, false otherwise.
-     */
-    public boolean checkAction(Location location, String who, Flag action, String type, Object... extra) {
+  /**
+   * Checks if a player can interact with a region.
+   *
+   * @param location The location of the interaction.
+   * @param who The UUID of the player.
+   * @param action The action the player wants to perform.
+   * @param type The type of the block or entity the interaction happened with.
+   * @param extra Additional, optional information, for example a spawn reason.
+   * @return True if the player can interact with the region, false otherwise.
+   */
+  public boolean checkAction(
+      Location location, String who, Flag action, String type, Object... extra) {
 
         // Skip checking if player has global bypass permission
         Player player = null;
@@ -86,10 +88,20 @@ public class PermissionManager {
             if (base) {
                 interactionCache.computeIfAbsent(who, k -> new ConcurrentLinkedQueue<>()).add(new CacheEntry(location, action.name(), type, result));
             }
+      if (result.equals(Result.UNDEFINED)) {
+        result = Result.valueOf(action.getDefaultValue());
+      }
             return result.equals(Result.TRUE);
-        }
-        // If no region found, check for unclaimed bypass perm and return false if not found
-        return player != null && player.hasPermission("zones.bypass.unclaimed");
+
+    } else {
+      // If no region found, check for player or universal type
+      if (who.equalsIgnoreCase("universal")) {
+        // If universal type, return default flag value
+        return action.getDefaultValue();
+      }
+      // Else, test player for bypass permission
+      return player != null && player.hasPermission("zones.bypass.unclaimed");
+    }
     }
 
     /**
@@ -153,30 +165,34 @@ public class PermissionManager {
         permissionCache.clear();
     }
 
-    /**
-     * hasPermission(String, String, String, Region) overload / bool
-     *
-     * @param uuid       The UUID of the player whose permission is being checked.
-     * @param permission The permission being checked (e.g., "break", "place").
-     * @param type       The type of object the permission applies to (e.g., "GRASS_BLOCK").
-     * @param region     The region in which the permission is being checked.
-     * @return true if the player has the specified permission for the type, false otherwise.
-     * @see #hasPermission(String, String, String, Region, Object...)
-     */
-    public boolean hasPermission(UUID uuid, String permission, String type, Region region, Object... extra) {
+  /**
+   * hasPermission(String, String, String, Region) overload / bool
+   *
+   * @param uuid The UUID of the player whose permission is being checked.
+   * @param permission The permission being checked (e.g., "break", "place").
+   * @param type The type of object the permission applies to (e.g., "GRASS_BLOCK").
+   * @param region The region in which the permission is being checked.
+   * @param extra Additional, optional information, for example a spawn reason.
+   * @return true if the player has the specified permission for the type, false otherwise.
+   * @see #hasPermission(String, String, String, Region, Object...)
+   */
+  public boolean hasPermission(
+      UUID uuid, String permission, String type, Region region, Object... extra) {
         return hasPermission(uuid.toString(), permission, type, region, extra).equals(Result.TRUE);
     }
-    /**
-     * Checks if a player has a specific permission for a given type in the provided region.
-     *
-     * @param who    Who to check the permission for
-     * @param permission The permission being checked (e.g., "break", "place").
-     * @param type    The type of object the permission applies to (e.g., "GRASS_BLOCK").
-     * @param region  The region in which the permission is being checked.
-     * @param extra   Additional, optional information, for example a spawn reason.
-     * @return {@link Result}
-     */
-    public Result hasPermission(String who, String permission, String type, Region region, Object... extra) {
+
+  /**
+   * Checks if a player has a specific permission for a given type in the provided region.
+   *
+   * @param who Who to check the permission for
+   * @param permission The permission being checked (e.g., "break", "place").
+   * @param type The type of object the permission applies to (e.g., "GRASS_BLOCK").
+   * @param region The region in which the permission is being checked.
+   * @param extra Additional, optional information, for example a spawn reason.
+   * @return {@link Result}
+   */
+  public Result hasPermission(
+      String who, String permission, String type, Region region, Object... extra) {
         if (permissionCache.containsKey(who)) {
             ConcurrentLinkedQueue<CacheEntry> entries = permissionCache.get(who);
             for (CacheEntry entry : entries) {
@@ -308,6 +324,10 @@ public class PermissionManager {
     public enum Result {
         TRUE,
         FALSE,
-        UNDEFINED
+    UNDEFINED;
+
+    public static Result valueOf(boolean value) {
+      return value ? TRUE : FALSE;
+    }
     }
 }

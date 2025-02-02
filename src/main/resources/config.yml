@@ -12,3 +12,39 @@ zone-saving:
   # PERIODIC: Saves the regions.yml file periodically
   mode: MODIFIED
   period: 60 # Default: 60, only used when mode is PERIODIC
+
+
+# Controls whether the plugin should listen for specific events
+events:
+  # Block physics events can be called thousands of times per tick, so they are disabled by default
+  block-physics:
+    enabled: false
+
+  explosion:
+    # Controls how explosions are handled
+    # Valid options are:
+    #   - ALL: Checks both ignition and explosion events
+    #   - IGNITION: Checks only ignition events
+    #   - EXPLOSION: Checks only explosion events
+    #   - NONE: Disables explosion checks
+    # Defaults to ALL
+    # Note that when set to ALL or EXPLOSION, large chain explosions can cause severe lag
+    mode: ALL
+    # Controls how to handle explosions, if enabled
+    # Valid options are:
+    #   - ALL: Individually checks every block affected by the explosion
+    #   - REGION: Confines explosion result to the region the explosion originated from
+    #   - BLOCK: Allows/denies the explosion based on the result of checking the block the explosion originated from
+    #   - ANY: Cancels the explosion if any affected block is protected
+    # Defaults to ALL
+    explosion-mode: ALL
+    # Maximum number of explosions to check per tick
+    limit: 10
+    # What to do when the limit is exceeded
+    # Valid options are:
+    #   - CANCEL: Cancel all further explosions
+    #   - IGNORE: Ignore further explosions
+    # Defaults to CANCEL
+    limit-exceeded-action: CANCEL
+
+

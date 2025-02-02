@@ -11,15 +11,21 @@ public class Flag {
     private final String description;
     private final boolean defaultValue;
 
+  private final Class<?>[] allowedExtra;
 
-    public Flag(String name, String description, boolean defaultValue) {
+  public Flag(String name, String description, boolean defaultValue, Class<?>[] allowedExtra) {
         this.name = name.toUpperCase();
         this.description = description;
         this.defaultValue = defaultValue;
+    this.allowedExtra = allowedExtra;
     }
 
+  public Flag(String name, String description, boolean defaultValue) {
+    this(name, description, defaultValue, null);
+  }
+
     public Flag(String name, String description) {
-        this(name, description, false);
+    this(name, description, false, null);
     }
 
     public String name() {
@@ -33,4 +39,8 @@ public class Flag {
     public boolean getDefaultValue() {
         return defaultValue;
     }
+
+  public Class<?>[] getAllowedExtra() {
+    return allowedExtra;
+  }
 }
