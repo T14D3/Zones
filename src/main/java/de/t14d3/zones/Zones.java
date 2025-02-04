@@ -142,8 +142,6 @@ public final class Zones extends JavaPlugin {
         // Save regions to regions.yml before plugin shutdown
         regionManager.saveRegions();
         regionManager.regions().clear();
-        regionManager.regions().clear();
-        regionManager.regionCache.clear();
         permissionManager.invalidateInteractionCaches();
         permissionManager.invalidateCaches();
         getLogger().info("Zones plugin is disabling and regions are saved.");

@@ -23,7 +23,6 @@ public class RegionManager {
     private final File regionsFile;
     private final FileConfiguration regionsConfig;
     private final Zones plugin;
-    Map<Location, List<String>> regionCache = new HashMap<>();
     private final Map<RegionKey, Region> loadedRegions = new HashMap<>();
 
     private final Map<ChunkKey, Set<RegionKey>> chunkIndex = new HashMap<>();
@@ -62,7 +61,6 @@ public class RegionManager {
             plugin.getLogger().severe("Failed to save regions.yml");
         }
         pm.invalidateInteractionCaches();
-        regionCache.clear();
     }
 
     /**
@@ -97,7 +95,6 @@ public class RegionManager {
                         priority);
                 loadedRegions.put(regionKey, region);
             }
-            regionCache.clear();
             pm.invalidateInteractionCaches();
         }
     }
@@ -274,7 +271,6 @@ public class RegionManager {
         });
 
         pm.invalidateInteractionCaches();
-        regionCache.clear();
         saveRegion(regionKey, newRegion);
         loadedRegions.put(regionKey, newRegion);
     }
