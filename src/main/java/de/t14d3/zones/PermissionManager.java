@@ -39,18 +39,10 @@ public class PermissionManager {
      * @param extra    Additional, optional information, for example a spawn reason.
      * @return True if the player can interact with the region, false otherwise.
      */
-    public boolean checkAction(
-            Location location, String who, Flag action, String type, Object... extra) {
+    public boolean checkAction(Location location, String who, Flag action, String type, Object... extra) {
 
         // Skip checking if player has global bypass permission
-        Player player = null;
-        try {
-            player = Bukkit.getPlayer(UUID.fromString(who));
-            if (player != null && player.hasPermission("zones.bypass.claimed")) {
-                return true;
-            }
-        } catch (IllegalArgumentException ignored) {
-        }
+
         boolean base = extra[0] == null;
         if (base && interactionCache.containsKey(who)) {
             ConcurrentLinkedQueue<CacheEntry> entries = interactionCache.get(who);
@@ -101,8 +93,17 @@ public class PermissionManager {
                 // If universal type, return default flag value
                 return action.getDefaultValue();
             }
+
             // Else, test player for bypass permission
-            return player != null && player.hasPermission("zones.bypass.unclaimed");
+            Player player = null;
+            try {
+                player = Bukkit.getPlayer(UUID.fromString(who));
+                if (player != null && player.hasPermission("zones.bypass.unclaimed")) {
+                    return true;
+                }
+            } catch (IllegalArgumentException ignored) {
+            }
+            return false;
         }
     }
 

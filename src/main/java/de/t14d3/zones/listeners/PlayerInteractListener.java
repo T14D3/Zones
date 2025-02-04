@@ -113,7 +113,9 @@ public class PlayerInteractListener implements Listener {
         }
 
         List<Flag> requiredPermissions = new ArrayList<>(); // Collect required permissions
-
+        if (player.hasPermission("zones.bypass.claimed")) {
+            return;
+        }
         // Interactable blocks
         if ((Utils.isContainer(event.getClickedBlock().getState(false)) || Utils.isPowerable(
                 event.getClickedBlock().getBlockData())) && event.getAction() == Action.RIGHT_CLICK_BLOCK) {
@@ -140,6 +142,9 @@ public class PlayerInteractListener implements Listener {
     @EventHandler
     private void onBlockPlace(BlockPlaceEvent event) {
         Player player = event.getPlayer();
+        if (player.hasPermission("zones.bypass.claimed")) {
+            return;
+        }
         String type = event.getBlockPlaced().getType().name();
         Location location = event.getBlockPlaced().getLocation();
         List<Flag> requiredPermissions = new ArrayList<>();
@@ -163,6 +168,9 @@ public class PlayerInteractListener implements Listener {
     @EventHandler
     private void onBlockBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
+        if (player.hasPermission("zones.bypass.claimed")) {
+            return;
+        }
         String type = event.getBlock().getType().name();
         Location location = event.getBlock().getLocation();
         List<Flag> requiredPermissions = new ArrayList<>();
@@ -186,6 +194,9 @@ public class PlayerInteractListener implements Listener {
     @EventHandler
     private void onEntityInteract(PlayerInteractEntityEvent event) {
         Player player = event.getPlayer();
+        if (player.hasPermission("zones.bypass.claimed")) {
+            return;
+        }
         Location location = event.getRightClicked().getLocation();
         List<Flag> requiredPermissions = new ArrayList<>();
         requiredPermissions.add(Flags.INTERACT);
@@ -202,6 +213,9 @@ public class PlayerInteractListener implements Listener {
     @EventHandler
     private void onEntityDamage(EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof Player player) {
+            if (player.hasPermission("zones.bypass.claimed")) {
+                return;
+            }
             Location location = event.getEntity().getLocation();
             List<Flag> requiredPermissions = new ArrayList<>();
             requiredPermissions.add(Flags.DAMAGE);
@@ -218,6 +232,9 @@ public class PlayerInteractListener implements Listener {
     @EventHandler
     private void onVehicleDamage(VehicleDamageEvent event) {
         if (event.getAttacker() instanceof Player player) {
+            if (player.hasPermission("zones.bypass.claimed")) {
+                return;
+            }
             Location location = event.getVehicle().getLocation();
             List<Flag> requiredPermissions = new ArrayList<>();
             requiredPermissions.add(Flags.DAMAGE);
@@ -234,6 +251,9 @@ public class PlayerInteractListener implements Listener {
     @EventHandler
     private void onArmorStandManipulate(PlayerArmorStandManipulateEvent event) {
         Player player = event.getPlayer();
+        if (player.hasPermission("zones.bypass.claimed")) {
+            return;
+        }
         Location location = event.getRightClicked().getLocation();
         List<Flag> requiredPermissions = new ArrayList<>();
         requiredPermissions.add(Flags.ENTITY);
@@ -249,10 +269,10 @@ public class PlayerInteractListener implements Listener {
 
     @EventHandler
     private void onHangingPlace(HangingPlaceEvent event) {
-        if (event.getPlayer() == null) {
+        Player player = event.getPlayer();
+        if (player == null || player.hasPermission("zones.bypass.claimed")) {
             return;
         }
-        Player player = event.getPlayer();
         Location location = event.getEntity().getLocation();
         List<Flag> requiredPermissions = new ArrayList<>();
         requiredPermissions.add(Flags.PLACE);
@@ -268,6 +288,9 @@ public class PlayerInteractListener implements Listener {
     @EventHandler
     private void onHangingBreak(HangingBreakByEntityEvent event) {
         Player player = (Player) event.getRemover();
+        if (player == null || player.hasPermission("zones.bypass.claimed")) {
+            return;
+        }
         Location location = event.getEntity().getLocation();
         List<Flag> requiredPermissions = new ArrayList<>();
         requiredPermissions.add(Flags.BREAK);
@@ -283,10 +306,10 @@ public class PlayerInteractListener implements Listener {
 
     @EventHandler
     private void onEntityPlace(EntityPlaceEvent event) {
-        if (event.getPlayer() == null) {
+        Player player = event.getPlayer();
+        if (player == null || player.hasPermission("zones.bypass.claimed")) {
             return;
         }
-        Player player = event.getPlayer();
         Location location = event.getEntity().getLocation();
         List<Flag> requiredPermissions = new ArrayList<>();
         requiredPermissions.add(Flags.PLACE);
