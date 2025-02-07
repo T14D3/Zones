@@ -38,9 +38,14 @@ public class FAWEIntegration extends BukkitMaskManager {
         final Player player = BukkitAdapter.adapt(wePlayer);
         final Location location = player.getLocation();
         Region region = plugin.getRegionManager().getEffectiveRegionAt(location);
+        if (region == null) {
+            return null;
+        }
         if (isAllowed(player, region, type)) {
-            final Location pos1 = region.getMin();
-            final Location pos2 = region.getMax();
+            final Location pos1 = new Location(region.getWorld(), region.getMin().getX(), region.getMin().getY(),
+                    region.getMin().getZ());
+            final Location pos2 = new Location(region.getWorld(), region.getMax().getX(), region.getMax().getY(),
+                    region.getMax().getZ());
             return new FaweMask(
                     new CuboidRegion(BukkitAdapter.asBlockVector(pos1), BukkitAdapter.asBlockVector(pos2))) {
                 @Override

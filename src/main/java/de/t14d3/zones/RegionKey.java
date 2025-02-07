@@ -1,12 +1,17 @@
 package de.t14d3.zones;
 
+import java.util.UUID;
+
 public final class RegionKey {
     private final int value;
 
     // Constructs from an 8-character hex string
     public RegionKey(String hex8) {
-        if (hex8 == null || hex8.length() != 8) {
-            throw new IllegalArgumentException("Input must be exactly 8 hex characters");
+        if (hex8 == null) {
+            throw new IllegalArgumentException("Input must be exactly 8 hex characters, got null!");
+        }
+        if (hex8.length() != 8) {
+            throw new IllegalArgumentException("Input must be exactly 8 hex characters, got " + hex8.length());
         }
         // Validate hex and parse
         try {
@@ -18,6 +23,10 @@ public final class RegionKey {
 
     public RegionKey(int value) {
         this.value = value;
+    }
+
+    public RegionKey() {
+        this.value = RegionKey.generate().getValue();
     }
 
     // Retrieve the integer value
@@ -48,5 +57,17 @@ public final class RegionKey {
 
     public static RegionKey fromString(String key) {
         return new RegionKey(key);
+    }
+
+    public static RegionKey fromInt(int key) {
+        return new RegionKey(key);
+    }
+
+    public static RegionKey generate() {
+        RegionKey key;
+        do {
+            key = RegionKey.fromString(UUID.randomUUID().toString().substring(0, 8));
+        } while (Zones.getInstance().getRegionManager().regions().containsKey(key.getValue()));
+        return key;
     }
 }

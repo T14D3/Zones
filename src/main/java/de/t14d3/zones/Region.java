@@ -1,8 +1,9 @@
 package de.t14d3.zones;
 
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.util.BlockVector;
-import org.bukkit.util.BoundingBox;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,10 +16,10 @@ import java.util.*;
  */
 public class Region {
     private String name;
-    private Location min;
-    private Location max;
+    private BlockVector min;
+    private BlockVector max;
+    private World world;
     private Map<String, Map<String, String>> members;
-    private final Set<ChunkKey> overlappingChunks = new HashSet<>();
     private RegionKey key;
     private RegionKey parent;
     private int priority;
@@ -35,12 +36,39 @@ public class Region {
      * @param key      The key of the region.
      * @param parent   The parent (if any) of the region.
      * @param priority The priority of the region.
+     * @see #Region(String, BlockVector, BlockVector, World, Map, RegionKey, RegionKey, int)
+     * @deprecated use {@link #Region(String, BlockVector, BlockVector, World, Map, RegionKey, RegionKey, int)}
+     */
+    @Deprecated(since = "0.2.0", forRemoval = true)
+    Region(@NotNull String name, @NotNull Location min, @NotNull Location max, Map<String, Map<String, String>> members, @NotNull RegionKey key, @Nullable RegionKey parent, int priority) {
+        this.name = name;
+        this.min = min.toVector().toBlockVector();
+        this.max = max.toVector().toBlockVector();
+        this.world = min.getWorld();
+        this.members = (members != null) ? members : new HashMap<>();
+        this.key = key;
+        this.parent = parent;
+        this.priority = priority;
+    }
+
+    /**
+     * Constructs a new region with the given name, minimum and maximum locations, members and parent.
+     *
+     * @param name     The name of the region (not unique).
+     * @param min      The minimum BlockVector of the region.
+     * @param max      The maximum BlockVector of the region.
+     * @param world    The world of the region.
+     * @param members  The members of the region.
+     * @param key      The key of the region.
+     * @param parent   The parent (if any) of the region.
+     * @param priority The priority of the region.
      * @see #Region(String, Location, Location, Map, RegionKey, int)
      */
-    Region(@NotNull String name, @NotNull Location min, @NotNull Location max, Map<String, Map<String, String>> members, @NotNull RegionKey key, @Nullable RegionKey parent, int priority) {
+    Region(@NotNull String name, @NotNull BlockVector min, @NotNull BlockVector max, @NotNull World world, Map<String, Map<String, String>> members, @NotNull RegionKey key, @Nullable RegionKey parent, int priority) {
         this.name = name;
         this.min = min;
         this.max = max;
+        this.world = world;
         this.members = (members != null) ? members : new HashMap<>();
         this.key = key;
         this.parent = parent;
@@ -74,46 +102,28 @@ public class Region {
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
-    public Location getMin() {
+    public BlockVector getMin() {
         return min;
     }
 
-    void setMin(Location min) {
-        this.min = min;
-    }
-
     void setMin(BlockVector min) {
-        this.min.set(min.getBlockX(), min.getBlockY(), min.getBlockZ());
+        this.min = min;
     }
 
     public String getMinString() {
         return min.getBlockX() + "," + min.getBlockY() + "," + min.getBlockZ();
     }
 
-    void setMin(Location min, RegionManager regionManager) {
-        this.min = min;
-        regionManager.saveRegion(key, this); // Ensure changes are saved
-    }
-
-    public Location getMax() {
+    public BlockVector getMax() {
         return max;
     }
 
-    void setMax(Location max) {
-        this.max = max;
-    }
-
     void setMax(BlockVector max) {
-        this.max.set(max.getBlockX(), max.getBlockY(), max.getBlockZ());
+        this.max = max;
     }
 
     public String getMaxString() {
         return max.getBlockX() + "," + max.getBlockY() + "," + max.getBlockZ();
-    }
-
-    void setMax(Location max, RegionManager regionManager) {
-        this.max = max;
-        regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
     /**
@@ -201,7 +211,7 @@ public class Region {
     }
 
     Region getParentRegion(RegionManager regionManager) {
-        return regionManager.regions().get(parent);
+        return regionManager.regions().get(parent.getValue());
     }
 
     public List<Region> getChildren(RegionManager regionManager) {
@@ -226,14 +236,31 @@ public class Region {
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
+    @Deprecated
     public boolean contains(Location location) {
-        BoundingBox box = BoundingBox.of(min, max);
-        box.expand(1); // Expand by 1 to encompass the full block
-        return box.contains(location.toVector());
+        return location.getWorld().equals(this.world) && contains(location.toVector().toBlockVector());
+    }
+
+    public boolean contains(BlockVector vec) {
+        return vec.getX() >= this.min.getX() && vec.getX() < this.max.getX() + 1
+                && vec.getY() >= this.min.getY() && vec.getY() < this.max.getY() + 1
+                && vec.getZ() >= this.min.getZ() && vec.getZ() < this.max.getZ() + 1;
+    }
+
+    public boolean intersects(@NotNull BlockVector min, @NotNull BlockVector max) {
+        return this.min.getX() <= max.getX() && this.max.getX() >= min.getX()
+                && this.min.getY() <= max.getY() && this.max.getY() >= min.getY()
+                && this.min.getZ() <= max.getZ() && this.max.getZ() >= min.getZ();
     }
 
     void addMemberPermission(UUID uuid, String permission, String value, RegionManager regionManager) {
         this.members.computeIfAbsent(uuid.toString(), k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER))
+                .put(permission, value);
+        regionManager.saveRegion(key, this); // Ensure changes are saved
+    }
+
+    void addMemberPermission(String who, String permission, String value, RegionManager regionManager) {
+        this.members.computeIfAbsent(who, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER))
                 .put(permission, value);
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
@@ -256,7 +283,16 @@ public class Region {
         this.priority = priority;
     }
 
-    public Set<ChunkKey> getOverlappingChunks() {
-        return overlappingChunks;
+    public World getWorld() {
+        return world;
+    }
+
+    /**
+     * Set the world of the region.
+     * Should very likely never be used.
+     */
+    @ApiStatus.Internal
+    public void setWorld(World world) {
+        this.world = world;
     }
 }

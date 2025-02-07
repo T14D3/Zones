@@ -43,7 +43,7 @@ public class PermissionManager {
 
         // Skip checking if player has global bypass permission
 
-        boolean base = extra[0] == null;
+        boolean base = extra == null;
         if (base && interactionCache.containsKey(who)) {
             ConcurrentLinkedQueue<CacheEntry> entries = interactionCache.get(who);
             for (CacheEntry entry : entries) {
@@ -89,7 +89,7 @@ public class PermissionManager {
 
         } else {
             // If no region found, check for player or universal type
-            if (who.equalsIgnoreCase("universal")) {
+            if (who.equalsIgnoreCase("+universal")) {
                 // If universal type, return default flag value
                 return action.getDefaultValue();
             }
@@ -252,8 +252,9 @@ public class PermissionManager {
                     return Result.FALSE;
                 }
                 for (String group : permissions.get("group").split(",")) {
-                    if (hasPermission(group, permission, type, region).equals(Result.TRUE)) {
-                        result = Result.TRUE;
+                    Result temp = hasPermission("+group-" + group, permission, type, region);
+                    if (temp.equals(Result.TRUE) || temp.equals(Result.FALSE)) {
+                        result = temp;
                     }
                 }
             }

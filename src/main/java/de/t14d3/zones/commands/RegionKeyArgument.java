@@ -20,30 +20,54 @@ import java.util.UUID;
 import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
 
 @SuppressWarnings("UnstableApiUsage")
-public class RegionKeyArgument implements CustomArgumentType.Converted<Region, String> {
+public class RegionKeyArgument implements CustomArgumentType.Converted<String, String> {
     public RegionKeyArgument() {
 
     }
 
-    public static Component regionInfo(Map.Entry<RegionKey, Region> entry) {
+
+    /**
+     * Get a region object from a string
+     *
+     * @param nativeType native argument provided value
+     * @return Region object
+     * @throws CommandSyntaxException if region is not found
+     */
+    @Override
+    public @NotNull String convert(@NotNull String nativeType) throws CommandSyntaxException {
+        String string = nativeType;
+        try {
+            int key = RegionKey.fromString(nativeType).getValue();
+            string = Zones.getInstance().getRegionManager().regions().get(key).getKey().toString();
+        } catch (Exception ignored) {
+        }
+        return string;
+    }
+
+    @Override
+    public @NotNull ArgumentType<String> getNativeType() {
+        return StringArgumentType.word();
+    }
+
+    static Component regionInfo(Region region) {
         Messages messages = Zones.getInstance().getMessages();
         var mm = MiniMessage.miniMessage();
         Component comp = Component.empty();
         comp = comp.append(
                 mm.deserialize("<light_purple>Name: </light_purple>" + messages.get("region.info.name") + " ",
-                        parsed("name", entry.getValue().getName())));
-        if (entry.getValue().getParent() != null) {
+                        parsed("name", region.getName())));
+        if (region.getParent() != null) {
             comp = comp.append(mm.deserialize(messages.get("region.info.parent") + " ",
-                    parsed("parent", entry.getValue().getParent().toString())));
+                    parsed("parent", region.getParent().toString())));
         }
         comp = comp.append(mm.deserialize("<green>(</green>" + messages.get("region.info.min") + " - ",
-                parsed("min", entry.getValue().getMinString())));
+                parsed("min", region.getMinString())));
         comp = comp.append(mm.deserialize(messages.get("region.info.max") + "<green>)</green>",
-                parsed("max", entry.getValue().getMaxString())));
+                parsed("max", region.getMaxString())));
         comp = comp.append(Component.text(" Members: ").color(NamedTextColor.LIGHT_PURPLE));
 
         // Iterate over members to format permissions
-        for (Map.Entry<String, Map<String, String>> member : entry.getValue().getMembers().entrySet()) {
+        for (Map.Entry<String, Map<String, String>> member : region.getMembers().entrySet()) {
             String playerName = null;
             try {
                 playerName = Utils.getPlayerName(UUID.fromString(member.getKey()));
@@ -58,24 +82,7 @@ public class RegionKeyArgument implements CustomArgumentType.Converted<Region, S
         }
 
         comp = comp.append(
-                mm.deserialize(" " + messages.get("region.info.key"), parsed("key", entry.getKey().toString())));
+                mm.deserialize(" " + messages.get("region.info.key"), parsed("key", region.getKey().toString())));
         return comp;
-    }
-
-    /**
-     * Get a region object from a string
-     *
-     * @param nativeType native argument provided value
-     * @return Region object
-     * @throws CommandSyntaxException if region is not found
-     */
-    @Override
-    public @NotNull Region convert(@NotNull String nativeType) throws CommandSyntaxException {
-        return Zones.getInstance().getRegionManager().regions().get(nativeType);
-    }
-
-    @Override
-    public @NotNull ArgumentType<String> getNativeType() {
-        return StringArgumentType.word();
     }
 }

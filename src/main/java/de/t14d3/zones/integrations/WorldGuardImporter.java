@@ -13,7 +13,6 @@ import org.bukkit.World;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 public class WorldGuardImporter {
 
@@ -35,10 +34,7 @@ public class WorldGuardImporter {
                     if (!region.getType().equals(RegionType.CUBOID)) {
                         continue;
                     }
-                    RegionKey key;
-                    do {
-                        key = RegionKey.fromString(UUID.randomUUID().toString().substring(0, 8));
-                    } while (plugin.getRegionManager().regions().containsKey(key));
+                    RegionKey key = RegionKey.generate();
                     String name = entry.getKey();
                     Location min = BukkitAdapter.adapt(world, region.getMinimumPoint());
                     Location max = BukkitAdapter.adapt(world, region.getMaximumPoint());

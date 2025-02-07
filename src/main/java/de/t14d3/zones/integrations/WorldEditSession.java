@@ -1,8 +1,8 @@
 package de.t14d3.zones.integrations;
 
 import com.sk89q.worldedit.EditSession;
-import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.event.extent.EditSessionEvent;
+import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.util.eventbus.Subscribe;
 import de.t14d3.zones.Region;
@@ -58,8 +58,9 @@ public class WorldEditSession {
                         && plugin.getPermissionManager().hasPermission(player.getUniqueId(), "BREAK", "true", region))
                         || region.isAdmin(player.getUniqueId())) {
                     mask.add(new CuboidRegion(
-                            BukkitAdapter.asBlockVector(region.getMin()),
-                            BukkitAdapter.asBlockVector(region.getMax().clone().subtract(1, 1, 1))
+                            BlockVector3.at(region.getMin().getX(), region.getMin().getY(), region.getMin().getZ()),
+                            BlockVector3.at(region.getMax().getX() - 1, region.getMax().getY() - 1,
+                                    region.getMax().getZ() - 1)
                             // Don't ask me why, but it works
                     ));
                 }
