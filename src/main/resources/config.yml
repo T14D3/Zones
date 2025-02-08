@@ -47,4 +47,21 @@ events:
     # Defaults to CANCEL
     limit-exceeded-action: CANCEL
 
+cache:
+  # For how long should Cache entries be stored for?
+  # Time is in seconds, defaults to 300
+  # Has an inaccuracy of ~0.024s/second due to
+  # using bitwise shifting to convert to seconds
+  # e.g. 300 is actually 307.2 seconds
+  ttl: 300
+  # How often should the cache be checked for expired entries?
+  # Time in minutes, defaults to 10
+  check-interval: 10
+  # Should there be a limit on the number of cached entries?
+  # Set to 0 to disable, defaults to 0
+  # Higher values may improve performance, but also increase memory usage
+  # For reference, 10.000 cache entries will use ~0.8-1.0MB of memory
+  limit: 0
+
+
 

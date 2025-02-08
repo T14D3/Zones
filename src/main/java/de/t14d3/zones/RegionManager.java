@@ -1,5 +1,6 @@
 package de.t14d3.zones;
 
+import de.t14d3.zones.permissions.PermissionManager;
 import de.t14d3.zones.utils.Direction;
 import de.t14d3.zones.utils.Utils;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;

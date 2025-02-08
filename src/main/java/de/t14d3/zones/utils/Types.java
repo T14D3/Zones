@@ -1,5 +1,6 @@
 package de.t14d3.zones.utils;
 
+import de.t14d3.zones.permissions.Flag;
 import org.bukkit.Material;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Container;
@@ -14,7 +15,7 @@ import java.util.List;
 /**
  * Utility class for types.
  * <p>
- * Contains lists for blocks and entities for their respective {@link Actions} type.
+ * Contains lists for blocks and entities for their respective {@link Flag} type.
  */
 public class Types {
 

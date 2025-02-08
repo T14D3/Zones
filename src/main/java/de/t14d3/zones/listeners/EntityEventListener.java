@@ -1,9 +1,9 @@
 package de.t14d3.zones.listeners;
 
-import de.t14d3.zones.PermissionManager;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.Zones;
-import de.t14d3.zones.utils.Flags;
+import de.t14d3.zones.permissions.Flags;
+import de.t14d3.zones.permissions.PermissionManager;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;

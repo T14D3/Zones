@@ -6,6 +6,7 @@ import de.t14d3.zones.integrations.FAWEIntegration;
 import de.t14d3.zones.integrations.PlaceholderAPI;
 import de.t14d3.zones.integrations.WorldEditSession;
 import de.t14d3.zones.listeners.*;
+import de.t14d3.zones.permissions.PermissionManager;
 import de.t14d3.zones.utils.DebugLoggerManager;
 import de.t14d3.zones.utils.Messages;
 import de.t14d3.zones.utils.Types;

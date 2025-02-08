@@ -1,11 +1,11 @@
 package de.t14d3.zones.listeners;
 
-import de.t14d3.zones.PermissionManager;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.Zones;
-import de.t14d3.zones.utils.Flag;
-import de.t14d3.zones.utils.Flags;
+import de.t14d3.zones.permissions.Flag;
+import de.t14d3.zones.permissions.Flags;
+import de.t14d3.zones.permissions.PermissionManager;
 import de.t14d3.zones.utils.Messages;
 import de.t14d3.zones.utils.Utils;
 import de.t14d3.zones.visuals.BeaconUtils;

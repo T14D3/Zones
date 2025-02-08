@@ -1,4 +1,4 @@
-package de.t14d3.zones.utils;
+package de.t14d3.zones.permissions;
 
 /**
  * A flag is a permission that can be set for a region.

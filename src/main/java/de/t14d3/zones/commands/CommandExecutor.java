@@ -1,7 +1,11 @@
 package de.t14d3.zones.commands;
 
-import de.t14d3.zones.*;
+import de.t14d3.zones.Region;
+import de.t14d3.zones.RegionKey;
+import de.t14d3.zones.RegionManager;
+import de.t14d3.zones.Zones;
 import de.t14d3.zones.integrations.WorldGuardImporter;
+import de.t14d3.zones.permissions.PermissionManager;
 import de.t14d3.zones.utils.Direction;
 import de.t14d3.zones.utils.Messages;
 import de.t14d3.zones.utils.Utils;

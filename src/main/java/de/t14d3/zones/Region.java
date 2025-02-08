@@ -1,5 +1,6 @@
 package de.t14d3.zones;
 
+import de.t14d3.zones.permissions.PermissionManager;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.util.BlockVector;
@@ -128,10 +129,9 @@ public class Region {
 
     /**
      * Get the members of this region and their permissions. <br>
-     * Use {@link de.t14d3.zones.PermissionManager#hasPermission} to check player permissions.
+     * Use {@link PermissionManager} to check player permissions.
      *
      * @return {@code Map<UUID player, Map<String permission, String value> permissions>}
-     * @see de.t14d3.zones.PermissionManager#hasPermission
      */
     public Map<String, Map<String, String>> getMembers() {
         return members;
@@ -210,7 +210,7 @@ public class Region {
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
-    Region getParentRegion(RegionManager regionManager) {
+    public Region getParentRegion(RegionManager regionManager) {
         return regionManager.regions().get(parent.getValue());
     }
 

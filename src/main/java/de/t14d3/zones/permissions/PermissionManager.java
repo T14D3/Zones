@@ -1,7 +1,9 @@
-package de.t14d3.zones;
+package de.t14d3.zones.permissions;
 
+import de.t14d3.zones.Region;
+import de.t14d3.zones.RegionManager;
+import de.t14d3.zones.Zones;
 import de.t14d3.zones.utils.DebugLoggerManager;
-import de.t14d3.zones.utils.Flag;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -14,14 +16,16 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class PermissionManager {
 
-    private final ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>> interactionCache = new ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>>();
-    private final ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>> permissionCache = new ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>>();
+    final ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>> interactionCache = new ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>>();
+    final ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>> permissionCache = new ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>>();
     private RegionManager regionManager;
+    private final CacheUtils cacheUtils;
     private final DebugLoggerManager debugLogger;
     public static final String UNIVERSAL = "+universal";
 
     public PermissionManager(Zones plugin) {
         this.debugLogger = plugin.getDebugLogger();
+        this.cacheUtils = new CacheUtils(plugin, this);
     }
 
     private static Result isAllowed(String perm, String type, Result result) {
@@ -402,47 +406,4 @@ public class PermissionManager {
                 region).equals(Result.TRUE);
     }
 
-    /**
-     * The result of a permission check
-     * TRUE/FALSE overwrite UNDEFINED
-     */
-    public enum Result {
-        TRUE, FALSE, UNDEFINED;
-
-        public static Result valueOf(boolean value) {
-            return value ? TRUE : FALSE;
-        }
-    }
-
-    public static class CacheEntry {
-        private final Object flag;
-        private final String value;
-        private final Object key;
-
-        public Result result;
-
-        public CacheEntry(Object flag, String value, Object key, Result result) {
-            this.flag = flag;
-            this.value = value;
-            this.key = key;
-            this.result = result;
-        }
-
-        // Getters
-        public Object getFlag() {
-            return flag;
-        }
-
-        public String getValue() {
-            return value;
-        }
-
-        public Object getKey() {
-            return key;
-        }
-
-        public boolean isEqual(Object flag, String value, Object key) {
-            return this.flag.equals(flag) && this.value.equals(value) && this.key.equals(key);
-        }
-    }
 }

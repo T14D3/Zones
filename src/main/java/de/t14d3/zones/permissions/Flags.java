@@ -1,4 +1,4 @@
-package de.t14d3.zones.utils;
+package de.t14d3.zones.permissions;
 
 import org.bukkit.Material;
 import org.bukkit.entity.EntityType;

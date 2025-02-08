@@ -1,7 +1,7 @@
 package de.t14d3.zones;
 
 import de.t14d3.zones.commands.CommandNode;
-import de.t14d3.zones.utils.Flags;
+import de.t14d3.zones.permissions.Flags;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
