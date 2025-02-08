@@ -1,5 +1,6 @@
 package de.t14d3.zones;
 
+import de.t14d3.zones.utils.DebugLoggerManager;
 import de.t14d3.zones.utils.Flag;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -16,18 +17,23 @@ public class PermissionManager {
     private final ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>> interactionCache = new ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>>();
     private final ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>> permissionCache = new ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>>();
     private RegionManager regionManager;
+    private final DebugLoggerManager debugLogger;
+    public static final String UNIVERSAL = "+universal";
 
-    public PermissionManager() {
+    public PermissionManager(Zones plugin) {
+        this.debugLogger = plugin.getDebugLogger();
     }
 
     private static Result isAllowed(String perm, String type, Result result) {
-        if (perm.equalsIgnoreCase("true") || perm.equals("*")) {
+        perm = perm.toLowerCase();
+        type = type.toLowerCase();
+        if (perm.equals("true") || perm.equals("*")) {
             result = Result.TRUE;
-        } else if (perm.equalsIgnoreCase("false") || perm.equals("!*")) {
+        } else if (perm.equals("false") || perm.equals("!*")) {
             result = Result.FALSE;
-        } else if (perm.equalsIgnoreCase(type)) {
+        } else if (perm.equals(type)) {
             result = Result.TRUE;
-        } else if (perm.equalsIgnoreCase("!" + type)) {
+        } else if (perm.equals("!" + type)) {
             result = Result.FALSE;
         }
         return result;
@@ -53,10 +59,24 @@ public class PermissionManager {
      * @return True if the player can interact with the region, false otherwise.
      */
     public boolean checkAction(Location location, String who, Flag action, String type, Object... extra) {
-        boolean nonplayer = who.equalsIgnoreCase("+universal") || extra.length != 0 && (boolean) extra[0];
+        debugLogger.log(DebugLoggerManager.CHECK, action.name(), who, location, type);
+        boolean nonplayer = who.equalsIgnoreCase(UNIVERSAL) || extra.length != 0 && (boolean) extra[0];
+        boolean base = extra.length == 0;
         if (nonplayer) {
+            debugLogger.log(DebugLoggerManager.UNI_CHECK, action.name(), location, type);
             return checkAction(location, action, type, extra);
         }
+        // Check interaction cache
+        if (base && interactionCache.containsKey(who)) {
+            ConcurrentLinkedQueue<CacheEntry> entries = interactionCache.get(who);
+            for (CacheEntry entry : entries) {
+                if (entry.isEqual(location, action.name(), type)) {
+                    debugLogger.log(DebugLoggerManager.CACHE_HIT, action.name(), who, location, type);
+                    return entry.result.equals(Result.TRUE);
+                }
+            }
+        }
+
         List<Region> regions = regionManager.getRegionsAt(location);
         if (!regions.isEmpty()) {
             Result result = Result.UNDEFINED;
@@ -87,21 +107,32 @@ public class PermissionManager {
             if (result.equals(Result.UNDEFINED)) {
                 result = Result.valueOf(action.getDefaultValue());
             }
+
+            // Update cache if needed
+            if (base) {
+                interactionCache.computeIfAbsent(who, k -> new ConcurrentLinkedQueue<>())
+                        .add(new CacheEntry(location, action.name(), type, result));
+            }
+            debugLogger.log(DebugLoggerManager.CACHE_MISS, action.name(), who, location, type);
             return result.equals(Result.TRUE);
 
         } else {
-            // If no region found, check for player or universal type
-
-            // Else, test player for bypass permission
+            // No region found, check player permissions
+            boolean bypass = false;
             Player player = null;
             try {
                 player = Bukkit.getPlayer(UUID.fromString(who));
                 if (player != null && player.hasPermission("zones.bypass.unclaimed")) {
-                    return true;
+                    bypass = true;
                 }
             } catch (IllegalArgumentException ignored) {
             }
-            return false;
+            debugLogger.log(DebugLoggerManager.PERM, action.name(), who, location, type, bypass);
+            if (base) {
+                interactionCache.computeIfAbsent(who, k -> new ConcurrentLinkedQueue<>())
+                        .add(new CacheEntry(location, action.name(), type, bypass ? Result.TRUE : Result.UNDEFINED));
+            }
+            return bypass;
         }
     }
 
@@ -116,18 +147,7 @@ public class PermissionManager {
      * @return true if the action is allowed, false otherwise
      */
     public boolean checkAction(Location location, Flag action, String type, Object... extra) {
-        String who = "+universal";
         boolean base = extra == null || extra.length == 0;
-
-        // Check interaction cache
-        if (base && interactionCache.containsKey(who)) {
-            ConcurrentLinkedQueue<CacheEntry> entries = interactionCache.get(who);
-            for (CacheEntry entry : entries) {
-                if (entry.isEqual(location, action.name(), type)) {
-                    return entry.result.equals(Result.TRUE);
-                }
-            }
-        }
 
         List<Region> regions = regionManager.getRegionsAt(location);
         if (!regions.isEmpty()) {
@@ -154,13 +174,6 @@ public class PermissionManager {
             if (finalResult == Result.UNDEFINED) {
                 finalResult = Result.valueOf(action.getDefaultValue());
             }
-
-            // Update cache if needed
-            if (base) {
-                interactionCache.computeIfAbsent(who, k -> new ConcurrentLinkedQueue<>())
-                        .add(new CacheEntry(location, action.name(), type, finalResult));
-            }
-
             return finalResult == Result.TRUE;
         } else {
             // No regions at location - use default value
@@ -260,6 +273,7 @@ public class PermissionManager {
             ConcurrentLinkedQueue<CacheEntry> entries = permissionCache.get(who);
             for (CacheEntry entry : entries) {
                 if (entry.isEqual(permission, type, region.getKey())) {
+                    debugLogger.log(DebugLoggerManager.CACHE_HIT, permission, who, region.getKey(), type);
                     return entry.result;
                 }
             }
@@ -268,6 +282,7 @@ public class PermissionManager {
         result = calculatePermission(who, permission, type, region, extra);
         permissionCache.computeIfAbsent(who, k -> new ConcurrentLinkedQueue<>())
                 .add(new CacheEntry(permission, type, region.getKey(), result));
+        debugLogger.log(DebugLoggerManager.CACHE_MISS, permission, who, region.getKey(), type);
         return result;
     }
 
@@ -282,18 +297,19 @@ public class PermissionManager {
      * @return Result of the permission check
      */
     private Result hasPermission(Region region, String permission, String type) {
-        String who = "+universal";
         // Check cache first
-        if (permissionCache.containsKey(who)) {
-            ConcurrentLinkedQueue<CacheEntry> entries = permissionCache.get(who);
+        if (permissionCache.containsKey(UNIVERSAL)) {
+            ConcurrentLinkedQueue<CacheEntry> entries = permissionCache.get(UNIVERSAL);
             for (CacheEntry entry : entries) {
                 if (entry.isEqual(permission, type, region.getKey())) {
+                    debugLogger.log(DebugLoggerManager.CACHE_HIT, permission, region.getKey(), type,
+                            DebugLoggerManager.UNI_CHECK);
                     return entry.result;
                 }
             }
         }
         Result result = Result.UNDEFINED;
-        Map<String, String> universalPerms = region.getMembers().get(who);
+        Map<String, String> universalPerms = region.getMembers().get(UNIVERSAL);
         if (universalPerms != null) {
             String value = universalPerms.get(permission.toLowerCase());
             if (value != null) {
@@ -306,16 +322,16 @@ public class PermissionManager {
 
         // If not found in current region, check parent
         if (result == Result.UNDEFINED && region.getParent() != null) {
+            debugLogger.log(DebugLoggerManager.PARENT, permission, region.getKey(), type, DebugLoggerManager.UNI_CHECK);
             Region parent = region.getParentRegion(regionManager);
             result = hasPermission(parent, permission, type);
         }
 
-        // Cache the result if it's not UNDEFINED
-        if (result != Result.UNDEFINED) {
-            permissionCache.computeIfAbsent(who, k -> new ConcurrentLinkedQueue<>())
-                    .add(new CacheEntry(permission, type, region.getKey(), result));
-        }
+        // Cache the result
+        permissionCache.computeIfAbsent(UNIVERSAL, k -> new ConcurrentLinkedQueue<>())
+                .add(new CacheEntry(permission, type, region.getKey(), result));
 
+        debugLogger.log(DebugLoggerManager.CACHE_MISS, permission, region.getKey(), type, DebugLoggerManager.UNI_CHECK);
         return result;
     }
 
@@ -377,7 +393,7 @@ public class PermissionManager {
                 result = isAllowed(permittedValue, type, result);
             }
         }
-
+        debugLogger.log(DebugLoggerManager.RESULT, result);
         return result; // Return null if no permission was set
     }
 

@@ -28,8 +28,8 @@ public class EntityEventListener implements Listener {
         if (event.getSpawnReason().equals(CreatureSpawnEvent.SpawnReason.SPAWNER_EGG)) {
             return;
         }
-        if (!permissionManager.checkAction(event.getLocation(), "universal", Flags.SPAWN,
-                event.getEntity().getType().name(), event.getSpawnReason().name())) {
+        if (!permissionManager.checkAction(event.getLocation(), Flags.SPAWN, event.getEntity().getType().name(),
+                event.getSpawnReason().name())) {
             event.setCancelled(true);
         }
     }
@@ -39,11 +39,7 @@ public class EntityEventListener implements Listener {
         boolean allowed = true;
         for (Block block : event.blockList()) {
             Location location = block.getLocation();
-            if (!permissionManager.checkAction(
-                    location,
-                    "universal",
-                    Flags.EXPLOSION,
-                    block.getType().name(),
+            if (!permissionManager.checkAction(location, Flags.EXPLOSION, block.getType().name(),
                     event.getEntity().getType().name())) {
                 allowed = false;
                 break;

@@ -6,6 +6,7 @@ import de.t14d3.zones.integrations.FAWEIntegration;
 import de.t14d3.zones.integrations.PlaceholderAPI;
 import de.t14d3.zones.integrations.WorldEditSession;
 import de.t14d3.zones.listeners.*;
+import de.t14d3.zones.utils.DebugLoggerManager;
 import de.t14d3.zones.utils.Messages;
 import de.t14d3.zones.utils.Types;
 import de.t14d3.zones.utils.Utils;
@@ -43,6 +44,7 @@ public final class Zones extends JavaPlugin {
     private final PaperBootstrap bootstrap;
     private Utils utils;
     private FindBossbar findBossbar;
+    private DebugLoggerManager debugLogger; // Add debug logger
 
     public Zones(PaperBootstrap bootstrap) {
         this.bootstrap = bootstrap;
@@ -55,8 +57,9 @@ public final class Zones extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
+        this.debugLogger = new DebugLoggerManager(this); // Initialize debug logger
         // Initialize PermissionManager first without RegionManager
-        this.permissionManager = new PermissionManager();
+        this.permissionManager = new PermissionManager(this);
 
         // Initialize RegionManager with PermissionManager
         this.regionManager = new RegionManager(this, permissionManager);
@@ -186,5 +189,9 @@ public final class Zones extends JavaPlugin {
 
     public FindBossbar getFindBossbar() {
         return findBossbar;
+    }
+
+    public DebugLoggerManager getDebugLogger() {
+        return debugLogger; // Getter for debug logger
     }
 }

@@ -113,7 +113,7 @@ public class RegionManager {
         for (String who : section.getKeys(false)) {
             Map<String, String> permissions = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
             for (String perm : section.getConfigurationSection(who).getKeys(false)) {
-                permissions.put(perm, section.getString(who + "." + perm));
+                permissions.put(perm.toLowerCase(), section.getString(who + "." + perm).toLowerCase());
             }
             members.put(who, permissions);
         }
