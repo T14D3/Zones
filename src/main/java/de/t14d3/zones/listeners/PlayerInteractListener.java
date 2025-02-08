@@ -11,6 +11,7 @@ import de.t14d3.zones.utils.Utils;
 import de.t14d3.zones.visuals.BeaconUtils;
 import it.unimi.dsi.fastutil.Pair;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -29,6 +30,7 @@ import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.util.BoundingBox;
 
 import java.util.ArrayList;
@@ -47,6 +49,7 @@ public class PlayerInteractListener implements Listener {
     private final BeaconUtils beaconUtils;
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
     private final Messages messages;
+    private final String ACTIONBAR_MESSAGE;
 
     public PlayerInteractListener(Zones plugin) {
         this.plugin = plugin;
@@ -54,7 +57,7 @@ public class PlayerInteractListener implements Listener {
         this.permissionManager = plugin.getPermissionManager();
         this.beaconUtils = plugin.getBeaconUtils();
         this.messages = plugin.getMessages();
-
+        this.ACTIONBAR_MESSAGE = messages.get("region.no-interact-permission");
     }
 
     @EventHandler
@@ -324,7 +327,19 @@ public class PlayerInteractListener implements Listener {
     }
 
     // Small util for message
+    static final String METADATA_KEY = "zones_last_actionbar";
     private void actionBar(Player player, Location location, List<Flag> actions, String type) {
+
+        // Cooldown on the actionbar processing, since spamming it several times per second causes lag
+        int currentTick = Bukkit.getCurrentTick();
+        if (player.hasMetadata(METADATA_KEY)) {
+            int lastSent = player.getMetadata(METADATA_KEY).get(0).asInt();
+            if (currentTick - lastSent < 5) { // 0.25 second cooldown
+                return; // Cooldown active
+            }
+        }
+
+        // Proceed to send action bar
         List<Region> regions = regionManager.getRegionsAt(location);
         String regionNames = regions.stream().map(Region::getName).collect(Collectors.joining(", "));
 
@@ -332,12 +347,16 @@ public class PlayerInteractListener implements Listener {
         for (Flag action : actions) {
             permissionsString.append(action.name()).append(", ");
         }
-        permissionsString.deleteCharAt(permissionsString.length() - 2); // Remove trailing ", "
-        permissionsString.deleteCharAt(permissionsString.length() - 1); // Remove trailing ", "
+        if (!actions.isEmpty()) {
+            permissionsString.setLength(permissionsString.length() - 2); // Remove trailing ", "
+        }
 
-        player.sendActionBar(miniMessage.deserialize(messages.get("region.no-interact-permission"),
+        player.sendActionBar(miniMessage.deserialize(ACTIONBAR_MESSAGE,
                 parsed("region", regionNames),
                 parsed("actions", permissionsString.toString()),
                 parsed("type", type)));
+
+        // Update last sent tick
+        player.setMetadata(METADATA_KEY, new FixedMetadataValue(plugin, currentTick));
     }
 }
