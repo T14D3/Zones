@@ -75,7 +75,7 @@ public class PermissionManager {
             ConcurrentLinkedQueue<CacheEntry> entries = interactionCache.get(who);
             for (CacheEntry entry : entries) {
                 if (entry.isEqual(location, action.name(), type)) {
-                    debugLogger.log(DebugLoggerManager.CACHE_HIT, action.name(), who, location, type);
+                    debugLogger.log(DebugLoggerManager.CACHE_HIT_ACTION, action.name(), who, location, type);
                     return entry.result.equals(Result.TRUE);
                 }
             }
@@ -117,7 +117,7 @@ public class PermissionManager {
                 interactionCache.computeIfAbsent(who, k -> new ConcurrentLinkedQueue<>())
                         .add(new CacheEntry(location, action.name(), type, result));
             }
-            debugLogger.log(DebugLoggerManager.CACHE_MISS, action.name(), who, location, type);
+            debugLogger.log(DebugLoggerManager.CACHE_MISS_ACTION, action.name(), who, location, type);
             return result.equals(Result.TRUE);
 
         } else {
@@ -277,7 +277,7 @@ public class PermissionManager {
             ConcurrentLinkedQueue<CacheEntry> entries = permissionCache.get(who);
             for (CacheEntry entry : entries) {
                 if (entry.isEqual(permission, type, region.getKey())) {
-                    debugLogger.log(DebugLoggerManager.CACHE_HIT, permission, who, region.getKey(), type);
+                    debugLogger.log(DebugLoggerManager.CACHE_HIT_PERM, permission, who, region.getKey(), type);
                     return entry.result;
                 }
             }
@@ -286,7 +286,7 @@ public class PermissionManager {
         result = calculatePermission(who, permission, type, region, extra);
         permissionCache.computeIfAbsent(who, k -> new ConcurrentLinkedQueue<>())
                 .add(new CacheEntry(permission, type, region.getKey(), result));
-        debugLogger.log(DebugLoggerManager.CACHE_MISS, permission, who, region.getKey(), type);
+        debugLogger.log(DebugLoggerManager.CACHE_MISS_PERM, permission, who, region.getKey(), type);
         return result;
     }
 
@@ -306,7 +306,7 @@ public class PermissionManager {
             ConcurrentLinkedQueue<CacheEntry> entries = permissionCache.get(UNIVERSAL);
             for (CacheEntry entry : entries) {
                 if (entry.isEqual(permission, type, region.getKey())) {
-                    debugLogger.log(DebugLoggerManager.CACHE_HIT, permission, region.getKey(), type,
+                    debugLogger.log(DebugLoggerManager.CACHE_HIT_PERM, permission, region.getKey(), type,
                             DebugLoggerManager.UNI_CHECK);
                     return entry.result;
                 }
@@ -335,7 +335,8 @@ public class PermissionManager {
         permissionCache.computeIfAbsent(UNIVERSAL, k -> new ConcurrentLinkedQueue<>())
                 .add(new CacheEntry(permission, type, region.getKey(), result));
 
-        debugLogger.log(DebugLoggerManager.CACHE_MISS, permission, region.getKey(), type, DebugLoggerManager.UNI_CHECK);
+        debugLogger.log(DebugLoggerManager.CACHE_MISS_PERM, permission, region.getKey(), type,
+                DebugLoggerManager.UNI_CHECK);
         return result;
     }
 

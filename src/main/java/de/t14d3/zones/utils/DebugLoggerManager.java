@@ -10,8 +10,10 @@ public final class DebugLoggerManager {
     private final Zones plugin;
     private final DebugLoggerInterface logger;
 
-    public static final String CACHE_HIT = "Cache hit on action: ";
-    public static final String CACHE_MISS = "Cache miss on action: ";
+    public static final String CACHE_HIT_ACTION = "Cache hit on action: ";
+    public static final String CACHE_MISS_ACTION = "Cache miss on action: ";
+    public static final String CACHE_HIT_PERM = "Cache hit on permission: ";
+    public static final String CACHE_MISS_PERM = "Cache miss on permission: ";
     public static final String UNI_CHECK = "UNIVERSAL Check";
     public static final String CHECK = "Checking action: ";
     public static final String PERM = "Checking permission: ";
