@@ -288,6 +288,8 @@ public class RegionManager {
     }
 
     public void addMemberPermission(String who, String permission, String value, RegionKey key) {
+        pm.invalidateInteractionCache(who);
+        pm.invalidateCache(who);
         Region region = regions().get(key.getValue());
         region.addMemberPermission(who, permission, value, this);
     }

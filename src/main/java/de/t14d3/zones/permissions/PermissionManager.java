@@ -188,7 +188,11 @@ public class PermissionManager {
         // No regions at location - use default value
 
         if (finalResult == Result.UNDEFINED) {
-            finalResult = Result.valueOf(action.getDefaultValue());
+            if (action.equals(Flags.IGNITE)) {
+                finalResult = Result.valueOf((boolean) action.getExtra()[0]);
+            } else {
+                finalResult = Result.valueOf(action.getDefaultValue());
+            }
         }
 
         interactionCache.computeIfAbsent(UNIVERSAL, k -> new ConcurrentLinkedQueue<>())
@@ -196,6 +200,7 @@ public class PermissionManager {
 
         debugLogger.log(DebugLoggerManager.CACHE_MISS_ACTION, DebugLoggerManager.UNI_CHECK, action.name(), location,
                 type, finalResult, extra);
+
         return finalResult == Result.TRUE;
     }
 
@@ -207,6 +212,10 @@ public class PermissionManager {
      */
     public void invalidateInteractionCache(UUID target) {
         interactionCache.remove(target.toString());
+    }
+
+    public void invalidateInteractionCache(String target) {
+        interactionCache.remove(target);
     }
 
     /**

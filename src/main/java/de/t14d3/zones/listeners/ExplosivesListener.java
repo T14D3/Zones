@@ -221,7 +221,7 @@ public class ExplosivesListener {
                 }
             } else {
                 if (!permissionManager.checkAction(event.getBlock().getLocation(), Flags.IGNITE,
-                        event.getBlock().getType().name(), event.getCause())) {
+                        event.getBlock().getType().name(), true, event.getCause())) {
                     event.setCancelled(true);
                 }
             }

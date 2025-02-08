@@ -1,7 +1,5 @@
 package de.t14d3.zones.permissions;
 
-import org.bukkit.Material;
-import org.bukkit.entity.EntityType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -40,14 +38,14 @@ public class Flags {
         CONTAINER = registerFlag(new Flag("container", "Allows opening containers", false));
         REDSTONE = registerFlag(new Flag("redstone", "Allows interacting with redstone", false));
         ENTITY = registerFlag(new Flag("entity", "Allows interacting with entities", false));
-        IGNITE = registerFlag(new Flag("ignite", "Allows igniting tnt", false));
+        IGNITE = registerFlag(
+                new Flag("ignite", "Allows igniting tnt", false, true /*Controls non-player ignition default*/));
         DAMAGE = registerFlag(new Flag("damage", "Allows damaging entities", false));
 
         GROUP = registerFlag(new Flag("group", "Add a group to the player"));
 
         SPAWN = registerFlag(new Flag("spawn", "Controls the spawning of entities", true));
-        EXPLOSION = registerFlag(new Flag("explosion", "Controls the explosion of entities", true,
-                new Class[]{Material.class, EntityType.class}));
+        EXPLOSION = registerFlag(new Flag("explosion", "Controls the explosion of entities", true));
         CREATE = registerFlag(new Flag("create", "Controls the creation of blocks through world events", true));
         DESTROY = registerFlag(new Flag("destroy", "Controls the removal of blocks through world events", true));
         TRANSFORM = registerFlag(
