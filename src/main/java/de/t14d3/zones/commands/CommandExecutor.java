@@ -21,6 +21,7 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -388,21 +389,25 @@ public class CommandExecutor {
             return;
         }
         String target = args[2];
+        String displayTarget = target;
         if (!target.startsWith("+")) {
-            target = Bukkit.getOfflinePlayerIfCached(target).getName();
+            OfflinePlayer temp = Bukkit.getOfflinePlayer(target);
+            target = temp.getUniqueId().toString();
+            displayTarget = temp.getName();
         }
-        String permission = args[3];
+        String permission = args[3].toLowerCase();
         // Yes, I know this is terrible.
         // No, I will not change it.
         List<String> arg = Arrays.stream(args).toList().subList(4, args.length);
-        String value = String.join(", ", arg);
+        String value = String.join(", ", arg).toLowerCase().replace("+group-", "");
         regionManager.addMemberPermission(target, permission, value, regionKey);
         regionManager.triggerSave();
         sender.sendMessage(miniMessage.deserialize(messages.get("commands.set.success"),
                 parsed("region", regionKey.toString()),
-                parsed("player", target),
+                parsed("target", displayTarget),
                 parsed("permission", permission),
-                parsed("value", value)));
+                parsed("value", value))
+        );
     }
 
     public void handleExpandCommand(CommandSender sender, String[] args) {
