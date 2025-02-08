@@ -14,8 +14,6 @@ import org.bukkit.event.block.TNTPrimeEvent;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static de.t14d3.zones.listeners.BlockEventListener.WHO;
-
 public class ExplosivesListener {
     private final Zones plugin;
     private final PermissionManager permissionManager;
@@ -28,13 +26,10 @@ public class ExplosivesListener {
         this.plugin = plugin;
         this.permissionManager = plugin.getPermissionManager();
 
-        String explosionMode =
-                plugin.getConfig().getString("events.explosion.explosion-mode", "ALL").toUpperCase();
-        limit = plugin.getConfig().getInt("events.explosion.limit", 10);
-        limitExceededCancel = plugin
-                        .getConfig()
-                        .getString("events.explosion.limit-exceeded-action", "CANCEL")
-                        .equalsIgnoreCase("CANCEL");
+        String explosionMode = plugin.getConfig().getString("events.explosion.explosion-mode", "ALL").toUpperCase();
+        limit = plugin.getConfig().getInt("events.explosion.limit", 100);
+        limitExceededCancel = plugin.getConfig().getString("events.explosion.limit-exceeded-action", "CANCEL")
+                .equalsIgnoreCase("CANCEL");
         limitHandler();
 
         switch (plugin.getConfig().getString("events.explosion.mode", "ALL").toUpperCase()) {
@@ -55,14 +50,9 @@ public class ExplosivesListener {
 
     private void limitHandler() {
         // Reset explosion counter every tick
-        Bukkit.getScheduler()
-                .runTaskTimer(
-                        plugin,
-                        () -> {
-                            explosionCount.set(0);
-                        },
-                        1L,
-                        1L);
+        Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            explosionCount.set(0);
+        }, 1L, 1L);
     }
 
     private boolean limitExceeded() {
@@ -82,12 +72,8 @@ public class ExplosivesListener {
                             return;
                         }
                         for (Block block : event.blockList()) {
-                            if (!permissionManager.checkAction(
-                                    block.getLocation(),
-                                    WHO,
-                                    Flags.EXPLOSION,
-                                    block.getType().name(),
-                                    event.getExplodedBlockState().getType())) {
+                            if (!permissionManager.checkAction(block.getLocation(), Flags.EXPLOSION,
+                                    block.getType().name(), event.getExplodedBlockState().getType())) {
                                 event.setCancelled(true);
                                 return;
                             }
@@ -106,15 +92,9 @@ public class ExplosivesListener {
                             }
                             return;
                         }
-                        event
-                                .blockList()
-                                .removeIf(
-                                        block ->
-                                                !permissionManager.checkAction(
-                                                        block.getLocation(),
-                                                        WHO,
-                                                        Flags.EXPLOSION,
-                                                        event.getExplodedBlockState().getType().name()));
+                        event.blockList().removeIf(
+                                block -> !permissionManager.checkAction(block.getLocation(), Flags.EXPLOSION,
+                                        event.getExplodedBlockState().getType().name()));
                     }
                 }
                 plugin.getServer().getPluginManager().registerEvents(new ExplosionListenerAll(), plugin);
@@ -129,22 +109,12 @@ public class ExplosivesListener {
                             }
                             return;
                         }
-                        if (permissionManager.checkAction(
-                                event.getBlock().getLocation(),
-                                WHO,
-                                Flags.EXPLOSION,
-                                event.getBlock().getType().name(),
-                                event.getExplodedBlockState().getType())) {
-                            Region region =
-                                    plugin.getRegionManager().getEffectiveRegionAt(event.getBlock().getLocation());
-                            event
-                                    .blockList()
-                                    .removeIf(
-                                            block ->
-                                                    !Objects.equals(
-                                                            plugin.getRegionManager()
-                                                                    .getEffectiveRegionAt(block.getLocation()),
-                                                            region));
+                        if (permissionManager.checkAction(event.getBlock().getLocation(), Flags.EXPLOSION,
+                                event.getBlock().getType().name(), event.getExplodedBlockState().getType())) {
+                            Region region = plugin.getRegionManager()
+                                    .getEffectiveRegionAt(event.getBlock().getLocation());
+                            event.blockList().removeIf(block -> !Objects.equals(
+                                    plugin.getRegionManager().getEffectiveRegionAt(block.getLocation()), region));
                         } else {
                             event.setCancelled(true);
                         }
@@ -162,10 +132,7 @@ public class ExplosivesListener {
                             }
                             return;
                         }
-                        if (!permissionManager.checkAction(
-                                event.getBlock().getLocation(),
-                                WHO,
-                                Flags.EXPLOSION,
+                        if (!permissionManager.checkAction(event.getBlock().getLocation(), Flags.EXPLOSION,
                                 event.getExplodedBlockState().getType().name())) {
                             event.setCancelled(true);
                         }
@@ -181,20 +148,13 @@ public class ExplosivesListener {
         @EventHandler
         public void onTNTPrime(TNTPrimeEvent event) {
             if (event.getPrimingEntity() instanceof org.bukkit.entity.Player player) {
-                if (!permissionManager.checkAction(
-                        event.getBlock().getLocation(),
-                        player.getUniqueId(),
-                        Flags.IGNITE,
+                if (!permissionManager.checkAction(event.getBlock().getLocation(), player.getUniqueId(), Flags.IGNITE,
                         event.getBlock().getType().name())) {
                     event.setCancelled(true);
                 }
             } else {
-                if (!permissionManager.checkAction(
-                        event.getBlock().getLocation(),
-                        WHO,
-                        Flags.IGNITE,
-                        event.getBlock().getType().name(),
-                        event.getCause())) {
+                if (!permissionManager.checkAction(event.getBlock().getLocation(), Flags.IGNITE,
+                        event.getBlock().getType().name(), event.getCause())) {
                     event.setCancelled(true);
                 }
             }

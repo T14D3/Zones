@@ -12,7 +12,6 @@ import org.bukkit.event.world.StructureGrowEvent;
 
 public class BlockEventListener implements Listener {
 
-    static final String WHO = "universal";
     private final Zones plugin;
     private final RegionManager regionManager;
     private final PermissionManager permissionManager;
@@ -30,7 +29,7 @@ public class BlockEventListener implements Listener {
     @EventHandler
     public void onBlockGrow(BlockGrowEvent event) {
         if (!permissionManager.checkAction(
-                event.getBlock().getLocation(), WHO, Flags.CREATE, event.getBlock().getType().name())) {
+                event.getBlock().getLocation(), Flags.CREATE, event.getBlock().getType().name())) {
             event.setCancelled(true);
         }
     }
@@ -44,7 +43,6 @@ public class BlockEventListener implements Listener {
                 };
         if (!permissionManager.checkAction(
                 event.getBlock().getLocation(),
-                WHO,
                 flag,
                 event.getBlock().getType().name(),
                 event.getNewState().getType().name())) {
@@ -61,7 +59,6 @@ public class BlockEventListener implements Listener {
                 };
         if (!permissionManager.checkAction(
                 event.getBlock().getLocation(),
-                WHO,
                 flag,
                 event.getNewState().getType().name(),
                 event.getBlock().getType().name())) {
@@ -78,7 +75,6 @@ public class BlockEventListener implements Listener {
                 };
         if (!permissionManager.checkAction(
                 event.getBlock().getLocation(),
-                WHO,
                 flag,
                 event.getBlock().getType().name(),
                 event.getToBlock().getType().name())) {
@@ -90,7 +86,6 @@ public class BlockEventListener implements Listener {
     public void onBlockSpread(BlockSpreadEvent event) {
         if (!permissionManager.checkAction(
                 event.getBlock().getLocation(),
-                WHO,
                 Flags.SPREAD,
                 event.getBlock().getType().name(),
                 event.getNewState().getType().name())) {
@@ -101,7 +96,7 @@ public class BlockEventListener implements Listener {
     @EventHandler
     public void onSculkSpread(SculkBloomEvent event) {
         if (!permissionManager.checkAction(
-                event.getBlock().getLocation(), WHO, Flags.SPREAD, event.getBlock().getType().name())) {
+                event.getBlock().getLocation(), Flags.SPREAD, event.getBlock().getType().name())) {
             event.setCancelled(true);
         }
     }
@@ -113,13 +108,13 @@ public class BlockEventListener implements Listener {
                 .removeIf(
                         state ->
                                 !permissionManager.checkAction(
-                                        state.getLocation(), WHO, Flags.CREATE, state.getType().name()));
+                                        state.getLocation(), Flags.CREATE, state.getType().name()));
     }
 
     @EventHandler
     public void onLeavesDecay(LeavesDecayEvent event) {
         if (!permissionManager.checkAction(
-                event.getBlock().getLocation(), WHO, Flags.DESTROY, event.getBlock().getType().name())) {
+                event.getBlock().getLocation(), Flags.DESTROY, event.getBlock().getType().name())) {
             event.setCancelled(true);
         }
     }
@@ -130,7 +125,7 @@ public class BlockEventListener implements Listener {
         @EventHandler
         public void onBlockPhysics(org.bukkit.event.block.BlockPhysicsEvent event) {
             if (!permissionManager.checkAction(
-                    event.getBlock().getLocation(), WHO, Flags.PHYSICS, event.getBlock().getType().name())) {
+                    event.getBlock().getLocation(), Flags.PHYSICS, event.getBlock().getType().name())) {
                 event.setCancelled(true);
             }
         }

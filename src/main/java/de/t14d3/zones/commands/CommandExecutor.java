@@ -385,7 +385,7 @@ public class CommandExecutor {
         }
         String target = args[2];
         if (!target.startsWith("+")) {
-            target = Utils.getPlayerName(UUID.fromString(target));
+            target = Bukkit.getOfflinePlayerIfCached(target).getName();
         }
         String permission = args[3];
         // Yes, I know this is terrible.

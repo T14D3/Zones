@@ -3,6 +3,7 @@ package de.t14d3.zones;
 import de.t14d3.zones.utils.Direction;
 import de.t14d3.zones.utils.Utils;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -29,7 +30,7 @@ public class RegionManager {
 
     private final Int2ObjectOpenHashMap<Region> loadedRegions = new Int2ObjectOpenHashMap<>();
     private final Map<World, Int2ObjectOpenHashMap<Region>> worldRegions = new HashMap<>();
-
+    private final Map<World, Long2ObjectOpenHashMap<List<Region>>> chunkRegions = new HashMap<>();
 
     public RegionManager(Zones plugin, PermissionManager permissionManager) {
         this.pm = permissionManager;
@@ -83,6 +84,7 @@ public class RegionManager {
                     Region region = loadRegion(key);
                     loadedRegions.put(region.getKey().getValue(), region);
                     worldRegions.get(region.getWorld()).put(region.getKey().getValue(), region);
+                    indexRegion(region); // Initialize chunk-region mapping
                 } catch (Exception e) {
                     plugin.getLogger().severe("Failed to load region " + key);
                     plugin.getLogger().info(e.getMessage());
@@ -99,6 +101,10 @@ public class RegionManager {
      */
     public Int2ObjectOpenHashMap<Region> regions() {
         return this.loadedRegions;
+    }
+
+    public Int2ObjectOpenHashMap<Region> regions(World world) {
+        return this.worldRegions.get(world);
     }
 
     private static Map<String, Map<String, String>> loadMembers(@Nullable ConfigurationSection section) {
@@ -151,7 +157,6 @@ public class RegionManager {
         );
     }
 
-
     private void saveMembers(RegionKey key, Map<String, Map<String, String>> members) {
         for (Map.Entry<String, Map<String, String>> entry : members.entrySet()) {
             String who = entry.getKey();
@@ -195,6 +200,7 @@ public class RegionManager {
         pm.invalidateInteractionCaches();
         saveRegion(key, newRegion);
         loadedRegions.put(key.getValue(), newRegion);
+        indexRegion(newRegion); // Add the new region to the spatial index
         return newRegion;
     }
 
@@ -226,6 +232,7 @@ public class RegionManager {
     public Region createNewRegion(RegionKey key, String name, Location min, Location max, Map<String, Map<String, String>> members, int priority) {
         Region region = new Region(name, min, max, members, key, priority);
         saveRegion(key, region);
+        indexRegion(region); // Add the region to the spatial index
         return region;
     }
 
@@ -260,6 +267,7 @@ public class RegionManager {
         pm.invalidateInteractionCaches();
         saveRegion(regionKey, newRegion);
         loadedRegions.put(regionKey.getValue(), newRegion);
+        indexRegion(newRegion); // Add the new region to the spatial index
         return newRegion;
     }
 
@@ -310,10 +318,16 @@ public class RegionManager {
         List<Region> foundRegions = new ArrayList<>();
         World world = location.getWorld();
         if (world == null) return foundRegions;
-        for (Region region : worldRegions.get(world).values()) {
-            if (region.contains(location.toVector().toBlockVector())) {
-                foundRegions.add(region);
-            }
+
+        BlockVector loc = location.toVector().toBlockVector();
+        int xChunk = loc.getBlockX() >> 4;
+        int zChunk = loc.getBlockZ() >> 4;
+        long key = ((long) xChunk << 32) | (zChunk & 0xFFFFFFFFL);
+
+        List<Region> candidates = chunkRegions.getOrDefault(world, new Long2ObjectOpenHashMap<>())
+                .getOrDefault(key, Collections.emptyList());
+        for (Region region : candidates) {
+            if (region.contains(loc)) foundRegions.add(region);
         }
         return foundRegions;
     }
@@ -337,6 +351,27 @@ public class RegionManager {
         return effectiveRegion;
     }
 
+    private void indexRegion(Region region) {
+        World world = region.getWorld();
+        Long2ObjectOpenHashMap<List<Region>> worldChunks = chunkRegions.computeIfAbsent(world,
+                k -> new Long2ObjectOpenHashMap<>());
+
+        BlockVector min = region.getMin();
+        BlockVector max = region.getMax();
+
+        int minXChunk = min.getBlockX() >> 4;
+        int minZChunk = min.getBlockZ() >> 4;
+        int maxXChunk = max.getBlockX() >> 4;
+        int maxZChunk = max.getBlockZ() >> 4;
+
+        for (int x = minXChunk; x <= maxXChunk; x++) {
+            for (int z = minZChunk; z <= maxZChunk; z++) {
+                long key = ((long) x << 32) | (z & 0xFFFFFFFFL);
+                worldChunks.computeIfAbsent(key, k -> new ArrayList<>()).add(region);
+            }
+        }
+    }
+
     /**
      * Gets Regions at location async
      *
@@ -356,10 +391,57 @@ public class RegionManager {
      * @param max    The new maximum location of the region.
      */
     public void redefineBounds(Region region, BlockVector min, BlockVector max) {
+        BlockVector oldMin = region.getMin();
+        BlockVector oldMax = region.getMax();
         region.setMin(min);
         region.setMax(max);
+        updateRegionInSpatialIndex(region, oldMin, oldMax);
+        triggerSave();
     }
 
+    public void updateRegionInSpatialIndex(Region region, BlockVector oldMin, BlockVector oldMax) {
+        World world = region.getWorld();
+        Map<Long, List<Region>> worldChunks = chunkRegions.get(world);
+        if (worldChunks == null) return;
+
+        // Remove from old chunks
+        removeRegionFromChunks(region, oldMin, oldMax, worldChunks);
+
+        // Add to new chunks
+        addRegionToChunks(region, region.getMin(), region.getMax(), worldChunks);
+    }
+
+    private void removeRegionFromChunks(Region region, BlockVector min, BlockVector max, Map<Long, List<Region>> worldChunks) {
+        int minXChunk = min.getBlockX() >> 4;
+        int minZChunk = min.getBlockZ() >> 4;
+        int maxXChunk = max.getBlockX() >> 4;
+        int maxZChunk = max.getBlockZ() >> 4;
+
+        for (int x = minXChunk; x <= maxXChunk; x++) {
+            for (int z = minZChunk; z <= maxZChunk; z++) {
+                long key = ((long) x << 32) | (z & 0xFFFFFFFFL);
+                List<Region> regions = worldChunks.get(key);
+                if (regions != null) {
+                    regions.remove(region);
+                    if (regions.isEmpty()) worldChunks.remove(key);
+                }
+            }
+        }
+    }
+
+    private void addRegionToChunks(Region region, BlockVector min, BlockVector max, Map<Long, List<Region>> worldChunks) {
+        int minXChunk = min.getBlockX() >> 4;
+        int minZChunk = min.getBlockZ() >> 4;
+        int maxXChunk = max.getBlockX() >> 4;
+        int maxZChunk = max.getBlockZ() >> 4;
+
+        for (int x = minXChunk; x <= maxXChunk; x++) {
+            for (int z = minZChunk; z <= maxZChunk; z++) {
+                long key = ((long) x << 32) | (z & 0xFFFFFFFFL);
+                worldChunks.computeIfAbsent(key, k -> new ArrayList<>()).add(region);
+            }
+        }
+    }
 
     /**
      * Expands the bounds of a region in a given direction by a given amount.
@@ -422,5 +504,6 @@ public class RegionManager {
      */
     public void addRegion(Region region) {
         loadedRegions.put(region.getKey().getValue(), region);
+        indexRegion(region); // Ensure the region is indexed
     }
 }
