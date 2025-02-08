@@ -153,9 +153,20 @@ public class PermissionManager {
     public boolean checkAction(Location location, Flag action, String type, Object... extra) {
         boolean base = extra == null || extra.length == 0;
 
+        if (base && interactionCache.containsKey(UNIVERSAL)) {
+            ConcurrentLinkedQueue<CacheEntry> entries = interactionCache.get(UNIVERSAL);
+            for (CacheEntry entry : entries) {
+                if (entry.isEqual(location, action.name(), type)) {
+                    debugLogger.log(DebugLoggerManager.CACHE_HIT_ACTION, DebugLoggerManager.UNI_CHECK, action.name(),
+                            location, type, entry.result);
+                    return entry.result.equals(Result.TRUE);
+                }
+            }
+        }
+
         List<Region> regions = regionManager.getRegionsAt(location);
+        Result finalResult = Result.UNDEFINED;
         if (!regions.isEmpty()) {
-            Result finalResult = Result.UNDEFINED;
             int highestPriority = Integer.MIN_VALUE;
 
             for (Region region : regions) {
@@ -173,16 +184,19 @@ public class PermissionManager {
                     }
                 }
             }
-
-            // Fallback to default if no regions defined the permission
-            if (finalResult == Result.UNDEFINED) {
-                finalResult = Result.valueOf(action.getDefaultValue());
-            }
-            return finalResult == Result.TRUE;
-        } else {
-            // No regions at location - use default value
-            return action.getDefaultValue();
         }
+        // No regions at location - use default value
+
+        if (finalResult == Result.UNDEFINED) {
+            finalResult = Result.valueOf(action.getDefaultValue());
+        }
+
+        interactionCache.computeIfAbsent(UNIVERSAL, k -> new ConcurrentLinkedQueue<>())
+                .add(new CacheEntry(location, action.name(), type, finalResult));
+
+        debugLogger.log(DebugLoggerManager.CACHE_MISS_ACTION, DebugLoggerManager.UNI_CHECK, action.name(), location,
+                type, finalResult, extra);
+        return finalResult == Result.TRUE;
     }
 
     /**

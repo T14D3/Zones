@@ -34,12 +34,12 @@ events:
     # Valid options are:
     #   - ALL: Individually checks every block affected by the explosion
     #   - REGION: Confines explosion result to the region the explosion originated from
-    #   - BLOCK: Allows/denies the explosion based on the result of checking the block the explosion originated from
-    #   - ANY: Cancels the explosion if any affected block is protected
-    # Defaults to ALL
-    explosion-mode: ALL
+    #   - SOURCE: Allows/denies the explosion based on the result of checking the block/entity the explosion originated from
+    #   - ANY: Cancels the explosion if any affected block is protected (Reflects WorldGuard's behavior)
+    # Defaults to ANY
+    explosion-mode: ANY
     # Maximum number of explosions to check per tick
-    limit: 10
+    limit: 50
     # What to do when the limit is exceeded
     # Valid options are:
     #   - CANCEL: Cancel all further explosions

@@ -404,7 +404,7 @@ public class CommandExecutor {
         regionManager.triggerSave();
         sender.sendMessage(miniMessage.deserialize(messages.get("commands.set.success"),
                 parsed("region", regionKey.toString()),
-                parsed("target", displayTarget),
+                parsed("target", displayTarget != null ? displayTarget : target),
                 parsed("permission", permission),
                 parsed("value", value))
         );
