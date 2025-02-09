@@ -2,7 +2,7 @@ package de.t14d3.zones.integrations;
 
 import de.t14d3.zones.Region;
 import de.t14d3.zones.Zones;
-import de.t14d3.zones.permissions.Flags;
+import de.t14d3.zones.permissions.flags.Flags;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;

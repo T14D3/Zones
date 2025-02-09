@@ -1,6 +1,7 @@
 package de.t14d3.zones.listeners;
 
 import de.t14d3.zones.Zones;
+import de.t14d3.zones.permissions.CacheUtils;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -8,9 +9,11 @@ import org.bukkit.event.player.PlayerQuitEvent;
 public class PlayerQuitListener implements Listener {
 
     private final Zones zones;
+    private CacheUtils cacheUtils;
 
     public PlayerQuitListener(Zones zones) {
         this.zones = zones;
+        this.cacheUtils = CacheUtils.getInstance();
     }
 
     @EventHandler
@@ -18,7 +21,7 @@ public class PlayerQuitListener implements Listener {
         java.util.UUID uuid = event.getPlayer().getUniqueId();
         zones.selection.remove(uuid);
         zones.particles.remove(uuid);
-        zones.getPermissionManager().invalidateInteractionCache(uuid);
-        zones.getPermissionManager().invalidateCache(uuid.toString());
+        cacheUtils.invalidateInteractionCache(uuid);
+        cacheUtils.invalidateCache(uuid.toString());
     }
 }

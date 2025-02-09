@@ -181,7 +181,7 @@ public class CommandExecutor {
         }
 
         Region region = regions.get(regionKey.getValue());
-        if (sender instanceof Player player && !pm.hasPermission(player.getUniqueId(), "role", "owner", region)) {
+        if (sender instanceof Player player && region.isAdmin(player.getUniqueId())) {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
             return; // Failure
         }
@@ -250,7 +250,7 @@ public class CommandExecutor {
             Region parentRegion = null;
             if (args.length < 2) {
                 for (Region region : regionManager.getRegionsAt(player.getLocation())) {
-                    if (pm.isAdmin(player.getUniqueId().toString(), region)) {
+                    if (region.isAdmin(player.getUniqueId())) {
                         parentRegion = region;
                         break;
                     }
@@ -323,8 +323,8 @@ public class CommandExecutor {
             if (!perm && (player != null && !region.isMember(player.getUniqueId()))) {
                 continue;
             }
-            Component hoverText = regionInfo(region, (perm || (player != null && this.plugin.getPermissionManager()
-                    .isAdmin(player.getUniqueId().toString(), region))))
+            Component hoverText = regionInfo(region, (perm || (player != null && region.isAdmin(
+                    player.getUniqueId()))))
                     .join();
             var mm = MiniMessage.miniMessage();
 
@@ -383,8 +383,8 @@ public class CommandExecutor {
         if (sender instanceof Player) {
             player = (Player) sender;
         }
-        if (region == null || (player != null && !pm.hasPermission(player.getUniqueId(), "role", "owner",
-                region) && !player.hasPermission("zones.set.other"))) {
+        if (region == null || (player != null && !region.isOwner(player.getUniqueId()) && !player.hasPermission(
+                "zones.set.other"))) {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.invalid-region")));
             return;
         }

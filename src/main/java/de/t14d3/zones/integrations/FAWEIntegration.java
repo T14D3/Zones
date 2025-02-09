@@ -7,6 +7,8 @@ import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.Zones;
+import de.t14d3.zones.permissions.Result;
+import de.t14d3.zones.permissions.flags.Flags;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
@@ -24,13 +26,11 @@ public class FAWEIntegration extends BukkitMaskManager {
     }
 
     public boolean isAllowed(Player player, Region region, MaskType type) {
-        return region != null &&
-                (region.isAdmin(player.getUniqueId()) ||
-                        type == MaskType.MEMBER && (
-                                plugin.getPermissionManager()
-                                        .hasPermission(player.getUniqueId(), "PLACE", "true", region)
-                                        || plugin.getPermissionManager()
-                                        .hasPermission(player.getUniqueId(), "BREAK", "true", region)));
+        return region != null && (region.isAdmin(
+                player.getUniqueId()) || type == MaskType.MEMBER && (Flags.BREAK.getCustomHandler()
+                .evaluate(region, player.getUniqueId().toString(), "break", "true")
+                .equals(Result.TRUE) || Flags.PLACE.getCustomHandler()
+                .evaluate(region, player.getUniqueId().toString(), "place", "true").equals(Result.TRUE)));
     }
 
     @Override

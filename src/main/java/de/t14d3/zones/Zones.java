@@ -6,7 +6,9 @@ import de.t14d3.zones.integrations.FAWEIntegration;
 import de.t14d3.zones.integrations.PlaceholderAPI;
 import de.t14d3.zones.integrations.WorldEditSession;
 import de.t14d3.zones.listeners.*;
+import de.t14d3.zones.permissions.CacheUtils;
 import de.t14d3.zones.permissions.PermissionManager;
+import de.t14d3.zones.permissions.flags.Flags;
 import de.t14d3.zones.utils.DebugLoggerManager;
 import de.t14d3.zones.utils.Messages;
 import de.t14d3.zones.utils.Types;
@@ -46,6 +48,7 @@ public final class Zones extends JavaPlugin {
     private Utils utils;
     private FindBossbar findBossbar;
     private DebugLoggerManager debugLogger; // Add debug logger
+    private Flags flags;
 
     public Zones(PaperBootstrap bootstrap) {
         this.bootstrap = bootstrap;
@@ -138,6 +141,11 @@ public final class Zones extends JavaPlugin {
             WorldEdit.getInstance().getEventBus().register(new WorldEditSession(this));
             getLogger().info("WorldEdit Integration enabled.");
         }
+        CacheUtils.getInstance().startCacheRunnable();
+        this.flags = new Flags();
+
+
+
         getLogger().info("Zones plugin has been enabled! Loaded " + regionManager.regions().size() + " regions.");
     }
 
@@ -146,8 +154,6 @@ public final class Zones extends JavaPlugin {
         // Save regions to regions.yml before plugin shutdown
         regionManager.saveRegions();
         regionManager.regions().clear();
-        permissionManager.invalidateInteractionCaches();
-        permissionManager.invalidateCaches();
         getLogger().info("Zones plugin is disabling and regions are saved.");
     }
 

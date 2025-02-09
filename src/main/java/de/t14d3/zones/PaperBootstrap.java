@@ -1,7 +1,8 @@
 package de.t14d3.zones;
 
 import de.t14d3.zones.commands.CommandNode;
-import de.t14d3.zones.permissions.Flags;
+import de.t14d3.zones.permissions.CacheUtils;
+import de.t14d3.zones.permissions.flags.Flags;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
@@ -16,10 +17,10 @@ public class PaperBootstrap implements PluginBootstrap {
 
     private Zones zones;
     private Flags flags;
+    private CacheUtils cacheUtils;
 
     @Override
     public void bootstrap(BootstrapContext context) {
-        flags = new Flags();
         CommandNode cmd = new CommandNode(this);
         LifecycleEventManager<@NotNull BootstrapContext> eventManager = context.getLifecycleManager();
         eventManager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
@@ -31,11 +32,8 @@ public class PaperBootstrap implements PluginBootstrap {
     @Override
     public @NotNull JavaPlugin createPlugin(@NotNull PluginProviderContext context) {
         zones = new Zones(this);
+        cacheUtils = new CacheUtils(zones);
         return zones;
-    }
-
-    public Flags getFlags() {
-        return flags;
     }
 
 

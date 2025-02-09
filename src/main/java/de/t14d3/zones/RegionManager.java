@@ -1,5 +1,6 @@
 package de.t14d3.zones;
 
+import de.t14d3.zones.permissions.CacheUtils;
 import de.t14d3.zones.permissions.PermissionManager;
 import de.t14d3.zones.utils.Direction;
 import de.t14d3.zones.utils.Utils;
@@ -28,6 +29,7 @@ public class RegionManager {
     private final File regionsFile;
     private final FileConfiguration regionsConfig;
     private final Zones plugin;
+    private static RegionManager instance;
 
     private final Int2ObjectOpenHashMap<Region> loadedRegions = new Int2ObjectOpenHashMap<>();
     private final Map<World, Int2ObjectOpenHashMap<Region>> worldRegions = new HashMap<>();
@@ -45,6 +47,7 @@ public class RegionManager {
         }
 
         regionsConfig = YamlConfiguration.loadConfiguration(regionsFile);
+        instance = this;
     }
 
     public void saveRegions() {
@@ -57,7 +60,7 @@ public class RegionManager {
         } catch (IOException e) {
             plugin.getLogger().severe("Failed to save regions.yml");
         }
-        pm.invalidateInteractionCaches();
+        CacheUtils.getInstance().invalidateInteractionCaches();
     }
 
     /**
@@ -91,7 +94,7 @@ public class RegionManager {
                     plugin.getLogger().info(e.getMessage());
                 }
             }
-            pm.invalidateInteractionCaches();
+            CacheUtils.getInstance().invalidateInteractionCaches();
         }
     }
 
@@ -175,7 +178,7 @@ public class RegionManager {
     public void deleteRegion(RegionKey regionKey) {
         regions().remove(regionKey.getValue());
         triggerSave();
-        pm.invalidateInteractionCaches();
+        CacheUtils.getInstance().invalidateInteractionCaches();
     }
 
     /**
@@ -198,7 +201,7 @@ public class RegionManager {
             newRegion.addMemberPermission(playerUUID, permission, value, this);
         });
 
-        pm.invalidateInteractionCaches();
+        CacheUtils.getInstance().invalidateInteractionCaches();
         saveRegion(key, newRegion);
         loadedRegions.put(key.getValue(), newRegion);
         indexRegion(newRegion); // Add the new region to the spatial index
@@ -265,7 +268,7 @@ public class RegionManager {
             newRegion.addMemberPermission(playerUUID, permission, value, this);
         });
 
-        pm.invalidateInteractionCaches();
+        CacheUtils.getInstance().invalidateInteractionCaches();
         saveRegion(regionKey, newRegion);
         loadedRegions.put(regionKey.getValue(), newRegion);
         indexRegion(newRegion); // Add the new region to the spatial index
@@ -281,15 +284,15 @@ public class RegionManager {
      * @param key        The key of the region.
      */
     public void addMemberPermission(UUID uuid, String permission, String value, RegionKey key) {
-        pm.invalidateInteractionCache(uuid);
-        pm.invalidateCache(uuid.toString());
+        CacheUtils.getInstance().invalidateInteractionCache(uuid);
+        CacheUtils.getInstance().invalidateCache(uuid.toString());
         Region region = regions().get(key.getValue());
         region.addMemberPermission(uuid, permission, value, this);
     }
 
     public void addMemberPermission(String who, String permission, String value, RegionKey key) {
-        pm.invalidateInteractionCache(who);
-        pm.invalidateCache(who);
+        CacheUtils.getInstance().invalidateInteractionCache(who);
+        CacheUtils.getInstance().invalidateCache(who);
         Region region = regions().get(key.getValue());
         region.addMemberPermission(who, permission, value, this);
     }
@@ -508,5 +511,12 @@ public class RegionManager {
     public void addRegion(Region region) {
         loadedRegions.put(region.getKey().getValue(), region);
         indexRegion(region); // Ensure the region is indexed
+    }
+
+    public static Region getRegion(RegionKey key) {
+        if (instance == null) {
+            throw new IllegalStateException("RegionManager is not yet initialized!");
+        }
+        return instance.loadedRegions.get(key.getValue());
     }
 }

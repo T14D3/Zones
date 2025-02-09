@@ -9,6 +9,7 @@ import java.util.Objects;
 public final class DebugLoggerManager {
     private final Zones plugin;
     private final DebugLoggerInterface logger;
+    private static DebugLoggerManager instance;
 
     public static final String CACHE_HIT_ACTION = "Cache hit on action: ";
     public static final String CACHE_MISS_ACTION = "Cache miss on action: ";
@@ -26,6 +27,11 @@ public final class DebugLoggerManager {
         boolean debugEnabled = plugin.getConfig().getBoolean("debug", false)
                 || Objects.equals(System.getenv("ZONES_DEBUG"), "true");
         this.logger = debugEnabled ? new DebugLogger() : new DebugLoggerDummy();
+        instance = this;
+    }
+
+    public static DebugLoggerManager Logger() {
+        return instance;
     }
 
     public void log(Object... objects) {

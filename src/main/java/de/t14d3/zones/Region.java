@@ -214,6 +214,11 @@ public class Region {
         return regionManager.regions().get(parent.getValue());
     }
 
+    @ApiStatus.Experimental
+    public Region getParentRegion() {
+        return RegionManager.getRegion(parent);
+    }
+
     public List<Region> getChildren(RegionManager regionManager) {
         List<Region> children = new ArrayList<>();
         for (Region region : regionManager.regions().values()) {
@@ -274,6 +279,11 @@ public class Region {
         }
         return null;
     }
+
+    public boolean isOwner(UUID uuid) {
+        return getOwner() != null && getOwner().equals(uuid);
+    }
+
 
     public int getPriority() {
         return priority;

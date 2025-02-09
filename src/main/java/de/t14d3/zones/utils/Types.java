@@ -1,6 +1,6 @@
 package de.t14d3.zones.utils;
 
-import de.t14d3.zones.permissions.Flag;
+import de.t14d3.zones.permissions.flags.Flag;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.Material;
@@ -40,16 +40,16 @@ public class Types {
     public static void populateTypes() {
         for (Material material : Material.values()) {
             if (material.isBlock() && !material.name().startsWith("LEGACY_")) {
-                allTypes.add(material.name());
-                allTypes.add("!" + material.name());
+                allTypes.add(material.name().toLowerCase());
+                allTypes.add("!" + material.name().toLowerCase());
             }
         }
         for (EntityType entityType : EntityType.values()) {
             if (entityType.name().startsWith("LEGACY_")) {
                 continue;
             }
-            allTypes.add(entityType.name());
-            allTypes.add("!" + entityType.name());
+            allTypes.add(entityType.name().toLowerCase());
+            allTypes.add("!" + entityType.name().toLowerCase());
         }
         allTypes.add("true");
         allTypes.add("false");
@@ -69,8 +69,8 @@ public class Types {
             if (entityType.name().startsWith("LEGACY_")) {
                 continue;
             }
-            entityTypes.add(entityType.name());
-            entityTypes.add("!" + entityType.name());
+            entityTypes.add(entityType.name().toLowerCase());
+            entityTypes.add("!" + entityType.name().toLowerCase());
         }
         entityTypes.add("true");
         entityTypes.add("false");
@@ -85,8 +85,8 @@ public class Types {
                     continue;
                 }
                 if (state instanceof Container) {
-                    containerTypes.add(material.name());
-                    containerTypes.add("!" + material.name());
+                    containerTypes.add(material.name().toLowerCase());
+                    containerTypes.add("!" + material.name().toLowerCase());
                 }
             }
         }
@@ -103,8 +103,8 @@ public class Types {
                     continue;
                 }
                 if (data instanceof Powerable) {
-                    redstoneTypes.add(material.name());
-                    redstoneTypes.add("!" + material.name());
+                    redstoneTypes.add(material.name().toLowerCase());
+                    redstoneTypes.add("!" + material.name().toLowerCase());
                 }
             }
         }
@@ -113,8 +113,8 @@ public class Types {
 
         // Populate damageTypes
         RegistryAccess.registryAccess().getRegistry(RegistryKey.DAMAGE_TYPE).forEach(damageType -> {
-            damageTypes.add(damageType.getTranslationKey());
-            damageTypes.add("!" + damageType.getTranslationKey());
+            damageTypes.add(damageType.getTranslationKey().toLowerCase());
+            damageTypes.add("!" + damageType.getTranslationKey().toLowerCase());
         });
     }
 
