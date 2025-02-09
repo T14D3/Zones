@@ -6,6 +6,7 @@ import de.t14d3.zones.permissions.Flags;
 import de.t14d3.zones.permissions.PermissionManager;
 import de.t14d3.zones.utils.DebugLoggerManager;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -31,10 +32,12 @@ public class ExplosivesListener {
         this.logger = plugin.getDebugLogger();
 
         String explosionMode = plugin.getConfig().getString("events.explosion.explosion-mode", "ALL").toUpperCase();
-        limit = plugin.getConfig().getInt("events.explosion.limit", 100);
+        limit = plugin.getConfig().getInt("events.explosion.limit", 50);
         limitExceededCancel = plugin.getConfig().getString("events.explosion.limit-exceeded-action", "CANCEL")
                 .equalsIgnoreCase("CANCEL");
-        limitHandler();
+
+        // Reset explosion counter every tick
+        Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () -> explosionCount.set(0), 1L, 1L);
 
         switch (plugin.getConfig().getString("events.explosion.mode", "ALL").toUpperCase()) {
             case "ALL":
@@ -50,13 +53,6 @@ public class ExplosivesListener {
             case "NONE":
                 break;
         }
-    }
-
-    private void limitHandler() {
-        // Reset explosion counter every tick
-        Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-            explosionCount.set(0);
-        }, 1L, 1L);
     }
 
     private boolean limitExceeded() {
@@ -162,10 +158,13 @@ public class ExplosivesListener {
                             }
                             return;
                         }
-                        if (permissionManager.checkAction(event.getLocation(), Flags.EXPLOSION,
-                                event.getEntityType().name(), event.getEntityType())) {
-                            Region region = plugin.getRegionManager()
-                                    .getEffectiveRegionAt(event.getLocation());
+                        Location location = switch (event.getEntity().getType()) {
+                            case TNT, TNT_MINECART -> event.getEntity().getOrigin();
+                            default -> event.getEntity().getLocation();
+                        };
+                        if (permissionManager.checkAction(location, Flags.EXPLOSION,
+                                event.getEntityType().name())) {
+                            Region region = plugin.getRegionManager().getEffectiveRegionAt(location);
                             event.blockList().removeIf(block -> !Objects.equals(
                                     plugin.getRegionManager().getEffectiveRegionAt(block.getLocation()), region));
                         } else {
@@ -199,7 +198,7 @@ public class ExplosivesListener {
                             }
                             return;
                         }
-                        if (!permissionManager.checkAction(event.getLocation(), Flags.EXPLOSION,
+                        if (!permissionManager.checkAction(event.getEntity().getOrigin(), Flags.EXPLOSION,
                                 event.getEntityType().name())) {
                             event.setCancelled(true);
                         }

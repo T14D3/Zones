@@ -4,12 +4,9 @@ import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.Zones;
 import de.t14d3.zones.permissions.Flags;
 import de.t14d3.zones.permissions.PermissionManager;
-import org.bukkit.Location;
-import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.CreatureSpawnEvent;
-import org.bukkit.event.entity.EntityExplodeEvent;
 
 public class EntityEventListener implements Listener {
 
@@ -30,22 +27,6 @@ public class EntityEventListener implements Listener {
         }
         if (!permissionManager.checkAction(event.getLocation(), Flags.SPAWN, event.getEntity().getType().name(),
                 event.getSpawnReason().name())) {
-            event.setCancelled(true);
-        }
-    }
-
-    @EventHandler
-    public void onEntityExplode(EntityExplodeEvent event) {
-        boolean allowed = true;
-        for (Block block : event.blockList()) {
-            Location location = block.getLocation();
-            if (!permissionManager.checkAction(location, Flags.EXPLOSION, block.getType().name(),
-                    event.getEntity().getType().name())) {
-                allowed = false;
-                break;
-            }
-        }
-        if (!allowed) {
             event.setCancelled(true);
         }
     }
