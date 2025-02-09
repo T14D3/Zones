@@ -104,7 +104,7 @@ public final class Zones extends JavaPlugin {
 
         // Populate Types
         types = new Types();
-        types.populateTypes();
+        Types.populateTypes();
 
         // Register mode permissions
         for (Utils.Modes mode : Utils.Modes.values()) {

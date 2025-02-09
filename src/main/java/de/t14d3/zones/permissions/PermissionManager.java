@@ -189,7 +189,7 @@ public class PermissionManager {
 
         if (finalResult == Result.UNDEFINED) {
             if (action.equals(Flags.IGNITE)) {
-                finalResult = Result.valueOf((boolean) action.getExtra()[0]);
+                finalResult = Result.TRUE; // TODO: Make this Data/Flag driven instead of hardcoded
             } else {
                 finalResult = Result.valueOf(action.getDefaultValue());
             }

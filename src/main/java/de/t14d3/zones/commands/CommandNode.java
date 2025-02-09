@@ -8,12 +8,12 @@ import de.t14d3.zones.Region;
 import de.t14d3.zones.Zones;
 import de.t14d3.zones.permissions.Flag;
 import de.t14d3.zones.permissions.Flags;
+import de.t14d3.zones.utils.Types;
 import de.t14d3.zones.utils.Utils;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.MessageComponentSerializer;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.entity.Player;
 
@@ -37,8 +37,12 @@ public class CommandNode {
      * @return Argument at the given index
      */
     public static String arg(CommandContext<CommandSourceStack> ctx, int index) {
+        return args(ctx)[index];
+    }
+
+    public static String[] args(CommandContext<CommandSourceStack> ctx) {
         String arg = ctx.getInput().replace("zones:", "");
-        return arg.split(" ")[index];
+        return arg.split(" ");
     }
 
     public LiteralCommandNode<CommandSourceStack> node() {
@@ -149,11 +153,12 @@ public class CommandNode {
         }).then(Commands.argument("value", StringArgumentType.greedyString()).suggests((ctx, builder) -> {
             Zones plugin = Zones.getInstance();
             List<String> types;
+            String[] args = args(ctx);
             switch (arg(ctx, 4).toUpperCase()) {
-                case "PLACE", "BREAK" -> types = plugin.getTypes().blockTypes;
-                case "CONTAINER" -> types = plugin.getTypes().containerTypes;
-                case "REDSTONE" -> types = plugin.getTypes().redstoneTypes;
-                case "ENTITY", "DAMAGE" -> types = plugin.getTypes().entityTypes;
+                case "PLACE", "BREAK" -> types = Types.blocks();
+                case "CONTAINER" -> types = Types.containers();
+                case "REDSTONE" -> types = Types.redstone();
+                case "ENTITY", "DAMAGE" -> types = Types.entities();
                 case "IGNITE" -> types = List.of("TRUE", "FALSE");
                 case "GROUP" -> {
                     types = new ArrayList<>();
@@ -168,14 +173,18 @@ public class CommandNode {
                         }
                     }
                 }
-                default -> types = plugin.getTypes().allTypes;
+                default -> types = Flags.getFlag(arg(ctx, 4)).getValidValues();
             }
-            String[] args = ctx.getInput().split(" ");
-            for (String value : types) {
-                if (args.length == 5 || value.toLowerCase().startsWith(args[args.length - 1])) {
-                    builder.suggest(value.toLowerCase(), MessageComponentSerializer.message().serialize(
-                            Component.text(value)
-                                    .color(value.startsWith("!") ? NamedTextColor.RED : NamedTextColor.GREEN)));
+
+            final String[] tokens = ctx.getInput().split(" ", 6);
+            final String input = tokens.length == 6 ? tokens[5].toLowerCase() : "";
+            final String prefix = input.contains(" ") ? input.substring(0, input.lastIndexOf(' ') + 1) : "";
+            final boolean isBase = args.length == 5 || input.endsWith(" ");
+            final String lastArg = args[args.length - 1].toLowerCase();
+
+            for (String type : types) {
+                if (isBase || type.startsWith(lastArg)) {
+                    builder.suggest(prefix.concat(type));
                 }
             }
             return builder.buildFuture();

@@ -1,5 +1,7 @@
 package de.t14d3.zones.permissions;
 
+import java.util.List;
+
 /**
  * A flag is a permission that can be set for a region.
  * Flags are registered in the {@link Flags} class, and can be accessed using the {@link Flags#getFlag(String)} method.
@@ -10,18 +12,23 @@ public class Flag {
     private final String name;
     private final String description;
     private final boolean defaultValue;
-
+    private final List<String> validValues;
     private final Object[] extra;
 
-    public Flag(String name, String description, boolean defaultValue, Object... extra) {
-        this.name = name.toUpperCase();
+    public Flag(String name, String description, boolean defaultValue) {
+        this.name = name.toLowerCase();
         this.description = description;
         this.defaultValue = defaultValue;
-        this.extra = extra;
+        this.validValues = null;
+        this.extra = null;
     }
 
-    public Flag(String name, String description, boolean defaultValue) {
-        this(name, description, defaultValue, null);
+    public Flag(String name, String description, boolean defaultValue, List<String> validValues, Object... extra) {
+        this.name = name.toLowerCase();
+        this.description = description;
+        this.defaultValue = defaultValue;
+        this.validValues = validValues;
+        this.extra = extra;
     }
 
     public Flag(String name, String description) {
@@ -38,6 +45,10 @@ public class Flag {
 
     public boolean getDefaultValue() {
         return defaultValue;
+    }
+
+    public List<String> getValidValues() {
+        return validValues;
     }
 
     public Object[] getExtra() {
