@@ -8,10 +8,10 @@ import java.util.List;
  * New flags always have a name and a fallback description (in case the translation ís missing).
  * Flags can be registered with a default value, which is used when a region doesn't have a value set for it, which defaults to false.
  */
-public class Flag {
+public class Flag implements FlagInterface {
     private final String name;
     private final String description;
-    private FlagInterface customHandler; // Optional custom logic
+    private final FlagInterface customHandler; // Optional custom logic
 
     public Flag(String name, String description) {
         this(name, description, null);

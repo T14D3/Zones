@@ -4,7 +4,6 @@ import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.Zones;
 import de.t14d3.zones.permissions.flags.Flag;
-import de.t14d3.zones.permissions.flags.Flags;
 import de.t14d3.zones.utils.DebugLoggerManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -73,8 +72,6 @@ public class PermissionManager {
 
                 // Only check regions with a higher priority than the current value
                 if (region.getPriority() > priority) {
-                    Bukkit.getLogger()
-                            .info("Checking permission: " + action.name() + " for " + who + " in " + region.getName());
                     Result hasPermission = action.getCustomHandler().evaluate(region, who, action.name(), type);
                     if (!hasPermission.equals(Result.UNDEFINED)) {
                         result = hasPermission;
@@ -94,7 +91,7 @@ public class PermissionManager {
             }
 
             if (result.equals(Result.UNDEFINED)) {
-                result = Result.valueOf(action.getDefaultValue());
+                result = Result.valueOf(action.getDefaultValue(who));
             }
 
             // Update cache if needed
@@ -108,7 +105,7 @@ public class PermissionManager {
         } else {
             // No region found, check player permissions
             boolean bypass = false;
-            Player player = null;
+            Player player;
             try {
                 player = Bukkit.getPlayer(UUID.fromString(who));
                 if (player != null && player.hasPermission("zones.bypass.unclaimed")) {
@@ -150,43 +147,54 @@ public class PermissionManager {
         }
 
         List<Region> regions = regionManager.getRegionsAt(location);
-        Result finalResult = Result.UNDEFINED;
+        Result result = Result.UNDEFINED;
         if (!regions.isEmpty()) {
-            int highestPriority = Integer.MIN_VALUE;
+            int priority = Integer.MIN_VALUE;
 
             for (Region region : regions) {
-                if (region.getPriority() > highestPriority) {
+                if (region.getPriority() > priority) {
                     Result regionResult = action.getCustomHandler().evaluate(region, action.name(), type);
                     if (regionResult != Result.UNDEFINED) {
-                        finalResult = regionResult;
-                        highestPriority = region.getPriority();
+                        result = regionResult;
+                        priority = region.getPriority();
                     }
-                } else if (region.getPriority() == highestPriority) {
+                } else if (region.getPriority() == priority) {
                     Result regionResult = action.getCustomHandler().evaluate(region, action.name(), type);
-                    if (regionResult == Result.FALSE || finalResult == Result.FALSE) {
-                        finalResult = Result.FALSE;
-                        highestPriority = region.getPriority();
+                    if (regionResult == Result.FALSE || result == Result.FALSE) {
+                        result = Result.FALSE;
+                        priority = region.getPriority();
                     }
                 }
             }
         }
         // No regions at location - use default value
 
-        if (finalResult == Result.UNDEFINED) {
-            if (action.equals(Flags.IGNITE)) {
-                finalResult = Result.TRUE; // TODO: Make this Data/Flag driven instead of hardcoded
-            } else {
-                finalResult = Result.valueOf(action.getDefaultValue());
-            }
+        if (result == Result.UNDEFINED) {
+            result = Result.valueOf(action.getDefaultValue(UNIVERSAL));
         }
 
         cacheUtils.interactionCache.computeIfAbsent(UNIVERSAL, k -> new ConcurrentLinkedQueue<>())
-                .add(new CacheEntry(location, action.name(), type, finalResult));
+                .add(new CacheEntry(location, action.name(), type, result));
 
         debugLogger.log(DebugLoggerManager.CACHE_MISS_ACTION, DebugLoggerManager.UNI_CHECK, action.name(), location,
-                type, finalResult, extra);
+                type, result, extra);
 
-        return finalResult == Result.TRUE;
+        return result == Result.TRUE;
+    }
+
+    public static Result isAllowed(String perm, String type, Result result) {
+        perm = perm.toLowerCase();
+        type = type.toLowerCase();
+        if (perm.equals("true") || perm.equals("*")) {
+            result = Result.TRUE;
+        } else if (perm.equals("false") || perm.equals("!*")) {
+            result = Result.FALSE;
+        } else if (perm.equals(type)) {
+            result = Result.TRUE;
+        } else if (perm.equals("!" + type)) {
+            result = Result.FALSE;
+        }
+        return result;
     }
 
 }

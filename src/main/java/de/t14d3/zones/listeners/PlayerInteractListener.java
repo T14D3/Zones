@@ -160,7 +160,7 @@ public class PlayerInteractListener implements Listener {
         }
         for (Flag action : requiredPermissions) {
             if (!permissionManager.checkAction(event.getBlockPlaced().getLocation(), player.getUniqueId(), action,
-                    type)) {
+                    type.toLowerCase())) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, type);
             }
@@ -185,7 +185,8 @@ public class PlayerInteractListener implements Listener {
             requiredPermissions.add(Flags.REDSTONE);
         }
         for (Flag action : requiredPermissions) {
-            if (!permissionManager.checkAction(event.getBlock().getLocation(), player.getUniqueId(), action, type)) {
+            if (!permissionManager.checkAction(event.getBlock().getLocation(), player.getUniqueId(), action,
+                    type.toLowerCase())) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, type);
             }

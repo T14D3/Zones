@@ -51,8 +51,7 @@ public class Types {
             allTypes.add(entityType.name().toLowerCase());
             allTypes.add("!" + entityType.name().toLowerCase());
         }
-        allTypes.add("true");
-        allTypes.add("false");
+        allTypes.addAll(List.of("owner", "admin", "true", "false"));
 
         // Populate blockTypes
         for (Material material : Material.values()) {
@@ -61,8 +60,7 @@ public class Types {
                 blockTypes.add("!" + material.name().toLowerCase());
             }
         }
-        blockTypes.add("true");
-        blockTypes.add("false");
+        blockTypes.addAll(List.of("owner", "admin", "true", "false"));
 
         // Populate entityTypes
         for (EntityType entityType : EntityType.values()) {
@@ -72,8 +70,7 @@ public class Types {
             entityTypes.add(entityType.name().toLowerCase());
             entityTypes.add("!" + entityType.name().toLowerCase());
         }
-        entityTypes.add("true");
-        entityTypes.add("false");
+        entityTypes.addAll(List.of("owner", "admin", "true", "false"));
 
         // Populate containerTypes
         for (Material material : Material.values()) {
@@ -90,8 +87,7 @@ public class Types {
                 }
             }
         }
-        containerTypes.add("true");
-        containerTypes.add("false");
+        containerTypes.addAll(List.of("owner", "admin", "true", "false"));
 
         // Populate redstoneTypes
         for (Material material : Material.values()) {
@@ -108,14 +104,14 @@ public class Types {
                 }
             }
         }
-        redstoneTypes.add("true");
-        redstoneTypes.add("false");
+        redstoneTypes.addAll(List.of("owner", "admin", "true", "false"));
 
         // Populate damageTypes
         RegistryAccess.registryAccess().getRegistry(RegistryKey.DAMAGE_TYPE).forEach(damageType -> {
             damageTypes.add(damageType.getTranslationKey().toLowerCase());
             damageTypes.add("!" + damageType.getTranslationKey().toLowerCase());
         });
+        damageTypes.addAll(List.of("owner", "admin", "true", "false"));
     }
 
     public static List<String> all() {
