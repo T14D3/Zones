@@ -84,10 +84,10 @@ public class Flags {
                 new DefaultFlagHandler(true, Types.blocks())));
     }
 
-    private static final class IgnitionFlagHandler extends UnifiedFlag {
+    private static final class IgnitionFlagHandler extends DefaultFlagHandler {
 
         public IgnitionFlagHandler(boolean defaultValue, List<String> validValues) {
-            super(validValues, defaultValue);
+            super(defaultValue, validValues);
         }
 
         @Override

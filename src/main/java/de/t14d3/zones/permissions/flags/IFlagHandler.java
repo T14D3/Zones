@@ -13,15 +13,19 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static de.t14d3.zones.permissions.PermissionManager.isAllowed;
 
-public interface FlagInterface {
+public interface IFlagHandler {
     String UNIVERSAL = "universal";
     CacheUtils cacheUtils = CacheUtils.getInstance();
     FlagTypes flagType = FlagTypes.OTHER;
+    List<String> validValues = null;
+    boolean defaultValue = true;
 
-    List<String> getValidValues();
+    default List<String> getValidValues() {
+        return validValues;
+    }
 
     default boolean getDefaultValue(Object... optional) {
-        return false;
+        return defaultValue;
     }
 
     default Result evaluate(Region region, String permission, String type, Object... optionals) {
