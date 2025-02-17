@@ -114,6 +114,8 @@ public class CommandNode {
                         builder.suggest(name);
                     }
                 });
+                builder.suggest("+universal",
+                        MessageComponentSerializer.message().serialize(Component.text("Universal/Non-Player Flags")));
                 boolean perm = ctx.getSource().getSender().hasPermission("zones.info.other");
                 for (Region region : Zones.getInstance().getRegionManager().regions().values()) {
                     String[] args = ctx.getInput().split(" ");
@@ -143,10 +145,13 @@ public class CommandNode {
             return 1;
         }).then(Commands.argument("flag", new FlagArgument(context)).suggests((ctx, builder) -> {
             MiniMessage mm = MiniMessage.miniMessage();
+            boolean isUniversal = args(ctx)[1].equalsIgnoreCase("+universal");
             for (Flag entry : Flags.getFlags()) {
-                builder.suggest(entry.name(), MessageComponentSerializer.message().serialize(mm.deserialize(
-                        Zones.getInstance().getMessages()
-                                .getOrDefault("flags." + entry.name(), entry.getDescription()))));
+                if (entry.getDefaultValue() == isUniversal) {
+                    builder.suggest(entry.name(), MessageComponentSerializer.message().serialize(mm.deserialize(
+                            Zones.getInstance().getMessages()
+                                    .getOrDefault("flags." + entry.name(), entry.getDescription()))));
+                }
             }
             return builder.buildFuture();
         }).then(Commands.argument("value", StringArgumentType.greedyString()).suggests((ctx, builder) -> {
