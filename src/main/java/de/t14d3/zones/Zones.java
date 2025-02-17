@@ -2,6 +2,8 @@ package de.t14d3.zones;
 
 import com.sk89q.worldedit.WorldEdit;
 import de.t14d3.zones.commands.CommandExecutor;
+import de.t14d3.zones.commands.InfoCommand;
+import de.t14d3.zones.commands.RootCommand;
 import de.t14d3.zones.integrations.FAWEIntegration;
 import de.t14d3.zones.integrations.PlaceholderAPI;
 import de.t14d3.zones.integrations.WorldEditSession;
@@ -146,6 +148,8 @@ public final class Zones extends JavaPlugin {
         this.flags = new Flags();
 
 
+        RootCommand rootCommand = new RootCommand(this);
+        InfoCommand infoCommand = new InfoCommand(this);
 
         getLogger().info("Zones plugin has been enabled! Loaded " + regionManager.regions().size() + " regions.");
     }

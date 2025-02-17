@@ -1,14 +1,10 @@
 package de.t14d3.zones;
 
-import de.t14d3.zones.commands.CommandNode;
 import de.t14d3.zones.permissions.CacheUtils;
 import de.t14d3.zones.permissions.flags.Flags;
-import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
 import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
-import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
-import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
@@ -21,12 +17,13 @@ public class PaperBootstrap implements PluginBootstrap {
 
     @Override
     public void bootstrap(BootstrapContext context) {
-        CommandNode cmd = new CommandNode(this);
-        LifecycleEventManager<@NotNull BootstrapContext> eventManager = context.getLifecycleManager();
-        eventManager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
-            final Commands commands = event.registrar();
-            commands.register(cmd.node());
-        });
+//        CommandNode cmd = new CommandNode(this);
+//        LifecycleEventManager<@NotNull BootstrapContext> eventManager = context.getLifecycleManager();
+//        eventManager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
+//            final Commands commands = event.registrar();
+//            commands.register(cmd.node());
+//        });
+
     }
 
     @Override

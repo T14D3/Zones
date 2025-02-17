@@ -21,11 +21,16 @@ repositories {
         url = uri("https://oss.sonatype.org/content/groups/public/")
     }
     maven {
+        name = "ExtendedClip"
         url = uri("https://repo.extendedclip.com/releases/")
     }
     maven {
         name = "EngineHub"
         url = uri("https://maven.enginehub.org/repo/")
+    }
+    maven {
+        name = "CodeMC"
+        url = uri("https://repo.codemc.io/repository/maven-public/")
     }
 }
 
@@ -37,6 +42,8 @@ dependencies {
     implementation(platform("com.intellectualsites.bom:bom-newest:1.52"))
     compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Core")
     compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit")
+    compileOnly("dev.jorel:commandapi-bukkit-core:9.7.0")
+    implementation("org.slf4j:slf4j-api:2.1.0-alpha1")
 }
 
 val targetJavaVersion = 21
