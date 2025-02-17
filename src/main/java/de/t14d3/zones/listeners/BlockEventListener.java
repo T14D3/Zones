@@ -28,23 +28,19 @@ public class BlockEventListener implements Listener {
 
     @EventHandler
     public void onBlockGrow(BlockGrowEvent event) {
-        if (!permissionManager.checkAction(
-                event.getBlock().getLocation(), Flags.CREATE, event.getBlock().getType().name())) {
+        if (!permissionManager.checkAction(event.getBlock().getLocation(), Flags.CREATE,
+                event.getBlock().getType().name())) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler
     public void onBlockFade(BlockFadeEvent event) {
-        Flag flag =
-                switch (event.getBlock().getType()) {
-                    case ICE, FROSTED_ICE, SNOW, FIRE -> Flags.DESTROY;
-                    default -> Flags.TRANSFORM;
-                };
-        if (!permissionManager.checkAction(
-                event.getBlock().getLocation(),
-                flag,
-                event.getBlock().getType().name(),
+        Flag flag = switch (event.getBlock().getType()) {
+            case ICE, FROSTED_ICE, SNOW, FIRE -> Flags.DESTROY;
+            default -> Flags.TRANSFORM;
+        };
+        if (!permissionManager.checkAction(event.getBlock().getLocation(), flag, event.getBlock().getType().name(),
                 event.getNewState().getType().name())) {
             event.setCancelled(true);
         }
@@ -52,15 +48,11 @@ public class BlockEventListener implements Listener {
 
     @EventHandler
     public void onBlockForm(BlockFormEvent event) {
-        Flag flag =
-                switch (event.getNewState().getType()) {
-                    case ICE, FROSTED_ICE, SNOW -> Flags.CREATE;
-                    default -> Flags.TRANSFORM;
-                };
-        if (!permissionManager.checkAction(
-                event.getBlock().getLocation(),
-                flag,
-                event.getNewState().getType().name(),
+        Flag flag = switch (event.getNewState().getType()) {
+            case ICE, FROSTED_ICE, SNOW -> Flags.CREATE;
+            default -> Flags.TRANSFORM;
+        };
+        if (!permissionManager.checkAction(event.getBlock().getLocation(), flag, event.getNewState().getType().name(),
                 event.getBlock().getType().name())) {
             event.setCancelled(true);
         }
@@ -68,15 +60,11 @@ public class BlockEventListener implements Listener {
 
     @EventHandler
     public void onBlockFromTo(BlockFromToEvent event) {
-        Flag flag =
-                switch (event.getBlock().getType()) {
-                    case WATER, LAVA -> Flags.SPREAD;
-                    default -> Flags.RELOCATE;
-                };
-        if (!permissionManager.checkAction(
-                event.getBlock().getLocation(),
-                flag,
-                event.getBlock().getType().name(),
+        Flag flag = switch (event.getBlock().getType()) {
+            case WATER, LAVA -> Flags.SPREAD;
+            default -> Flags.RELOCATE;
+        };
+        if (!permissionManager.checkAction(event.getBlock().getLocation(), flag, event.getBlock().getType().name(),
                 event.getToBlock().getType().name())) {
             event.setCancelled(true);
         }
@@ -84,37 +72,30 @@ public class BlockEventListener implements Listener {
 
     @EventHandler
     public void onBlockSpread(BlockSpreadEvent event) {
-        if (!permissionManager.checkAction(
-                event.getBlock().getLocation(),
-                Flags.SPREAD,
-                event.getBlock().getType().name(),
-                event.getNewState().getType().name())) {
+        if (!permissionManager.checkAction(event.getBlock().getLocation(), Flags.SPREAD,
+                event.getBlock().getType().name(), event.getNewState().getType().name())) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler
     public void onSculkSpread(SculkBloomEvent event) {
-        if (!permissionManager.checkAction(
-                event.getBlock().getLocation(), Flags.SPREAD, event.getBlock().getType().name())) {
+        if (!permissionManager.checkAction(event.getBlock().getLocation(), Flags.SPREAD,
+                event.getBlock().getType().name())) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler
     public void onStructureGrow(StructureGrowEvent event) {
-        event
-                .getBlocks()
-                .removeIf(
-                        state ->
-                                !permissionManager.checkAction(
-                                        state.getLocation(), Flags.CREATE, state.getType().name()));
+        event.getBlocks().removeIf(
+                state -> !permissionManager.checkAction(state.getLocation(), Flags.CREATE, state.getType().name()));
     }
 
     @EventHandler
     public void onLeavesDecay(LeavesDecayEvent event) {
-        if (!permissionManager.checkAction(
-                event.getBlock().getLocation(), Flags.DESTROY, event.getBlock().getType().name())) {
+        if (!permissionManager.checkAction(event.getBlock().getLocation(), Flags.DESTROY,
+                event.getBlock().getType().name())) {
             event.setCancelled(true);
         }
     }
@@ -124,8 +105,8 @@ public class BlockEventListener implements Listener {
     private class BlockPhysicsEventListener implements Listener {
         @EventHandler
         public void onBlockPhysics(org.bukkit.event.block.BlockPhysicsEvent event) {
-            if (!permissionManager.checkAction(
-                    event.getBlock().getLocation(), Flags.PHYSICS, event.getBlock().getType().name())) {
+            if (!permissionManager.checkAction(event.getBlock().getLocation(), Flags.PHYSICS,
+                    event.getBlock().getType().name())) {
                 event.setCancelled(true);
             }
         }
