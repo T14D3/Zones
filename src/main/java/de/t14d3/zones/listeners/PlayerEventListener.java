@@ -25,10 +25,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityPlaceEvent;
 import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 import org.bukkit.event.hanging.HangingPlaceEvent;
-import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
-import org.bukkit.event.player.PlayerBucketEvent;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -329,7 +326,45 @@ public class PlayerEventListener implements Listener {
     }
 
     @EventHandler
-    private void onBucketUse(PlayerBucketEvent event) {
+    private void onBucketFill(PlayerBucketFillEvent event) {
+        Player player = event.getPlayer();
+        if (player.hasPermission("zones.bypass.claimed")) {
+            return;
+        }
+        Location location = event.getBlockClicked().getLocation();
+        List<Flag> requiredPermissions = new ArrayList<>();
+        String type = event.getBlockClicked().getType().name();
+        requiredPermissions.add(Flags.BREAK);
+
+        for (Flag action : requiredPermissions) {
+            if (!permissionManager.checkAction(location, player.getUniqueId(), action, type)) {
+                event.setCancelled(true);
+                actionBar(player, location, requiredPermissions, type);
+            }
+        }
+    }
+
+    @EventHandler
+    private void onBucketFillEntity(PlayerBucketEntityEvent event) {
+        Player player = event.getPlayer();
+        if (player.hasPermission("zones.bypass.claimed")) {
+            return;
+        }
+        Location location = event.getEntity().getLocation();
+        List<Flag> requiredPermissions = new ArrayList<>();
+        String type = event.getEntity().getType().name();
+        requiredPermissions.add(Flags.ENTITY);
+
+        for (Flag action : requiredPermissions) {
+            if (!permissionManager.checkAction(location, player.getUniqueId(), action, type)) {
+                event.setCancelled(true);
+                actionBar(player, location, requiredPermissions, type);
+            }
+        }
+    }
+
+    @EventHandler
+    private void onBucketEmpty(PlayerBucketEmptyEvent event) {
         Player player = event.getPlayer();
         if (player.hasPermission("zones.bypass.claimed")) {
             return;
@@ -337,13 +372,17 @@ public class PlayerEventListener implements Listener {
         Location location = event.getBlockClicked().getLocation();
         List<Flag> requiredPermissions = new ArrayList<>();
         String type;
-        if (event.getBucket() == Material.BUCKET) {
-            requiredPermissions.add(Flags.BREAK);
-            type = event.getBlockClicked().getRelative(event.getBlockFace()).getType().name();
-        } else {
-            requiredPermissions.add(Flags.PLACE);
-            type = event.getBlock().getType().name();
+        switch (event.getBucket()) {
+            case WATER_BUCKET -> type = "water";
+            case LAVA_BUCKET -> type = "lava";
+            case POWDER_SNOW_BUCKET -> type = "powder_snow";
+            case TROPICAL_FISH_BUCKET, COD_BUCKET, SALMON_BUCKET, PUFFERFISH_BUCKET, TADPOLE_BUCKET, AXOLOTL_BUCKET -> {
+                type = "water";
+                requiredPermissions.add(Flags.ENTITY);
+            }
+            default -> type = event.getBlockClicked().getType().name();
         }
+        requiredPermissions.add(Flags.PLACE);
 
         for (Flag action : requiredPermissions) {
             if (!permissionManager.checkAction(location, player.getUniqueId(), action, type)) {
