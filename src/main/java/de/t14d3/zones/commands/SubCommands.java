@@ -27,11 +27,11 @@ public enum SubCommands {
         this.info = info;
     }
 
-    public Component getInfo() {
-        return info;
-    }
-
     public static SubCommands get(String input) {
         return SubCommands.valueOf(input.split(" ")[0]);
+    }
+
+    public Component getInfo() {
+        return info;
     }
 }

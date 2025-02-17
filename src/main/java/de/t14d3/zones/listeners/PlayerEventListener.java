@@ -1,15 +1,17 @@
 package de.t14d3.zones.listeners;
 
-import de.t14d3.zones.PermissionManager;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.Zones;
-import de.t14d3.zones.utils.Actions;
+import de.t14d3.zones.permissions.PermissionManager;
+import de.t14d3.zones.permissions.flags.Flag;
+import de.t14d3.zones.permissions.flags.Flags;
 import de.t14d3.zones.utils.Messages;
 import de.t14d3.zones.utils.Utils;
 import de.t14d3.zones.visuals.BeaconUtils;
 import it.unimi.dsi.fastutil.Pair;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -24,10 +26,12 @@ import org.bukkit.event.entity.EntityPlaceEvent;
 import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 import org.bukkit.event.hanging.HangingPlaceEvent;
 import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
+import org.bukkit.event.player.PlayerBucketEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.util.BoundingBox;
 
 import java.util.ArrayList;
@@ -38,7 +42,7 @@ import java.util.stream.Collectors;
 import static de.t14d3.zones.visuals.BeaconUtils.resetBeacon;
 import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
 
-public class PlayerInteractListener implements Listener {
+public class PlayerEventListener implements Listener {
 
     private final RegionManager regionManager;
     private final PermissionManager permissionManager;
@@ -46,15 +50,17 @@ public class PlayerInteractListener implements Listener {
     private final BeaconUtils beaconUtils;
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
     private final Messages messages;
+    private final String ACTIONBAR_MESSAGE;
 
-    public PlayerInteractListener(RegionManager regionManager, PermissionManager permissionManager, Zones plugin) {
+    public PlayerEventListener(Zones plugin) {
         this.plugin = plugin;
-        this.regionManager = regionManager;
-        this.permissionManager = permissionManager;
+        this.regionManager = plugin.getRegionManager();
+        this.permissionManager = plugin.getPermissionManager();
         this.beaconUtils = plugin.getBeaconUtils();
         this.messages = plugin.getMessages();
-
+        this.ACTIONBAR_MESSAGE = messages.get("region.no-interact-permission");
     }
+
     @EventHandler
     private void onPlayerInteract(PlayerInteractEvent event) {
         Player player = event.getPlayer();
@@ -110,24 +116,27 @@ public class PlayerInteractListener implements Listener {
             return;
         }
 
-        List<Actions> requiredPermissions = new ArrayList<>(); // Collect required permissions
-
+        List<Flag> requiredPermissions = new ArrayList<>(); // Collect required permissions
+        if (player.hasPermission("zones.bypass.claimed")) {
+            return;
+        }
         // Interactable blocks
-        if ((Utils.isContainer(event.getClickedBlock().getState(false)) || Utils.isPowerable(event.getClickedBlock().getBlockData())) && event.getAction() == Action.RIGHT_CLICK_BLOCK) {
-            requiredPermissions.add(Actions.INTERACT);
+        if ((Utils.isContainer(event.getClickedBlock().getState(false)) || Utils.isPowerable(
+                event.getClickedBlock().getBlockData())) && event.getAction() == Action.RIGHT_CLICK_BLOCK) {
+            requiredPermissions.add(Flags.INTERACT);
             if (Utils.isContainer(event.getClickedBlock().getState(false))) {
-                requiredPermissions.add(Actions.CONTAINER);
+                requiredPermissions.add(Flags.CONTAINER);
             }
             if (Utils.isPowerable(event.getClickedBlock().getBlockData())) {
-                requiredPermissions.add(Actions.REDSTONE);
+                requiredPermissions.add(Flags.REDSTONE);
             }
             if (event.getClickedBlock().getType() == Material.TNT) {
-                requiredPermissions.add(Actions.IGNITE);
+                requiredPermissions.add(Flags.IGNITE);
             }
-        }
-        else return;
-        for (Actions action : requiredPermissions) {
-            if (!permissionManager.canInteract(location, playerUUID, action, event.getClickedBlock().getType().name())) {
+        } else return;
+        for (Flag action : requiredPermissions) {
+            if (!permissionManager.checkAction(location, playerUUID, action,
+                    event.getClickedBlock().getType().name())) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, event.getClickedBlock().getType().name());
             }
@@ -137,18 +146,22 @@ public class PlayerInteractListener implements Listener {
     @EventHandler
     private void onBlockPlace(BlockPlaceEvent event) {
         Player player = event.getPlayer();
+        if (player.hasPermission("zones.bypass.claimed")) {
+            return;
+        }
         String type = event.getBlockPlaced().getType().name();
         Location location = event.getBlockPlaced().getLocation();
-        List<Actions> requiredPermissions = new ArrayList<>();
-        requiredPermissions.add(Actions.PLACE);
+        List<Flag> requiredPermissions = new ArrayList<>();
+        requiredPermissions.add(Flags.PLACE);
         if (Utils.isContainer(event.getBlockPlaced().getState(false))) {
-            requiredPermissions.add(Actions.CONTAINER);
+            requiredPermissions.add(Flags.CONTAINER);
         }
         if (Utils.isPowerable(event.getBlockPlaced().getBlockData())) {
-            requiredPermissions.add(Actions.REDSTONE);
+            requiredPermissions.add(Flags.REDSTONE);
         }
-        for (Actions action : requiredPermissions) {
-            if (!permissionManager.canInteract(event.getBlockPlaced().getLocation(), player.getUniqueId(), action, type)) {
+        for (Flag action : requiredPermissions) {
+            if (!permissionManager.checkAction(event.getBlockPlaced().getLocation(), player.getUniqueId(), action,
+                    type.toLowerCase())) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, type);
             }
@@ -159,18 +172,22 @@ public class PlayerInteractListener implements Listener {
     @EventHandler
     private void onBlockBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
+        if (player.hasPermission("zones.bypass.claimed")) {
+            return;
+        }
         String type = event.getBlock().getType().name();
         Location location = event.getBlock().getLocation();
-        List<Actions> requiredPermissions = new ArrayList<>();
-        requiredPermissions.add(Actions.BREAK);
+        List<Flag> requiredPermissions = new ArrayList<>();
+        requiredPermissions.add(Flags.BREAK);
         if (Utils.isContainer(event.getBlock().getState(false))) {
-            requiredPermissions.add(Actions.CONTAINER);
+            requiredPermissions.add(Flags.CONTAINER);
         }
         if (Utils.isPowerable(event.getBlock().getBlockData())) {
-            requiredPermissions.add(Actions.REDSTONE);
+            requiredPermissions.add(Flags.REDSTONE);
         }
-        for (Actions action : requiredPermissions) {
-            if (!permissionManager.canInteract(event.getBlock().getLocation(), player.getUniqueId(), action, type)) {
+        for (Flag action : requiredPermissions) {
+            if (!permissionManager.checkAction(event.getBlock().getLocation(), player.getUniqueId(), action,
+                    type.toLowerCase())) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, type);
             }
@@ -182,13 +199,16 @@ public class PlayerInteractListener implements Listener {
     @EventHandler
     private void onEntityInteract(PlayerInteractEntityEvent event) {
         Player player = event.getPlayer();
+        if (player.hasPermission("zones.bypass.claimed")) {
+            return;
+        }
         Location location = event.getRightClicked().getLocation();
-        List<Actions> requiredPermissions = new ArrayList<>();
-        requiredPermissions.add(Actions.INTERACT);
-        requiredPermissions.add(Actions.ENTITY);
+        List<Flag> requiredPermissions = new ArrayList<>();
+        requiredPermissions.add(Flags.INTERACT);
+        requiredPermissions.add(Flags.ENTITY);
         String type = event.getRightClicked().getType().name();
-        for (Actions action : requiredPermissions) {
-            if (!permissionManager.canInteract(location, player.getUniqueId(), action, type)) {
+        for (Flag action : requiredPermissions) {
+            if (!permissionManager.checkAction(location, player.getUniqueId(), action, type)) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, type);
             }
@@ -198,12 +218,15 @@ public class PlayerInteractListener implements Listener {
     @EventHandler
     private void onEntityDamage(EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof Player player) {
+            if (player.hasPermission("zones.bypass.claimed")) {
+                return;
+            }
             Location location = event.getEntity().getLocation();
-            List<Actions> requiredPermissions = new ArrayList<>();
-            requiredPermissions.add(Actions.DAMAGE);
+            List<Flag> requiredPermissions = new ArrayList<>();
+            requiredPermissions.add(Flags.DAMAGE);
             String type = event.getEntity().getType().name();
-            for (Actions action : requiredPermissions) {
-                if (!permissionManager.canInteract(location, player.getUniqueId(), action, type)) {
+            for (Flag action : requiredPermissions) {
+                if (!permissionManager.checkAction(location, player.getUniqueId(), action, type)) {
                     event.setCancelled(true);
                     actionBar(player, location, requiredPermissions, type);
                 }
@@ -214,12 +237,15 @@ public class PlayerInteractListener implements Listener {
     @EventHandler
     private void onVehicleDamage(VehicleDamageEvent event) {
         if (event.getAttacker() instanceof Player player) {
+            if (player.hasPermission("zones.bypass.claimed")) {
+                return;
+            }
             Location location = event.getVehicle().getLocation();
-            List<Actions> requiredPermissions = new ArrayList<>();
-            requiredPermissions.add(Actions.DAMAGE);
+            List<Flag> requiredPermissions = new ArrayList<>();
+            requiredPermissions.add(Flags.DAMAGE);
             String type = event.getVehicle().getType().name();
-            for (Actions action : requiredPermissions) {
-                if (!permissionManager.canInteract(location, player.getUniqueId(), action, type)) {
+            for (Flag action : requiredPermissions) {
+                if (!permissionManager.checkAction(location, player.getUniqueId(), action, type)) {
                     event.setCancelled(true);
                     actionBar(player, location, requiredPermissions, type);
                 }
@@ -230,13 +256,16 @@ public class PlayerInteractListener implements Listener {
     @EventHandler
     private void onArmorStandManipulate(PlayerArmorStandManipulateEvent event) {
         Player player = event.getPlayer();
+        if (player.hasPermission("zones.bypass.claimed")) {
+            return;
+        }
         Location location = event.getRightClicked().getLocation();
-        List<Actions> requiredPermissions = new ArrayList<>();
-        requiredPermissions.add(Actions.ENTITY);
+        List<Flag> requiredPermissions = new ArrayList<>();
+        requiredPermissions.add(Flags.ENTITY);
         String type = event.getRightClicked().getType().name();
-        requiredPermissions.add(Actions.CONTAINER);
-        for (Actions action : requiredPermissions) {
-            if (!permissionManager.canInteract(location, player.getUniqueId(), action, type)) {
+        requiredPermissions.add(Flags.CONTAINER);
+        for (Flag action : requiredPermissions) {
+            if (!permissionManager.checkAction(location, player.getUniqueId(), action, type)) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, type);
             }
@@ -245,16 +274,16 @@ public class PlayerInteractListener implements Listener {
 
     @EventHandler
     private void onHangingPlace(HangingPlaceEvent event) {
-        if (event.getPlayer() == null) {
+        Player player = event.getPlayer();
+        if (player == null || player.hasPermission("zones.bypass.claimed")) {
             return;
         }
-        Player player = event.getPlayer();
         Location location = event.getEntity().getLocation();
-        List<Actions> requiredPermissions = new ArrayList<>();
-        requiredPermissions.add(Actions.PLACE);
+        List<Flag> requiredPermissions = new ArrayList<>();
+        requiredPermissions.add(Flags.PLACE);
         String type = event.getEntity().getType().name();
-        for (Actions action : requiredPermissions) {
-            if (!permissionManager.canInteract(location, player.getUniqueId(), action, type)) {
+        for (Flag action : requiredPermissions) {
+            if (!permissionManager.checkAction(location, player.getUniqueId(), action, type)) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, type);
             }
@@ -264,13 +293,16 @@ public class PlayerInteractListener implements Listener {
     @EventHandler
     private void onHangingBreak(HangingBreakByEntityEvent event) {
         Player player = (Player) event.getRemover();
+        if (player == null || player.hasPermission("zones.bypass.claimed")) {
+            return;
+        }
         Location location = event.getEntity().getLocation();
-        List<Actions> requiredPermissions = new ArrayList<>();
-        requiredPermissions.add(Actions.BREAK);
-        requiredPermissions.add(Actions.ENTITY);
+        List<Flag> requiredPermissions = new ArrayList<>();
+        requiredPermissions.add(Flags.BREAK);
+        requiredPermissions.add(Flags.ENTITY);
         String type = event.getEntity().getType().name();
-        for (Actions action : requiredPermissions) {
-            if (!permissionManager.canInteract(location, player.getUniqueId(), action, type)) {
+        for (Flag action : requiredPermissions) {
+            if (!permissionManager.checkAction(location, player.getUniqueId(), action, type)) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, type);
             }
@@ -279,17 +311,42 @@ public class PlayerInteractListener implements Listener {
 
     @EventHandler
     private void onEntityPlace(EntityPlaceEvent event) {
-        if (event.getPlayer() == null) {
+        Player player = event.getPlayer();
+        if (player == null || player.hasPermission("zones.bypass.claimed")) {
             return;
         }
-        Player player = event.getPlayer();
         Location location = event.getEntity().getLocation();
-        List<Actions> requiredPermissions = new ArrayList<>();
-        requiredPermissions.add(Actions.PLACE);
-        requiredPermissions.add(Actions.ENTITY);
+        List<Flag> requiredPermissions = new ArrayList<>();
+        requiredPermissions.add(Flags.PLACE);
+        requiredPermissions.add(Flags.ENTITY);
         String type = event.getEntity().getType().name();
-        for (Actions action : requiredPermissions) {
-            if (!permissionManager.canInteract(location, player.getUniqueId(), action, type)) {
+        for (Flag action : requiredPermissions) {
+            if (!permissionManager.checkAction(location, player.getUniqueId(), action, type)) {
+                event.setCancelled(true);
+                actionBar(player, location, requiredPermissions, type);
+            }
+        }
+    }
+
+    @EventHandler
+    private void onBucketUse(PlayerBucketEvent event) {
+        Player player = event.getPlayer();
+        if (player.hasPermission("zones.bypass.claimed")) {
+            return;
+        }
+        Location location = event.getBlockClicked().getLocation();
+        List<Flag> requiredPermissions = new ArrayList<>();
+        String type;
+        if (event.getBucket() == Material.BUCKET) {
+            requiredPermissions.add(Flags.BREAK);
+            type = event.getBlockClicked().getRelative(event.getBlockFace()).getType().name();
+        } else {
+            requiredPermissions.add(Flags.PLACE);
+            type = event.getBlock().getType().name();
+        }
+
+        for (Flag action : requiredPermissions) {
+            if (!permissionManager.checkAction(location, player.getUniqueId(), action, type)) {
                 event.setCancelled(true);
                 actionBar(player, location, requiredPermissions, type);
             }
@@ -297,20 +354,36 @@ public class PlayerInteractListener implements Listener {
     }
 
     // Small util for message
-    private void actionBar(Player player, Location location, List<Actions> actions, String type) {
+    static final String METADATA_KEY = "zones_last_actionbar";
+    private void actionBar(Player player, Location location, List<Flag> actions, String type) {
+
+        // Cooldown on the actionbar processing, since spamming it several times per second causes lag
+        int currentTick = Bukkit.getCurrentTick();
+        if (player.hasMetadata(METADATA_KEY)) {
+            int lastSent = player.getMetadata(METADATA_KEY).get(0).asInt();
+            if (currentTick - lastSent < 5) { // 0.25 second cooldown
+                return; // Cooldown active
+            }
+        }
+
+        // Proceed to send action bar
         List<Region> regions = regionManager.getRegionsAt(location);
         String regionNames = regions.stream().map(Region::getName).collect(Collectors.joining(", "));
 
         StringBuilder permissionsString = new StringBuilder();
-        for (Actions action : actions) {
-            permissionsString.append(action).append(", ");
+        for (Flag action : actions) {
+            permissionsString.append(action.name()).append(", ");
         }
-        permissionsString.deleteCharAt(permissionsString.length() - 2); // Remove trailing ", "
-        permissionsString.deleteCharAt(permissionsString.length() - 1); // Remove trailing ", "
+        if (!actions.isEmpty()) {
+            permissionsString.setLength(permissionsString.length() - 2); // Remove trailing ", "
+        }
 
-        player.sendActionBar(miniMessage.deserialize(messages.get("region.no-interact-permission"),
+        player.sendActionBar(miniMessage.deserialize(ACTIONBAR_MESSAGE,
                 parsed("region", regionNames),
                 parsed("actions", permissionsString.toString()),
                 parsed("type", type)));
+
+        // Update last sent tick
+        player.setMetadata(METADATA_KEY, new FixedMetadataValue(plugin, currentTick));
     }
 }

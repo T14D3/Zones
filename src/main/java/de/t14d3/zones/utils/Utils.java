@@ -20,10 +20,9 @@ import java.util.*;
  * Currently only contains methods for checking if a BlockState or BlockData is a container or powerable.
  */
 public class Utils {
-    private final Zones plugin;
-
     public static List<OfflinePlayer> offlinePlayers = new ArrayList<>();
     public static Map<UUID, String> playerNames = new HashMap<>();
+    private final Zones plugin;
 
     /**
      * Constructor for Utility methods.
@@ -42,49 +41,8 @@ public class Utils {
         return data instanceof Powerable;
     }
 
-    public PersistentDataContainer getPDC(Player player) {
-        return player.getPersistentDataContainer();
-    }
-
     public static void setPDC(Player player, String key, String value) {
         player.getPersistentDataContainer().set(new NamespacedKey("zones", key), PersistentDataType.STRING, value);
-    }
-
-    public enum SavingModes {
-        SHUTDOWN,
-        MODIFIED,
-        PERIODIC;
-
-        public static SavingModes fromString(String string) {
-            SavingModes mode;
-            try {
-                mode = SavingModes.valueOf(string.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                mode = SavingModes.MODIFIED;
-            }
-            return mode;
-        }
-    }
-
-    public static Map<String, String> defaultFlags() {
-        Map<String, String> flags = new HashMap<>();
-        flags.put("break", "Allows breaking blocks");
-        flags.put("place", "Allows placing blocks");
-        flags.put("interact", "Allows interacting");
-        flags.put("container", "Allows opening containers");
-        flags.put("redstone", "Allows interacting with redstone");
-        flags.put("entity", "Allows interacting with entities");
-        flags.put("ignite", "Allows igniting tnt");
-        flags.put("damage", "Allows damaging entities");
-        flags.put("group", "Add a group to the player");
-        return flags;
-    }
-
-    public void populatePlayers() {
-        offlinePlayers.addAll(Arrays.asList(Bukkit.getOfflinePlayers()));
-        for (OfflinePlayer player : offlinePlayers) {
-            playerNames.put(player.getUniqueId(), player.getName());
-        }
     }
 
     public static OfflinePlayer getOfflinePlayer(UUID uuid) {
@@ -114,6 +72,33 @@ public class Utils {
         return new ArrayList<>(playerNames.values());
     }
 
+    public PersistentDataContainer getPDC(Player player) {
+        return player.getPersistentDataContainer();
+    }
+
+    public void populatePlayers() {
+        offlinePlayers.addAll(Arrays.asList(Bukkit.getOfflinePlayers()));
+        for (OfflinePlayer player : offlinePlayers) {
+            playerNames.put(player.getUniqueId(), player.getName());
+        }
+    }
+
+    public enum SavingModes {
+        SHUTDOWN,
+        MODIFIED,
+        PERIODIC;
+
+        public static SavingModes fromString(String string) {
+            SavingModes mode;
+            try {
+                mode = SavingModes.valueOf(string.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                mode = SavingModes.MODIFIED;
+            }
+            return mode;
+        }
+    }
+
     public enum Modes {
         CUBOID_2D("2D"),
         CUBOID_3D("3D");
@@ -127,7 +112,8 @@ public class Utils {
         public static Modes getPlayerMode(Player player) {
             Modes mode;
             try {
-                mode = Modes.valueOf(player.getPersistentDataContainer().get(new NamespacedKey("zones", "mode"), PersistentDataType.STRING));
+                mode = Modes.valueOf(player.getPersistentDataContainer()
+                        .get(new NamespacedKey("zones", "mode"), PersistentDataType.STRING));
             } catch (IllegalArgumentException e) {
                 mode = Modes.CUBOID_2D;
             }

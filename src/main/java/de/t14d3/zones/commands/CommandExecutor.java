@@ -1,15 +1,17 @@
 package de.t14d3.zones.commands;
 
-import de.t14d3.zones.PermissionManager;
 import de.t14d3.zones.Region;
+import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.Zones;
 import de.t14d3.zones.integrations.WorldGuardImporter;
+import de.t14d3.zones.permissions.PermissionManager;
 import de.t14d3.zones.utils.Direction;
 import de.t14d3.zones.utils.Messages;
 import de.t14d3.zones.utils.Utils;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import it.unimi.dsi.fastutil.Pair;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -170,21 +172,23 @@ public class CommandExecutor {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.invalid-region")));
             return;
         }
-        String regionKey = args[1];
+        RegionKey regionKey = RegionKey.fromString(args[1]);
 
-        Map<String, Region> regions = regionManager.regions();
-        if (!regions.containsKey(regionKey)) {
+        Int2ObjectOpenHashMap<Region> regions = regionManager.regions();
+        if (!regions.containsKey(regionKey.getValue())) {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.invalid-region")));
             return; // Failure
         }
 
-        Region region = regions.get(regionKey);
-        if (sender instanceof Player player && !pm.hasPermission(player.getUniqueId(), "role", "owner", region)) {
+        Region region = regions.get(regionKey.getValue());
+        if (sender instanceof Player player && region.isAdmin(player.getUniqueId())) {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
             return; // Failure
         }
         regionManager.deleteRegion(regionKey);
-        sender.sendMessage(miniMessage.deserialize(messages.get("commands.delete.success").replace("<region>", regionKey)));
+        sender.sendMessage(
+                miniMessage.deserialize(
+                        messages.get("commands.delete.success").replace("<region>", regionKey.toString())));
         regionManager.triggerSave();
     }
 
@@ -198,7 +202,8 @@ public class CommandExecutor {
 
             Pair<Location, Location> selectionPair = plugin.selection.get(player.getUniqueId());
             if (selectionPair.first() != null && selectionPair.second() != null) {
-                if (regionManager.overlapsExistingRegion(selectionPair.first(), selectionPair.second()) && !sender.hasPermission("zones.create.overlap")) {
+                if (regionManager.overlapsExistingRegion(selectionPair.first(),
+                        selectionPair.second()) && !sender.hasPermission("zones.create.overlap")) {
                     sender.sendMessage(miniMessage.deserialize(messages.get("commands.create.overlap")));
                     return; // Failure
                 }
@@ -206,15 +211,19 @@ public class CommandExecutor {
                 Map<String, String> perms = new HashMap<>();
                 perms.put("role", "owner");
                 Utils.Modes mode = Utils.Modes.getPlayerMode(player);
-                String key;
+                RegionKey key;
                 if (mode == Utils.Modes.CUBOID_3D && player.hasPermission("zones.mode.3d.main")) {
-                    key = regionManager.createNewRegion(sender.getName(), selectionPair.first(), selectionPair.second(), player.getUniqueId(), perms);
+                    key = regionManager.createNewRegion(sender.getName(), selectionPair.first(), selectionPair.second(),
+                            player.getUniqueId(), perms).getKey();
                 } else {
-                    key = regionManager.create2DRegion(sender.getName(), selectionPair.first(), selectionPair.second(), player.getUniqueId(), perms);
+                    key = regionManager.create2DRegion(sender.getName(), selectionPair.first(), selectionPair.second(),
+                            player.getUniqueId(), perms).getKey();
                 }
                 resetBeacon(player, selectionPair.first());
                 resetBeacon(player, selectionPair.second());
-                sender.sendMessage(miniMessage.deserialize(messages.get("commands.create.success"), parsed("region", key)));
+                sender.sendMessage(
+                        miniMessage.deserialize(messages.get("commands.create.success"),
+                                parsed("region", key.toString())));
                 plugin.selection.remove(player.getUniqueId());
                 return; // Success
             }
@@ -241,14 +250,14 @@ public class CommandExecutor {
             Region parentRegion = null;
             if (args.length < 2) {
                 for (Region region : regionManager.getRegionsAt(player.getLocation())) {
-                    if (pm.isAdmin(player.getUniqueId().toString(), region)) {
+                    if (region.isAdmin(player.getUniqueId())) {
                         parentRegion = region;
                         break;
                     }
                 }
             } else {
-                String regionKey = args[1];
-                Region tempRegion = regionManager.regions().get(regionKey);
+                RegionKey regionKey = RegionKey.fromString(args[1]);
+                Region tempRegion = regionManager.regions().get(regionKey.getValue());
                 if (tempRegion == null || !tempRegion.isAdmin(player.getUniqueId())) {
                     player.sendMessage(miniMessage.deserialize(messages.get("commands.invalid-region")));
                     return;
@@ -270,7 +279,9 @@ public class CommandExecutor {
             Map<String, String> perms = new HashMap<>();
             perms.put("role", "owner");
 
-            regionManager.createSubRegion(player.getName(), selectionPair.first(), selectionPair.second(), player.getUniqueId(), perms, parentRegion);
+            regionManager.createSubRegion(player.getName(), selectionPair.first().toVector().toBlockVector(),
+                    selectionPair.second().toVector().toBlockVector(),
+                    selectionPair.first().getWorld(), player.getUniqueId(), perms, parentRegion);
             resetBeacon(player, selectionPair.first());
             resetBeacon(player, selectionPair.second());
             player.sendMessage(miniMessage.deserialize(messages.get("commands.subcreate.success")));
@@ -298,7 +309,7 @@ public class CommandExecutor {
     }
 
     public void handleListCommand(CommandSender sender) {
-        Map<String, Region> regions = regionManager.regions();
+        Int2ObjectOpenHashMap<Region> regions = regionManager.regions();
         if (regions.isEmpty()) {
             sender.sendMessage(miniMessage.deserialize(messages.get("region.none-found")));
             return;
@@ -312,15 +323,13 @@ public class CommandExecutor {
             if (!perm && (player != null && !region.isMember(player.getUniqueId()))) {
                 continue;
             }
-
-            Component hoverText = regionInfo(
-                    region,
-                    (perm ||
-                            (player != null && this.plugin.getPermissionManager().isAdmin(player.getUniqueId().toString(), region))))
+            Component hoverText = regionInfo(region, (perm || (player != null && region.isAdmin(
+                    player.getUniqueId()))))
                     .join();
             var mm = MiniMessage.miniMessage();
 
-            Component comp = mm.deserialize(messages.get("region.info.name"), parsed("name", region.getName()), parsed("key", region.getKey()));
+            Component comp = mm.deserialize(messages.get("region.info.name"), parsed("name", region.getName()),
+                    parsed("key", region.getKey().toString()));
             HoverEvent<Component> hover = hoverText.asHoverEvent();
             ClickEvent click = ClickEvent.runCommand("/zone info " + region.getKey());
             comp = comp.hoverEvent(hover);
@@ -330,20 +339,20 @@ public class CommandExecutor {
     }
 
     public void handleInfoCommand(CommandSender sender, String[] args) {
-        String regionKey;
+        RegionKey regionKey;
         if (args.length < 2) {
             if (sender instanceof Player player) {
                 regionManager.getRegionsAtAsync(player.getLocation()).join().forEach(region ->
-                        handleInfoCommand(sender, new String[]{"info", region.getKey()}));
+                        handleInfoCommand(sender, new String[]{"info", region.getKey().toString()}));
             } else {
                 sender.sendMessage(miniMessage.deserialize(messages.get("commands.invalid-region")));
             }
             return;
         } else {
-            regionKey = args[1];
+            regionKey = RegionKey.fromString(args[1]);
         }
-        Map<String, Region> regions = regionManager.regions();
-        if (!regions.containsKey(regionKey)) {
+        Int2ObjectOpenHashMap<Region> regions = regionManager.regions();
+        if (!regions.containsKey(regionKey.getValue())) {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.invalid-region")));
             return;
         }
@@ -351,11 +360,12 @@ public class CommandExecutor {
         if (sender instanceof Player) {
             player = (Player) sender;
         }
-        if (!sender.hasPermission("zones.info.other") && (player != null && !regions.get(regionKey).isMember(player.getUniqueId()))) {
+        if (!sender.hasPermission("zones.info.other") && (player != null && !regions.get(regionKey.getValue())
+                .isMember(player.getUniqueId()))) {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.no-permission")));
             return;
         }
-        Region region = regions.get(regionKey);
+        Region region = regions.get(regionKey.getValue());
         regionInfo(region, region.isAdmin(player.getUniqueId()))
                 .thenAccept(sender::sendMessage);
 
@@ -367,29 +377,37 @@ public class CommandExecutor {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.set.invalid-usage")));
             return;
         }
-        String regionKey = args[1];
-        Region region = regionManager.regions().get(regionKey);
+        RegionKey regionKey = RegionKey.fromString(args[1]);
+        Region region = regionManager.regions().get(regionKey.getValue());
         Player player = null;
         if (sender instanceof Player) {
             player = (Player) sender;
         }
-        if (region == null || (player != null && !pm.hasPermission(player.getUniqueId(), "role", "owner", region) && !player.hasPermission("zones.set.other"))) {
+        if (region == null || (player != null && !region.isOwner(player.getUniqueId()) && !player.hasPermission(
+                "zones.set.other"))) {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.invalid-region")));
             return;
         }
-        OfflinePlayer target = Bukkit.getOfflinePlayer(args[2]);
-        String permission = args[3];
+        String target = args[2];
+        String displayTarget = target;
+        if (!target.startsWith("+")) {
+            OfflinePlayer temp = Bukkit.getOfflinePlayer(target);
+            target = temp.getUniqueId().toString();
+            displayTarget = temp.getName();
+        }
+        String permission = args[3].toLowerCase();
         // Yes, I know this is terrible.
         // No, I will not change it.
         List<String> arg = Arrays.stream(args).toList().subList(4, args.length);
-        String value = String.join(", ", arg);
-        regionManager.addMemberPermission(target.getUniqueId(), permission, value, regionKey);
+        String value = String.join(", ", arg).toLowerCase().replace("+group-", "");
+        regionManager.addMemberPermission(target, permission, value, regionKey);
         regionManager.triggerSave();
         sender.sendMessage(miniMessage.deserialize(messages.get("commands.set.success"),
-                parsed("region", regionKey),
-                parsed("player", target.getName()),
+                parsed("region", regionKey.toString()),
+                parsed("target", displayTarget != null ? displayTarget : target),
                 parsed("permission", permission),
-                parsed("value", value)));
+                parsed("value", value))
+        );
     }
 
     public void handleExpandCommand(CommandSender sender, String[] args) {
@@ -401,9 +419,9 @@ public class CommandExecutor {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.expand.invalid-usage")));
             return;
         }
-        String regionKey = args[1];
+        RegionKey regionKey = RegionKey.fromString(args[1]);
         Direction direction;
-        Region region = regionManager.regions().get(regionKey);
+        Region region = regionManager.regions().get(regionKey.getValue());
         if (sender instanceof Player player) {
             direction = Direction.fromYaw(player.getLocation().getYaw());
             if (region == null || !region.isAdmin(player.getUniqueId())) {
@@ -420,9 +438,13 @@ public class CommandExecutor {
             allowOverlap = Objects.equals(args[3], "overlap") && sender.hasPermission("zones.expand.overlap");
         }
         if (regionManager.expandBounds(region, direction, amount, allowOverlap)) {
-            sender.sendMessage(miniMessage.deserialize(messages.get("commands.expand.success"), parsed("region", regionKey)));
+            sender.sendMessage(
+                    miniMessage.deserialize(messages.get("commands.expand.success"),
+                            parsed("region", regionKey.toString())));
         } else {
-            sender.sendMessage(miniMessage.deserialize(messages.get("commands.expand.fail"), parsed("region", regionKey)));
+            sender.sendMessage(
+                    miniMessage.deserialize(messages.get("commands.expand.fail"),
+                            parsed("region", regionKey.toString())));
         }
     }
 
@@ -431,8 +453,8 @@ public class CommandExecutor {
             sender.sendMessage(miniMessage.deserialize(messages.get("commands.invalid-region")));
             return;
         }
-        String regionKey = args[1];
-        Region region = regionManager.regions().get(regionKey);
+        RegionKey regionKey = RegionKey.fromString(args[1]);
+        Region region = regionManager.regions().get(regionKey.getValue());
         Player player = null;
         if (sender instanceof Player) {
             player = (Player) sender;
@@ -448,7 +470,7 @@ public class CommandExecutor {
         String name = String.join(" ", args).substring(16).replace("\"", "").replace("'", "");
         region.setName(name, regionManager);
         sender.sendMessage(miniMessage.deserialize(messages.get("commands.rename.success"),
-                parsed("region", regionKey),
+                parsed("region", regionKey.toString()),
                 parsed("name", name)));
 
     }
@@ -456,13 +478,15 @@ public class CommandExecutor {
     public void handleSaveCommand(CommandSender sender) {
         regionManager.saveRegions();
         int count = regionManager.regions().size();
-        sender.sendMessage(miniMessage.deserialize(messages.get("commands.save"), parsed("count", String.valueOf(count))));
+        sender.sendMessage(
+                miniMessage.deserialize(messages.get("commands.save"), parsed("count", String.valueOf(count))));
     }
 
     public void handleLoadCommand(CommandSender sender) {
         regionManager.loadRegions();
         int count = regionManager.regions().size();
-        sender.sendMessage(miniMessage.deserialize(messages.get("commands.load"), parsed("count", String.valueOf(count))));
+        sender.sendMessage(
+                miniMessage.deserialize(messages.get("commands.load"), parsed("count", String.valueOf(count))));
     }
 
     public void handleSelectCommand(CommandSender sender, String[] args) {
@@ -477,7 +501,7 @@ public class CommandExecutor {
                 }
             } else {
 
-                region = regionManager.regions().get(args[1]);
+                region = regionManager.regions().get(RegionKey.fromString(args[1]).getValue());
             }
             if (region == null) {
                 player.sendMessage(miniMessage.deserialize(messages.get("commands.invalid-region")));
@@ -485,7 +509,8 @@ public class CommandExecutor {
             }
             if (!plugin.particles.containsKey(player.getUniqueId()) || args.length >= 2) {
                 plugin.particles.put(player.getUniqueId(), BoundingBox.of(region.getMin(), region.getMax()));
-                player.sendMessage(miniMessage.deserialize(messages.get("commands.select.selected"), parsed("region", region.getName())));
+                player.sendMessage(miniMessage.deserialize(messages.get("commands.select.selected"),
+                        parsed("region", region.getName())));
             } else {
                 plugin.particles.remove(player.getUniqueId());
                 player.sendMessage(miniMessage.deserialize(messages.get("commands.select.deselected")));
@@ -500,7 +525,8 @@ public class CommandExecutor {
         }
         if (args[1].equalsIgnoreCase("worldguard")) {
             if (plugin.getServer().getPluginManager().getPlugin("WorldGuard") == null) {
-                sender.sendMessage(miniMessage.deserialize(messages.get("commands.import.not-loaded"), parsed("plugin", "WorldGuard")));
+                sender.sendMessage(miniMessage.deserialize(messages.get("commands.import.not-loaded"),
+                        parsed("plugin", "WorldGuard")));
                 return;
             }
             WorldGuardImporter worldGuardImporter = new WorldGuardImporter(plugin);
@@ -514,11 +540,13 @@ public class CommandExecutor {
             PersistentDataContainer pdc = player.getPersistentDataContainer();
             if (args.length < 2) {
                 pdc.set(new NamespacedKey("zones", "mode"), PersistentDataType.STRING, Utils.Modes.CUBOID_2D.name());
-                sender.sendMessage(miniMessage.deserialize(messages.get("commands.mode.set"), parsed("mode", Utils.Modes.CUBOID_2D.name())));
+                sender.sendMessage(miniMessage.deserialize(messages.get("commands.mode.set"),
+                        parsed("mode", Utils.Modes.CUBOID_2D.name())));
             } else {
                 Utils.Modes mode = Utils.Modes.getMode(args[1]);
                 pdc.set(new NamespacedKey("zones", "mode"), PersistentDataType.STRING, mode.name());
-                sender.sendMessage(miniMessage.deserialize(messages.get("commands.mode.set"), parsed("mode", mode.name())));
+                sender.sendMessage(
+                        miniMessage.deserialize(messages.get("commands.mode.set"), parsed("mode", mode.name())));
             }
         }
     }
@@ -529,7 +557,8 @@ public class CommandExecutor {
                 player.hideBossBar(plugin.getFindBossbar().players.get(player));
                 plugin.getFindBossbar().players.remove(player);
             } else {
-                BossBar bossbar = BossBar.bossBar(Component.text("Finding Regions..."), 1.0f, BossBar.Color.GREEN, BossBar.Overlay.PROGRESS);
+                BossBar bossbar = BossBar.bossBar(Component.text("Finding Regions..."), 1.0f, BossBar.Color.GREEN,
+                        BossBar.Overlay.PROGRESS);
                 plugin.getFindBossbar().players.put(player, bossbar);
                 player.showBossBar(bossbar);
             }
@@ -542,7 +571,9 @@ public class CommandExecutor {
         comp = comp.append(mm.deserialize(messages.get("region.info.name"), parsed("name", region.getName())));
         comp = comp.appendNewline();
         if (region.getParent() != null) {
-            comp = comp.append(mm.deserialize(messages.get("region.info.parent"), parsed("parent", region.getParent())));
+            comp = comp.append(
+                    mm.deserialize(messages.get("region.info.parent"),
+                            parsed("parent", region.getParent().toString())));
         }
         comp = comp.append(mm.deserialize(messages.get("region.info.min"), parsed("min", region.getMinString())));
         comp = comp.appendNewline();
@@ -559,7 +590,8 @@ public class CommandExecutor {
                 if (playerName == null) {
                     playerName = member.getKey();
                 }
-                Component playerComponent = mm.deserialize(messages.get("region.info.members.name"), parsed("name", playerName));
+                Component playerComponent = mm.deserialize(messages.get("region.info.members.name"),
+                        parsed("name", playerName));
                 playerComponent = playerComponent.appendNewline();
 
                 // Extract permissions and format them using Adventure Components
@@ -577,16 +609,20 @@ public class CommandExecutor {
                     for (String value : permValues) {
                         Component formattedValue;
                         if ("true".equalsIgnoreCase(value) || "*".equals(value)) {
-                            formattedValue = mm.deserialize(messages.get("region.info.members.values.allowed"), parsed("value", value));
+                            formattedValue = mm.deserialize(messages.get("region.info.members.values.allowed"),
+                                    parsed("value", value));
                         } else if ("false".equalsIgnoreCase(value) || value.startsWith("!")) {
-                            formattedValue = mm.deserialize(messages.get("region.info.members.values.denied"), parsed("value", value));
+                            formattedValue = mm.deserialize(messages.get("region.info.members.values.denied"),
+                                    parsed("value", value));
                         } else {
-                            formattedValue = mm.deserialize(messages.get("region.info.members.values.allowed"), parsed("value", value));
+                            formattedValue = mm.deserialize(messages.get("region.info.members.values.allowed"),
+                                    parsed("value", value));
                         }
                         formattedComponents.add(formattedValue);
                     }
                     // Combine all formatted components into one line
-                    Component permLine = mm.deserialize(messages.get("region.info.members.permission"), parsed("permission", permKey));
+                    Component permLine = mm.deserialize(messages.get("region.info.members.permission"),
+                            parsed("permission", permKey));
 
                     // Append all value components with comma separators
                     for (int i = 0; i < formattedComponents.size(); i++) {
@@ -604,7 +640,7 @@ public class CommandExecutor {
                         .append(permissionsComponent);
             }
         }
-        comp = comp.append(mm.deserialize(messages.get("region.info.key"), parsed("key", region.getKey())));
+        comp = comp.append(mm.deserialize(messages.get("region.info.key"), parsed("key", region.getKey().toString())));
 
         return CompletableFuture.completedFuture(comp);
     }

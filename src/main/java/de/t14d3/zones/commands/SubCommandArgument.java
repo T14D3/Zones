@@ -19,7 +19,8 @@ public class SubCommandArgument implements CustomArgumentType.Converted<SubComma
         try {
             return SubCommands.valueOf(nativeType.toUpperCase().split(" ")[0]);
         } catch (IllegalArgumentException ignored) {
-            Message message = MessageComponentSerializer.message().serialize(MiniMessage.miniMessage().deserialize(Zones.getInstance().getMessages().get("commands.invalid")));
+            Message message = MessageComponentSerializer.message().serialize(
+                    MiniMessage.miniMessage().deserialize(Zones.getInstance().getMessages().get("commands.invalid")));
             throw new CommandSyntaxException(new SimpleCommandExceptionType(message), message);
         }
     }

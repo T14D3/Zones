@@ -1,10 +1,10 @@
 package de.t14d3.zones;
 
-import com.google.gson.JsonObject;
-import org.bukkit.Bukkit;
+import de.t14d3.zones.permissions.PermissionManager;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.util.BlockVector;
-import org.bukkit.util.BoundingBox;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,14 +17,16 @@ import java.util.*;
  */
 public class Region {
     private String name;
-    private Location min;
-    private Location max;
+    private BlockVector min;
+    private BlockVector max;
+    private World world;
     private Map<String, Map<String, String>> members;
-    private String key;
-    private String parent;
+    private RegionKey key;
+    private RegionKey parent;
     private int priority;
 
     // Constructor
+
     /**
      * Constructs a new region with the given name, minimum and maximum locations, members and parent.
      *
@@ -35,12 +37,39 @@ public class Region {
      * @param key      The key of the region.
      * @param parent   The parent (if any) of the region.
      * @param priority The priority of the region.
-     * @see #Region(String, Location, Location, Map, String, int)
+     * @see #Region(String, BlockVector, BlockVector, World, Map, RegionKey, RegionKey, int)
+     * @deprecated use {@link #Region(String, BlockVector, BlockVector, World, Map, RegionKey, RegionKey, int)}
      */
-    Region(@NotNull String name, @NotNull Location min, @NotNull Location max, Map<String, Map<String, String>> members, @NotNull String key, @Nullable String parent, int priority) {
+    @Deprecated(since = "0.2.0", forRemoval = true)
+    Region(@NotNull String name, @NotNull Location min, @NotNull Location max, Map<String, Map<String, String>> members, @NotNull RegionKey key, @Nullable RegionKey parent, int priority) {
+        this.name = name;
+        this.min = min.toVector().toBlockVector();
+        this.max = max.toVector().toBlockVector();
+        this.world = min.getWorld();
+        this.members = (members != null) ? members : new HashMap<>();
+        this.key = key;
+        this.parent = parent;
+        this.priority = priority;
+    }
+
+    /**
+     * Constructs a new region with the given name, minimum and maximum locations, members and parent.
+     *
+     * @param name     The name of the region (not unique).
+     * @param min      The minimum BlockVector of the region.
+     * @param max      The maximum BlockVector of the region.
+     * @param world    The world of the region.
+     * @param members  The members of the region.
+     * @param key      The key of the region.
+     * @param parent   The parent (if any) of the region.
+     * @param priority The priority of the region.
+     * @see #Region(String, Location, Location, Map, RegionKey, int)
+     */
+    Region(@NotNull String name, @NotNull BlockVector min, @NotNull BlockVector max, @NotNull World world, Map<String, Map<String, String>> members, @NotNull RegionKey key, @Nullable RegionKey parent, int priority) {
         this.name = name;
         this.min = min;
         this.max = max;
+        this.world = world;
         this.members = (members != null) ? members : new HashMap<>();
         this.key = key;
         this.parent = parent;
@@ -48,6 +77,7 @@ public class Region {
     }
 
     // Constructor overload for regions without parent
+
     /**
      * Constructs a new region with the given name, minimum and maximum locations, and members.
      *
@@ -57,10 +87,9 @@ public class Region {
      * @param members  The members of the region.
      * @param key      The key of the region.
      * @param priority The priority of the region.
-     *
-     * @see #Region(String, Location, Location, Map, String, int)
+     * @see #Region(String, Location, Location, Map, RegionKey, int)
      */
-    Region(String name, Location min, Location max, Map<String, Map<String, String>> members, String key, int priority) {
+    Region(String name, Location min, Location max, Map<String, Map<String, String>> members, RegionKey key, int priority) {
         this(name, min, max, members, key, null, priority);
     }
 
@@ -74,54 +103,35 @@ public class Region {
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
-    public Location getMin() {
+    public BlockVector getMin() {
         return min;
+    }
+
+    void setMin(BlockVector min) {
+        this.min = min;
     }
 
     public String getMinString() {
         return min.getBlockX() + "," + min.getBlockY() + "," + min.getBlockZ();
     }
 
-    void setMin(Location min, RegionManager regionManager) {
-        this.min = min;
-        regionManager.saveRegion(key, this); // Ensure changes are saved
-    }
-
-    void setMin(Location min) {
-        this.min = min;
-    }
-
-    void setMin(BlockVector min) {
-        this.min.set(min.getBlockX(), min.getBlockY(), min.getBlockZ());
-    }
-
-    public Location getMax() {
+    public BlockVector getMax() {
         return max;
+    }
+
+    void setMax(BlockVector max) {
+        this.max = max;
     }
 
     public String getMaxString() {
         return max.getBlockX() + "," + max.getBlockY() + "," + max.getBlockZ();
     }
 
-    void setMax(Location max, RegionManager regionManager) {
-        this.max = max;
-        regionManager.saveRegion(key, this); // Ensure changes are saved
-    }
-
-    void setMax(Location max) {
-        this.max = max;
-    }
-
-    void setMax(BlockVector max) {
-        this.max.set(max.getBlockX(), max.getBlockY(), max.getBlockZ());
-    }
-
     /**
      * Get the members of this region and their permissions. <br>
-     * Use {@link de.t14d3.zones.PermissionManager#hasPermission} to check player permissions.
+     * Use {@link PermissionManager} to check player permissions.
      *
      * @return {@code Map<UUID player, Map<String permission, String value> permissions>}
-     * @see de.t14d3.zones.PermissionManager#hasPermission
      */
     public Map<String, Map<String, String>> getMembers() {
         return members;
@@ -160,17 +170,17 @@ public class Region {
         return groupMembers;
     }
 
-    void setMembers(Map<String, Map<String, String>> members, RegionManager regionManager, String key) {
+    void setMembers(Map<String, Map<String, String>> members, RegionManager regionManager) {
         this.members = members;
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
-    void addMember(UUID uuid, Map<String, String> permissions, RegionManager regionManager, String key) {
+    void addMember(UUID uuid, Map<String, String> permissions, RegionManager regionManager) {
         this.members.put(uuid.toString(), permissions);
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
-    void removeMember(UUID uuid, RegionManager regionManager, String key) {
+    void removeMember(UUID uuid, RegionManager regionManager) {
         this.members.remove(uuid.toString());
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
@@ -181,7 +191,8 @@ public class Region {
 
     public boolean isAdmin(UUID uuid) {
         if (this.members.containsKey(uuid.toString()) && this.members.get(uuid.toString()).containsKey("role")) {
-            return this.members.get(uuid.toString()).get("role").equals("admin") || this.members.get(uuid.toString()).get("role").equals("owner");
+            return this.members.get(uuid.toString()).get("role").equals("admin") || this.members.get(uuid.toString())
+                    .get("role").equals("owner");
         }
         return false; // Default to false
     }
@@ -190,17 +201,22 @@ public class Region {
         return this.members.get(who);
     }
 
-    public String getParent() {
+    public RegionKey getParent() {
         return this.parent;
     }
 
-    void setParent(String parent, RegionManager regionManager, String key) {
+    void setParent(RegionKey parent, RegionManager regionManager) {
         this.parent = parent;
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
-    Region getParentRegion(RegionManager regionManager) {
-        return regionManager.regions().get(parent);
+    public Region getParentRegion(RegionManager regionManager) {
+        return regionManager.regions().get(parent.getValue());
+    }
+
+    @ApiStatus.Experimental
+    public Region getParentRegion() {
+        return RegionManager.getRegion(parent);
     }
 
     public List<Region> getChildren(RegionManager regionManager) {
@@ -213,26 +229,44 @@ public class Region {
         return children;
     }
 
-    public String getKey() {
+    public RegionKey getKey() {
         return key;
     }
 
     /**
      * Careful, can easily break things.
      */
-    void setKey(String key, RegionManager regionManager) {
+    void setKey(RegionKey key, RegionManager regionManager) {
         this.key = key;
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
+    @Deprecated
     public boolean contains(Location location) {
-        BoundingBox box = BoundingBox.of(min, max);
-        box.expand(1); // Expand by 1 to encompass the full block
-        return box.contains(location.toVector());
+        return location.getWorld().equals(this.world) && contains(location.toVector().toBlockVector());
+    }
+
+    public boolean contains(BlockVector vec) {
+        return vec.getX() >= this.min.getX() && vec.getX() < this.max.getX() + 1
+                && vec.getY() >= this.min.getY() && vec.getY() < this.max.getY() + 1
+                && vec.getZ() >= this.min.getZ() && vec.getZ() < this.max.getZ() + 1;
+    }
+
+    public boolean intersects(@NotNull BlockVector min, @NotNull BlockVector max) {
+        return this.min.getX() <= max.getX() && this.max.getX() >= min.getX()
+                && this.min.getY() <= max.getY() && this.max.getY() >= min.getY()
+                && this.min.getZ() <= max.getZ() && this.max.getZ() >= min.getZ();
     }
 
     void addMemberPermission(UUID uuid, String permission, String value, RegionManager regionManager) {
-        this.members.computeIfAbsent(uuid.toString(), k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)).put(permission, value);
+        this.members.computeIfAbsent(uuid.toString(), k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER))
+                .put(permission, value);
+        regionManager.saveRegion(key, this); // Ensure changes are saved
+    }
+
+    void addMemberPermission(String who, String permission, String value, RegionManager regionManager) {
+        this.members.computeIfAbsent(who, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER))
+                .put(permission, value);
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
@@ -246,6 +280,11 @@ public class Region {
         return null;
     }
 
+    public boolean isOwner(UUID uuid) {
+        return getOwner() != null && getOwner().equals(uuid);
+    }
+
+
     public int getPriority() {
         return priority;
     }
@@ -254,22 +293,16 @@ public class Region {
         this.priority = priority;
     }
 
+    public World getWorld() {
+        return world;
+    }
 
-    JsonObject getAsJson() {
-        JsonObject json = new JsonObject();
-        json.addProperty("name", getName());
-        JsonObject membersJson = new JsonObject();
-        for (Map.Entry<String, Map<String, String>> member : getMembers().entrySet()) {
-            JsonObject memberJson = new JsonObject();
-            memberJson.addProperty("player", Bukkit.getPlayer(member.getKey()) != null ? Bukkit.getPlayer(member.getKey()).getName() : member.getKey().toString());
-            JsonObject permissions = new JsonObject();
-            for (Map.Entry<String, String> perm : member.getValue().entrySet()) {
-                permissions.addProperty(perm.getKey(), perm.getValue());
-            }
-            memberJson.add("permissions", permissions);
-            membersJson.add(member.getKey(), memberJson);
-        }
-        json.add("members", membersJson);
-        return json;
+    /**
+     * Set the world of the region.
+     * Should very likely never be used.
+     */
+    @ApiStatus.Internal
+    public void setWorld(World world) {
+        this.world = world;
     }
 }

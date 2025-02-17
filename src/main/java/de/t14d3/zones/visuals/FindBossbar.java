@@ -16,34 +16,41 @@ import java.util.Map;
 
 public class FindBossbar {
     private final Zones plugin;
-    private BukkitTask bossbarRunnable;
     public Map<Player, BossBar> players = new HashMap<>();
+    private final BukkitTask bossbarRunnable;
 
     public FindBossbar(Zones plugin) {
         this.plugin = plugin;
-        bossbarRunnable = new BukkitRunnable() {
-            @Override
-            public void run() {
-                for (Map.Entry<Player, BossBar> entry : players.entrySet()) {
-                    Player player = entry.getKey();
-                    List<String> regions = new ArrayList<>();
-                    for (Region region : plugin.getRegionManager().getRegionsAt(player.getLocation())) {
-                        regions.add(region.getName());
-                    }
-                    StringBuilder builder = new StringBuilder();
-                    for (String name : regions) {
-                        if (!builder.isEmpty()) {
-                            builder.append(", ");
-                        }
-                        builder.append(name);
-                    }
-                    BossBar bossbar = entry.getValue();
-                    bossbar.name(Component.text(String.valueOf(builder)).color(NamedTextColor.GREEN));
-                    player.showBossBar(bossbar);
-                }
-            }
-        }.runTaskTimerAsynchronously(plugin, 0, 20);
+        bossbarRunnable = new BossbarRunnable(plugin).runTaskTimerAsynchronously(plugin, 0, 20);
     }
 
 
+    private class BossbarRunnable extends BukkitRunnable {
+        private final Zones plugin;
+
+        public BossbarRunnable(Zones plugin) {
+            this.plugin = plugin;
+        }
+
+        @Override
+        public void run() {
+            for (Map.Entry<Player, BossBar> entry : players.entrySet()) {
+                Player player = entry.getKey();
+                List<String> regions = new ArrayList<>();
+                for (Region region : plugin.getRegionManager().getRegionsAt(player.getLocation())) {
+                    regions.add(region.getName());
+                }
+                StringBuilder builder = new StringBuilder();
+                for (String name : regions) {
+                    if (!builder.isEmpty()) {
+                        builder.append(", ");
+                    }
+                    builder.append(name);
+                }
+                BossBar bossbar = entry.getValue();
+                bossbar.name(Component.text(String.valueOf(builder)).color(NamedTextColor.GREEN));
+                player.showBossBar(bossbar);
+            }
+        }
+    }
 }
