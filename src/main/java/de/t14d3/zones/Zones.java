@@ -99,7 +99,7 @@ public final class Zones extends JavaPlugin {
 
 
         // Register listeners
-        this.getServer().getPluginManager().registerEvents(new PlayerInteractListener(this), this);
+        this.getServer().getPluginManager().registerEvents(new PlayerEventListener(this), this);
         this.getServer().getPluginManager().registerEvents(new PlayerQuitListener(this), this);
         this.getServer().getPluginManager().registerEvents(new ChunkEventListener(this), this);
         ExplosivesListener explosivesListener = new ExplosivesListener(this);

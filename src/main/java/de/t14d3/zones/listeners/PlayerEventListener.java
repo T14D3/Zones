@@ -26,6 +26,7 @@ import org.bukkit.event.entity.EntityPlaceEvent;
 import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 import org.bukkit.event.hanging.HangingPlaceEvent;
 import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
+import org.bukkit.event.player.PlayerBucketEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
@@ -41,7 +42,7 @@ import java.util.stream.Collectors;
 import static de.t14d3.zones.visuals.BeaconUtils.resetBeacon;
 import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
 
-public class PlayerInteractListener implements Listener {
+public class PlayerEventListener implements Listener {
 
     private final RegionManager regionManager;
     private final PermissionManager permissionManager;
@@ -51,7 +52,7 @@ public class PlayerInteractListener implements Listener {
     private final Messages messages;
     private final String ACTIONBAR_MESSAGE;
 
-    public PlayerInteractListener(Zones plugin) {
+    public PlayerEventListener(Zones plugin) {
         this.plugin = plugin;
         this.regionManager = plugin.getRegionManager();
         this.permissionManager = plugin.getPermissionManager();
@@ -319,6 +320,31 @@ public class PlayerInteractListener implements Listener {
         requiredPermissions.add(Flags.PLACE);
         requiredPermissions.add(Flags.ENTITY);
         String type = event.getEntity().getType().name();
+        for (Flag action : requiredPermissions) {
+            if (!permissionManager.checkAction(location, player.getUniqueId(), action, type)) {
+                event.setCancelled(true);
+                actionBar(player, location, requiredPermissions, type);
+            }
+        }
+    }
+
+    @EventHandler
+    private void onBucketUse(PlayerBucketEvent event) {
+        Player player = event.getPlayer();
+        if (player.hasPermission("zones.bypass.claimed")) {
+            return;
+        }
+        Location location = event.getBlockClicked().getLocation();
+        List<Flag> requiredPermissions = new ArrayList<>();
+        String type;
+        if (event.getBucket() == Material.BUCKET) {
+            requiredPermissions.add(Flags.BREAK);
+            type = event.getBlockClicked().getRelative(event.getBlockFace()).getType().name();
+        } else {
+            requiredPermissions.add(Flags.PLACE);
+            type = event.getBlock().getType().name();
+        }
+
         for (Flag action : requiredPermissions) {
             if (!permissionManager.checkAction(location, player.getUniqueId(), action, type)) {
                 event.setCancelled(true);
