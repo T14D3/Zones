@@ -98,6 +98,26 @@ public class RegionManager {
         }
     }
 
+    public void loadRegions(World world) {
+        worldRegions.computeIfAbsent(world, k -> new Int2ObjectOpenHashMap<>());
+        worldRegions.get(world).clear();
+        if (regionsConfig.contains("regions")) {
+            String worldName = world.getName();
+            for (String key : Objects.requireNonNull(regionsConfig.getConfigurationSection("regions")).getKeys(false)) {
+                if (regionsConfig.getString("regions." + key + ".world").equalsIgnoreCase(worldName)) {
+                    try {
+                        Region region = loadRegion(key);
+                        loadedRegions.put(region.getKey().getValue(), region);
+                        indexRegion(region);
+                    } catch (Exception e) {
+                        plugin.getLogger().severe("Failed to load region " + key);
+                        plugin.getLogger().info(e.getMessage());
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * Get all currently loaded regions and their corresponding key.
      *
