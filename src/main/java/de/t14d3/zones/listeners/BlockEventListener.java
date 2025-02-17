@@ -5,6 +5,7 @@ import de.t14d3.zones.Zones;
 import de.t14d3.zones.permissions.PermissionManager;
 import de.t14d3.zones.permissions.flags.Flag;
 import de.t14d3.zones.permissions.flags.Flags;
+import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
@@ -97,6 +98,38 @@ public class BlockEventListener implements Listener {
         if (!permissionManager.checkAction(event.getBlock().getLocation(), Flags.DESTROY,
                 event.getBlock().getType().name())) {
             event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onPistonExtend(BlockPistonExtendEvent event) {
+        if (!permissionManager.checkAction(event.getBlock().getLocation(), Flags.RELOCATE,
+                event.getBlock().getType().name())) {
+            event.setCancelled(true);
+            return;
+        }
+        for (Block block : event.getBlocks()) {
+            if (!permissionManager.checkAction(block.getLocation(), Flags.RELOCATE,
+                    event.getBlock().getType().name())) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+    }
+
+    @EventHandler
+    public void onPistonRetract(BlockPistonRetractEvent event) {
+        if (!permissionManager.checkAction(event.getBlock().getLocation(), Flags.RELOCATE,
+                event.getBlock().getType().name())) {
+            event.setCancelled(true);
+            return;
+        }
+        for (Block block : event.getBlocks()) {
+            if (!permissionManager.checkAction(block.getLocation(), Flags.RELOCATE,
+                    event.getBlock().getType().name())) {
+                event.setCancelled(true);
+                return;
+            }
         }
     }
 
