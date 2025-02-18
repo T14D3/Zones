@@ -16,6 +16,8 @@ import de.t14d3.zones.utils.Utils;
 import de.t14d3.zones.visuals.BeaconUtils;
 import de.t14d3.zones.visuals.FindBossbar;
 import de.t14d3.zones.visuals.ParticleHandler;
+import dev.jorel.commandapi.CommandAPI;
+import dev.jorel.commandapi.CommandAPIBukkitConfig;
 import it.unimi.dsi.fastutil.Pair;
 import org.bukkit.Location;
 import org.bukkit.permissions.Permission;
@@ -26,10 +28,7 @@ import org.bukkit.util.BoundingBox;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class Zones extends JavaPlugin {
@@ -48,6 +47,7 @@ public final class Zones extends JavaPlugin {
     private FindBossbar findBossbar;
     private DebugLoggerManager debugLogger; // Add debug logger
     private Flags flags;
+    public boolean debug = false;
 
     public Zones(PaperBootstrap bootstrap) {
         this.bootstrap = bootstrap;
@@ -58,9 +58,25 @@ public final class Zones extends JavaPlugin {
     }
 
     @Override
+    public void onLoad() {
+        this.debug = getConfig().getBoolean("debug", false)
+                || Objects.equals(System.getenv("ZONES_DEBUG"), "true");
+        // Configure CommandAPI
+        CommandAPI.onLoad(new CommandAPIBukkitConfig(this)
+                .verboseOutput(debug)
+                .skipReloadDatapacks(true)
+                .silentLogs(!debug)
+                .usePluginNamespace()
+        );
+    }
+
+    @Override
     public void onEnable() {
         instance = this;
-        this.debugLogger = new DebugLoggerManager(this); // Initialize debug logger
+        this.debugLogger = new DebugLoggerManager(this);
+        // Initialize CommandAPI
+        CommandAPI.onEnable();
+
         // Initialize PermissionManager first without RegionManager
         this.permissionManager = new PermissionManager(this);
 
@@ -152,6 +168,7 @@ public final class Zones extends JavaPlugin {
         // Save regions to regions.yml before plugin shutdown
         regionManager.saveRegions();
         regionManager.regions().clear();
+        CommandAPI.onDisable();
         getLogger().info("Zones plugin is disabling and regions are saved.");
     }
 

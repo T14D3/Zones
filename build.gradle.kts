@@ -3,7 +3,7 @@ import xyz.jpenilla.runtask.task.AbstractRun
 plugins {
     id("java")
     id("maven-publish")
-    //id("io.papermc.paperweight.userdev") version "1.7.3"
+    id("com.gradleup.shadow") version "9.0.0-beta8"
     id("xyz.jpenilla.run-paper") version "2.3.1"
 }
 
@@ -42,8 +42,8 @@ dependencies {
     implementation(platform("com.intellectualsites.bom:bom-newest:1.52"))
     compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Core")
     compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit")
-    compileOnly("dev.jorel:commandapi-bukkit-core:9.7.0")
-    implementation("org.slf4j:slf4j-api:2.1.0-alpha1")
+    implementation("dev.jorel:commandapi-bukkit-shade-mojang-mapped:9.7.0")
+    compileOnly("org.slf4j:slf4j-api:2.1.0-alpha1")
 }
 
 val targetJavaVersion = 21
@@ -84,6 +84,10 @@ tasks.processResources {
 }
 
 tasks {
+    shadowJar {
+        archiveClassifier.set("")
+        relocate("dev.jorel.commandapi", "de.t14d3.zones.commandapi")
+    }
     runServer {
         minecraftVersion("1.21.4")
     }
@@ -106,7 +110,7 @@ publishing {
             groupId = group.toString().lowercase()
             version = version.toString()
             from(components["java"])
+            artifact(tasks.shadowJar.get())
         }
     }
 }
-
