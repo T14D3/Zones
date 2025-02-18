@@ -1,5 +1,7 @@
 package de.t14d3.zones.permissions.flags;
 
+import de.t14d3.zones.utils.Types;
+
 import java.util.List;
 
 /**
@@ -14,7 +16,7 @@ public class Flag implements IFlagHandler {
     private final IFlagHandler customHandler; // Optional custom logic
 
     public Flag(String name, String description) {
-        this(name, description, null);
+        this(name, description, new DefaultFlagHandler(false, Types.all()));
     }
 
     // Constructor for custom handlers
@@ -30,7 +32,7 @@ public class Flag implements IFlagHandler {
     }
 
     public List<String> getValidValues() {
-        return this.customHandler.getValidValues();
+        return customHandler.getValidValues();
     }
 
     public boolean getDefaultValue() {

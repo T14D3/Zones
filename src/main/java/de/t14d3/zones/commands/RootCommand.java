@@ -12,6 +12,11 @@ public class RootCommand {
         new CommandAPICommand("zone")
                 .withSubcommand(new InfoCommand(plugin).info)
                 .withSubcommand(new ListCommand(plugin).list)
+                .withSubcommand(new CreateCommand(plugin).create)
+                .withSubcommand(new SubCreateCommand(plugin).subcreate)
+                .withSubcommand(new CancelCommand(plugin).cancel)
+                .withSubcommand(new SetCommand(plugin).set)
+                .withSubcommand(new ExpandCommand(plugin).expand)
                 .register(plugin);
     }
 }
