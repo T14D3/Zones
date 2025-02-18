@@ -4,8 +4,6 @@ import de.t14d3.zones.Zones;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Objects;
-
 public final class DebugLoggerManager {
     private final Zones plugin;
     private final DebugLoggerInterface logger;
@@ -24,8 +22,7 @@ public final class DebugLoggerManager {
 
     public DebugLoggerManager(Zones plugin) {
         this.plugin = plugin;
-        boolean debugEnabled = plugin.getConfig().getBoolean("debug", false)
-                || Objects.equals(System.getenv("ZONES_DEBUG"), "true");
+        boolean debugEnabled = plugin.debug;
         this.logger = debugEnabled ? new DebugLogger() : new DebugLoggerDummy();
         instance = this;
     }

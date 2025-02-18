@@ -19,4 +19,9 @@ public class DefaultFlagHandler implements IFlagHandler {
         } else return optional[0].toString().equalsIgnoreCase("+universal");
     }
 
+    @Override
+    public List<String> getValidValues() {
+        return this.validValues;
+    }
+
 }

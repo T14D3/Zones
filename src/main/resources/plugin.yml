@@ -6,7 +6,6 @@ softdepend: [ WorldEdit, FastAsyncWorldEdit, PlaceholderAPI ]
 commands:
   zone:
     description: Main Command
-    usage: /zone <create|delete|createmanual> <regionName> <minX> <minY> <minZ> <maxX> <maxY> <maxZ>
 permissions:
   zones.info:
     description: Allow players to view region information

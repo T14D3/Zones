@@ -1,7 +1,7 @@
 package de.t14d3.zones;
 
 import com.sk89q.worldedit.WorldEdit;
-import de.t14d3.zones.commands.CommandExecutor;
+import de.t14d3.zones.commands.RootCommand;
 import de.t14d3.zones.integrations.FAWEIntegration;
 import de.t14d3.zones.integrations.PlaceholderAPI;
 import de.t14d3.zones.integrations.WorldEditSession;
@@ -16,6 +16,8 @@ import de.t14d3.zones.utils.Utils;
 import de.t14d3.zones.visuals.BeaconUtils;
 import de.t14d3.zones.visuals.FindBossbar;
 import de.t14d3.zones.visuals.ParticleHandler;
+import dev.jorel.commandapi.CommandAPI;
+import dev.jorel.commandapi.CommandAPIBukkitConfig;
 import it.unimi.dsi.fastutil.Pair;
 import org.bukkit.Location;
 import org.bukkit.permissions.Permission;
@@ -26,10 +28,7 @@ import org.bukkit.util.BoundingBox;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class Zones extends JavaPlugin {
@@ -43,12 +42,12 @@ public final class Zones extends JavaPlugin {
     private ParticleHandler particleHandler;
     private Types types;
     private Messages messages;
-    private CommandExecutor commandExecutor;
     private final PaperBootstrap bootstrap;
     private Utils utils;
     private FindBossbar findBossbar;
     private DebugLoggerManager debugLogger; // Add debug logger
     private Flags flags;
+    public boolean debug = false;
 
     public Zones(PaperBootstrap bootstrap) {
         this.bootstrap = bootstrap;
@@ -59,9 +58,25 @@ public final class Zones extends JavaPlugin {
     }
 
     @Override
+    public void onLoad() {
+        this.debug = getConfig().getBoolean("debug", false)
+                || Objects.equals(System.getenv("ZONES_DEBUG"), "true");
+        // Configure CommandAPI
+        CommandAPI.onLoad(new CommandAPIBukkitConfig(this)
+                .verboseOutput(debug)
+                .skipReloadDatapacks(true)
+                .silentLogs(!debug)
+                .usePluginNamespace()
+        );
+    }
+
+    @Override
     public void onEnable() {
         instance = this;
-        this.debugLogger = new DebugLoggerManager(this); // Initialize debug logger
+        this.debugLogger = new DebugLoggerManager(this);
+        // Initialize CommandAPI
+        CommandAPI.onEnable();
+
         // Initialize PermissionManager first without RegionManager
         this.permissionManager = new PermissionManager(this);
 
@@ -116,8 +131,6 @@ public final class Zones extends JavaPlugin {
             getServer().getPluginManager().addPermission(new Permission("zones.mode." + mode.getName().toLowerCase() + ".sub", PermissionDefault.OP));
         }
 
-
-        this.commandExecutor = new CommandExecutor(this, regionManager);
         // Register saving task
         if (getSavingMode() == Utils.SavingModes.PERIODIC) {
             getServer().getScheduler().runTaskTimerAsynchronously(this, () -> {
@@ -145,7 +158,7 @@ public final class Zones extends JavaPlugin {
         CacheUtils.getInstance().startCacheRunnable();
         this.flags = new Flags();
 
-
+        RootCommand rootCommand = new RootCommand(this);
 
         getLogger().info("Zones plugin has been enabled! Loaded " + regionManager.regions().size() + " regions.");
     }
@@ -155,6 +168,7 @@ public final class Zones extends JavaPlugin {
         // Save regions to regions.yml before plugin shutdown
         regionManager.saveRegions();
         regionManager.regions().clear();
+        CommandAPI.onDisable();
         getLogger().info("Zones plugin is disabling and regions are saved.");
     }
 
@@ -191,15 +205,15 @@ public final class Zones extends JavaPlugin {
         return Utils.SavingModes.fromString(this.getConfig().getString("zone-saving.mode", "MODIFIED"));
     }
 
-    public CommandExecutor getCommandListener() {
-        return commandExecutor;
-    }
-
     public FindBossbar getFindBossbar() {
         return findBossbar;
     }
 
     public DebugLoggerManager getDebugLogger() {
         return debugLogger; // Getter for debug logger
+    }
+
+    public Flags getFlags() {
+        return flags;
     }
 }
