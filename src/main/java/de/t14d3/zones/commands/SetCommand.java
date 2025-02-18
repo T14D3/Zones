@@ -35,6 +35,7 @@ public class SetCommand {
         this.messages = plugin.getMessages();
     }
 
+    @SuppressWarnings({"unchecked", "DataFlowIssue"})
     public CommandAPICommand set = new CommandAPICommand("set")
             .withPermission("zones.set")
             .withArguments(
@@ -126,7 +127,8 @@ public class SetCommand {
                 Region region = regionManager.regions().get(regionKey.getValue());
                 if (sender instanceof Player player && region.isOwner(player.getUniqueId())) {
                     StringBuilder builder = new StringBuilder();
-                    for (String value : (List<String>) args.get("values")) {
+                    List<String> values = (List<String>) args.get("values");
+                    for (String value : values) {
                         builder.append(value).append(",");
                     }
                     regionManager.addMemberPermission((String) args.get("target"), (String) args.get("flag"),

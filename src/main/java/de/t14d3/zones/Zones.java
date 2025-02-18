@@ -1,7 +1,6 @@
 package de.t14d3.zones;
 
 import com.sk89q.worldedit.WorldEdit;
-import de.t14d3.zones.commands.CommandExecutor;
 import de.t14d3.zones.commands.RootCommand;
 import de.t14d3.zones.integrations.FAWEIntegration;
 import de.t14d3.zones.integrations.PlaceholderAPI;
@@ -44,7 +43,6 @@ public final class Zones extends JavaPlugin {
     private ParticleHandler particleHandler;
     private Types types;
     private Messages messages;
-    private CommandExecutor commandExecutor;
     private final PaperBootstrap bootstrap;
     private Utils utils;
     private FindBossbar findBossbar;
@@ -117,8 +115,6 @@ public final class Zones extends JavaPlugin {
             getServer().getPluginManager().addPermission(new Permission("zones.mode." + mode.getName().toLowerCase() + ".sub", PermissionDefault.OP));
         }
 
-
-        this.commandExecutor = new CommandExecutor(this, regionManager);
         // Register saving task
         if (getSavingMode() == Utils.SavingModes.PERIODIC) {
             getServer().getScheduler().runTaskTimerAsynchronously(this, () -> {
@@ -190,10 +186,6 @@ public final class Zones extends JavaPlugin {
 
     public Utils.SavingModes getSavingMode() {
         return Utils.SavingModes.fromString(this.getConfig().getString("zone-saving.mode", "MODIFIED"));
-    }
-
-    public CommandExecutor getCommandListener() {
-        return commandExecutor;
     }
 
     public FindBossbar getFindBossbar() {
