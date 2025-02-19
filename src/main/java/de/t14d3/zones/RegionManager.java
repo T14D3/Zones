@@ -34,6 +34,7 @@ public class RegionManager {
         this.pm = permissionManager;
         this.plugin = plugin;
         this.dataSourceManager = new DataSourceManager(plugin);
+        instance = this;
     }
 
     public DataSourceManager getDataSourceManager() {

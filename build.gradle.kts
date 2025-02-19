@@ -90,8 +90,15 @@ tasks {
     shadowJar {
         archiveClassifier.set("")
         relocate("dev.jorel.commandapi", "de.t14d3.zones.commandapi")
-        relocate("org.h2.Driver", "de.t14d3.zones.db.h2")
-        relocate("org.postgresql.Driver", "de.t14d3.zones.db.postgresql")
+        relocate("org.h2", "de.t14d3.zones.db.h2")
+        relocate("org.postgresql", "de.t14d3.zones.db.postgresql")
+
+        dependencies {
+            exclude(dependency("org.checkerframework:checker-qual"))
+        }
+    }
+    build {
+        dependsOn(shadowJar)
     }
     runServer {
         minecraftVersion("1.21.4")
