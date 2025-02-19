@@ -63,5 +63,38 @@ cache:
   # For reference, 10.000 cache entries will use ~0.8-1.0MB of memory
   limit: 0
 
+storage:
+  # Controls how the plugin should store regions
+  # Valid options are:
+  #   - MYSQL: MySql/MariaDB style Database - Requires you to provide connection details below
+  #   - SQLITE: SQLite file-storage
+  #   - YAML: Flatfile YAML storage
+  #   - H2: H2 Database
+  #   - POSTGRESQL: PostgreSQL Database
+  #   - CUSTOM: Custom Database connection - Requires you to provide connection string and driver class below
+  # Defaults to YAML
+  type: YAML
 
+  # Name of the table to use
+  table: regions
 
+  # Additional configuration for different storage types
+  mysql:
+    host: "localhost:3306"
+    database: "zones"
+    user: "root"
+    password: "CHANGEME"
+    options: "?serverTimezone=UTC&autoReconnect=true"
+
+  postgresql:
+    host: "localhost:5432"
+    database: "zones"
+    user: "root"
+    password: "CHANGEME"
+    options: "?serverTimezone=UTC&autoReconnect=true"
+
+  custom:
+    # Example: url: "jdbc:postgresql://localhost:5432/zones?serverTimezone=UTC&autoReconnect=true"
+    url: ""
+    # Example: driver: "org.postgresql.Driver"
+    driver: ""

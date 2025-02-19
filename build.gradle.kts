@@ -44,6 +44,9 @@ dependencies {
     compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit")
     implementation("dev.jorel:commandapi-bukkit-shade-mojang-mapped:9.7.0")
     compileOnly("org.slf4j:slf4j-api:2.1.0-alpha1")
+
+    implementation("com.h2database:h2:2.2.220")
+    implementation("org.postgresql:postgresql:42.7.5")
 }
 
 val targetJavaVersion = 21
@@ -87,6 +90,8 @@ tasks {
     shadowJar {
         archiveClassifier.set("")
         relocate("dev.jorel.commandapi", "de.t14d3.zones.commandapi")
+        relocate("org.h2.Driver", "de.t14d3.zones.db.h2")
+        relocate("org.postgresql.Driver", "de.t14d3.zones.db.postgresql")
     }
     runServer {
         minecraftVersion("1.21.4")

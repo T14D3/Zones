@@ -1,5 +1,6 @@
 package de.t14d3.zones;
 
+import de.t14d3.zones.datasource.DataSourceManager;
 import de.t14d3.zones.permissions.CacheUtils;
 import de.t14d3.zones.permissions.PermissionManager;
 import de.t14d3.zones.utils.Direction;
@@ -9,25 +10,19 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.util.BlockVector;
 import org.bukkit.util.BoundingBox;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 public class RegionManager {
 
     private final PermissionManager pm;
-    private final File regionsFile;
-    private final FileConfiguration regionsConfig;
+    private final DataSourceManager dataSourceManager;
     private final Zones plugin;
     private static RegionManager instance;
 
@@ -38,28 +33,15 @@ public class RegionManager {
     public RegionManager(Zones plugin, PermissionManager permissionManager) {
         this.pm = permissionManager;
         this.plugin = plugin;
+        this.dataSourceManager = new DataSourceManager(plugin);
+    }
 
-        regionsFile = new File(plugin.getDataFolder(), "regions.yml");
-
-        if (!regionsFile.exists()) {
-            regionsFile.getParentFile().mkdirs();
-            plugin.saveResource("regions.yml", false);
-        }
-
-        regionsConfig = YamlConfiguration.loadConfiguration(regionsFile);
-        instance = this;
+    public DataSourceManager getDataSourceManager() {
+        return dataSourceManager; // Add getter for DataSourceManager
     }
 
     public void saveRegions() {
-        regionsConfig.set("regions", null);
-        for (Int2ObjectOpenHashMap.Entry<Region> entry : loadedRegions.int2ObjectEntrySet()) {
-            saveRegion(RegionKey.fromInt(entry.getIntKey()), entry.getValue());
-        }
-        try {
-            regionsConfig.save(regionsFile);
-        } catch (IOException e) {
-            plugin.getLogger().severe("Failed to save regions.yml");
-        }
+        dataSourceManager.saveRegions(loadedRegions.values().stream().toList());
         CacheUtils.getInstance().invalidateInteractionCaches();
     }
 
@@ -82,40 +64,13 @@ public class RegionManager {
         loadedRegions.clear();
         worldRegions.clear();
         Bukkit.getWorlds().forEach(world -> worldRegions.put(world, new Int2ObjectOpenHashMap<>()));
-        if (regionsConfig.contains("regions")) {
-            for (String key : Objects.requireNonNull(regionsConfig.getConfigurationSection("regions")).getKeys(false)) {
-                try {
-                    Region region = loadRegion(key);
-                    loadedRegions.put(region.getKey().getValue(), region);
-                    worldRegions.get(region.getWorld()).put(region.getKey().getValue(), region);
-                    indexRegion(region); // Initialize chunk-region mapping
-                } catch (Exception e) {
-                    plugin.getLogger().severe("Failed to load region " + key);
-                    plugin.getLogger().info(e.getMessage());
-                }
-            }
-            CacheUtils.getInstance().invalidateInteractionCaches();
-        }
+        dataSourceManager.loadRegions();
     }
 
     public void loadRegions(World world) {
         worldRegions.computeIfAbsent(world, k -> new Int2ObjectOpenHashMap<>());
         worldRegions.get(world).clear();
-        if (regionsConfig.contains("regions")) {
-            String worldName = world.getName();
-            for (String key : Objects.requireNonNull(regionsConfig.getConfigurationSection("regions")).getKeys(false)) {
-                if (regionsConfig.getString("regions." + key + ".world").equalsIgnoreCase(worldName)) {
-                    try {
-                        Region region = loadRegion(key);
-                        loadedRegions.put(region.getKey().getValue(), region);
-                        indexRegion(region);
-                    } catch (Exception e) {
-                        plugin.getLogger().severe("Failed to load region " + key);
-                        plugin.getLogger().info(e.getMessage());
-                    }
-                }
-            }
-        }
+        dataSourceManager.loadRegions();
     }
 
     /**
@@ -131,63 +86,12 @@ public class RegionManager {
         return this.worldRegions.get(world);
     }
 
-    private static Map<String, Map<String, String>> loadMembers(@Nullable ConfigurationSection section) {
-        Map<String, Map<String, String>> members = new HashMap<>();
-        if (section == null) return members;
-        for (String who : section.getKeys(false)) {
-            Map<String, String> permissions = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-            for (String perm : section.getConfigurationSection(who).getKeys(false)) {
-                permissions.put(perm.toLowerCase(), section.getString(who + "." + perm).toLowerCase());
-            }
-            members.put(who, permissions);
-        }
-        return members;
-    }
+
 
     // Save a region to the YAML file
     public void saveRegion(RegionKey key, Region region) {
         String keyString = key.toString();
-        regionsConfig.set("regions." + keyString + ".name", region.getName());
-        regionsConfig.set("regions." + keyString + ".priority", region.getPriority());
-        regionsConfig.set("regions." + keyString + ".world", region.getWorld().getName());
-        regionsConfig.set("regions." + keyString + ".min.x", region.getMin().getBlockX());
-        regionsConfig.set("regions." + keyString + ".min.y", region.getMin().getBlockY());
-        regionsConfig.set("regions." + keyString + ".min.z", region.getMin().getBlockZ());
-        regionsConfig.set("regions." + keyString + ".max.x", region.getMax().getBlockX());
-        regionsConfig.set("regions." + keyString + ".max.y", region.getMax().getBlockY());
-        regionsConfig.set("regions." + keyString + ".max.z", region.getMax().getBlockZ());
-        if (region.getParent() != null) {
-            regionsConfig.set("regions." + keyString + ".parent", region.getParent().toString());
-        }
-        saveMembers(key, region.getMembers());
-    }
-
-    @SuppressWarnings("ConstantConditions")
-    private Region loadRegion(String key) {
-        return new Region(
-                regionsConfig.getString("regions." + key + ".name"),
-                new BlockVector(regionsConfig.getInt("regions." + key + ".min.x"),
-                        regionsConfig.getInt("regions." + key + ".min.y"),
-                        regionsConfig.getInt("regions." + key + ".min.z")),
-                new BlockVector(regionsConfig.getInt("regions." + key + ".max.x"),
-                        regionsConfig.getInt("regions." + key + ".max.y"),
-                        regionsConfig.getInt("regions." + key + ".max.z")),
-                Bukkit.getWorld(regionsConfig.getString("regions." + key + ".world")),
-                loadMembers(regionsConfig.getConfigurationSection("regions." + key + ".members")),
-                RegionKey.fromString(key),
-                regionsConfig.getString("regions." + key + ".parent") != null
-                        ? RegionKey.fromString(regionsConfig.getString("regions." + key + ".parent")) : null,
-                regionsConfig.getInt("regions." + key + ".priority")
-        );
-    }
-
-    private void saveMembers(RegionKey key, Map<String, Map<String, String>> members) {
-        for (Map.Entry<String, Map<String, String>> entry : members.entrySet()) {
-            String who = entry.getKey();
-            for (Map.Entry<String, String> perm : entry.getValue().entrySet()) {
-                regionsConfig.set("regions." + key + ".members." + who + "." + perm.getKey(), perm.getValue());
-            }
-        }
+        dataSourceManager.saveRegion(keyString, region);
     }
 
     /**
@@ -224,6 +128,8 @@ public class RegionManager {
         CacheUtils.getInstance().invalidateInteractionCaches();
         saveRegion(key, newRegion);
         loadedRegions.put(key.getValue(), newRegion);
+        worldRegions.computeIfAbsent(newRegion.getWorld(), k -> new Int2ObjectOpenHashMap<>())
+                .put(newRegion.getKey().getValue(), newRegion);
         indexRegion(newRegion); // Add the new region to the spatial index
         return newRegion;
     }
@@ -291,6 +197,8 @@ public class RegionManager {
         CacheUtils.getInstance().invalidateInteractionCaches();
         saveRegion(regionKey, newRegion);
         loadedRegions.put(regionKey.getValue(), newRegion);
+        worldRegions.computeIfAbsent(newRegion.getWorld(), k -> new Int2ObjectOpenHashMap<>())
+                .put(newRegion.getKey().getValue(), newRegion);
         indexRegion(newRegion); // Add the new region to the spatial index
         return newRegion;
     }
@@ -530,6 +438,8 @@ public class RegionManager {
      */
     public void addRegion(Region region) {
         loadedRegions.put(region.getKey().getValue(), region);
+        worldRegions.computeIfAbsent(region.getWorld(), k -> new Int2ObjectOpenHashMap<>())
+                .put(region.getKey().getValue(), region);
         indexRegion(region); // Ensure the region is indexed
     }
 

@@ -169,6 +169,7 @@ public final class Zones extends JavaPlugin {
         regionManager.saveRegions();
         regionManager.regions().clear();
         CommandAPI.onDisable();
+        regionManager.getDataSourceManager().close();
         getLogger().info("Zones plugin is disabling and regions are saved.");
     }
 

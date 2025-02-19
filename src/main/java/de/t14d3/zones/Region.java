@@ -65,7 +65,7 @@ public class Region {
      * @param priority The priority of the region.
      * @see #Region(String, Location, Location, Map, RegionKey, int)
      */
-    Region(@NotNull String name, @NotNull BlockVector min, @NotNull BlockVector max, @NotNull World world, Map<String, Map<String, String>> members, @NotNull RegionKey key, @Nullable RegionKey parent, int priority) {
+    public Region(@NotNull String name, @NotNull BlockVector min, @NotNull BlockVector max, @NotNull World world, Map<String, Map<String, String>> members, @NotNull RegionKey key, @Nullable RegionKey parent, int priority) {
         this.name = name;
         this.min = min;
         this.max = max;

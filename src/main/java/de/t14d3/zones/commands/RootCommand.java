@@ -24,6 +24,7 @@ public class RootCommand {
                 .withSubcommand(new LoadCommand(plugin).load)
                 .withSubcommand(new ImportCommand(plugin).importcmd)
                 .withSubcommand(new ModeCommand(plugin).mode)
+                .withSubcommand(new MigrateCommand(plugin).migrate)
                 .withSubcommand(new FindCommand(plugin).find)
                 .register(plugin);
     }
