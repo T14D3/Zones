@@ -15,7 +15,7 @@ public class DataSourceManager {
             case YAML:
                 this.currentDataSource = new YamlDataSource(plugin.getDataFolder(), plugin);
                 break;
-            case SQLITE, MYSQL:
+            case SQLITE, MYSQL, H2, POSTGRESQL, CUSTOM:
                 this.currentDataSource = new SQLDataSource(plugin, type);
                 break;
             default:
@@ -42,6 +42,9 @@ public class DataSourceManager {
     public enum DataSourceTypes {
         YAML,
         MYSQL,
-        SQLITE
+        SQLITE,
+        H2,
+        POSTGRESQL,
+        CUSTOM
     }
 }

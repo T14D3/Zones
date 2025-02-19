@@ -23,19 +23,83 @@ public class SQLDataSource extends AbstractDataSource {
     public SQLDataSource(Zones plugin, DataSourceManager.DataSourceTypes type) {
         super(plugin);
         this.plugin = plugin;
-        this.tableName = plugin.getConfig().getString("storage.mysql.table", "regions");
+        this.tableName = plugin.getConfig().getString("storage.table", "regions");
         switch (type) {
             case MYSQL -> {
-                String host = plugin.getConfig().getString("storage.mysql.host", "localhost:3306");
-                String database = plugin.getConfig().getString("storage.mysql.database", "zones");
-                String user = plugin.getConfig().getString("storage.mysql.user", "root");
-                String password = plugin.getConfig().getString("storage.mysql.password", "CHANGEME");
                 try {
+                    String host = plugin.getConfig().getString("storage.mysql.host", "localhost:3306");
+                    String database = plugin.getConfig().getString("storage.mysql.database", "zones");
+                    String user = plugin.getConfig().getString("storage.mysql.user", "root");
+                    String password = plugin.getConfig().getString("storage.mysql.password", "CHANGEME");
+                    String options = plugin.getConfig()
+                            .getString("storage.mysql.options", "?serverTimezone=UTC&autoReconnect=true");
                     Class.forName("com.mysql.cj.jdbc.Driver");
-                    String url = "jdbc:mysql://" + host + "/" + database + "?serverTimezone=UTC";
+                    String url = "jdbc:mysql://" + host + "/" + database + options;
                     this.connection = DriverManager.getConnection(url, user, password);
-
-                    String createTableSQL = "CREATE TABLE IF NOT EXISTS " + tableName + " (" +
+                } catch (Exception e) {
+                    plugin.getLogger().severe("Failed to initialize MySQL database! Error: " + e.getMessage());
+                    if (plugin.debug) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            case SQLITE -> {
+                try {
+                    Class.forName("org.sqlite.JDBC");
+                    this.connection = DriverManager.getConnection("jdbc:sqlite:plugins/Zones/regions.sqlite.db");
+                } catch (Exception e) {
+                    plugin.getLogger().severe("Failed to initialize SQLite database! Error: " + e.getMessage());
+                    if (plugin.debug) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            case H2 -> {
+                try {
+                    Class.forName("org.h2.Driver");
+                    this.connection = DriverManager.getConnection("jdbc:h2:file:plugins/Zones/regions.h2.db");
+                } catch (Exception e) {
+                    plugin.getLogger().severe("Failed to initialize H2 database! Error: " + e.getMessage());
+                    if (plugin.debug) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            case POSTGRESQL -> {
+                try {
+                    String host = plugin.getConfig().getString("storage.postgresql.host", "localhost:5432");
+                    String database = plugin.getConfig().getString("storage.postgresql.database", "zones");
+                    String user = plugin.getConfig().getString("storage.postgresql.user", "root");
+                    String password = plugin.getConfig().getString("storage.postgresql.password", "CHANGEME");
+                    String options = plugin.getConfig()
+                            .getString("storage.postgresql.options", "?serverTimezone=UTC&autoReconnect=true");
+                    Class.forName("org.postgresql.Driver");
+                    String url = "jdbc:postgresql://" + host + "/" + database + options;
+                    this.connection = DriverManager.getConnection(url, user, password);
+                } catch (Exception e) {
+                    plugin.getLogger().severe("Failed to initialize PostgreSQL database! Error: " + e.getMessage());
+                    if (plugin.debug) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            case CUSTOM -> {
+                try {
+                    String url = plugin.getConfig().getString("storage.custom.url");
+                    String driver = plugin.getConfig().getString("storage.custom.driver");
+                    Class.forName(driver);
+                    this.connection = DriverManager.getConnection(url);
+                } catch (Exception e) {
+                    plugin.getLogger().severe("Failed to initialize custom database! Error: " + e.getMessage());
+                    if (plugin.debug) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+        try {
+            String createTableSQL =
+                    "CREATE TABLE IF NOT EXISTS " + tableName + " (" +
                             "key INT PRIMARY KEY, " +
                             "name VARCHAR(255), " +
                             "minX INT, " +
@@ -49,41 +113,11 @@ public class SQLDataSource extends AbstractDataSource {
                             "parent INT, " +
                             "priority INT" +
                             ")";
-                    connection.prepareStatement(createTableSQL).execute();
-                } catch (Exception e) {
-                    plugin.getLogger().severe("Failed to initialize MySQL database! Error: " + e.getMessage());
-                    if (plugin.debug) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-            case SQLITE -> {
-                try {
-                    Class.forName("org.sqlite.JDBC");
-                    this.connection = DriverManager.getConnection("jdbc:sqlite:plugins/Zones/regions.db");
-
-                    String createTableSQL =
-                            "CREATE TABLE IF NOT EXISTS regions (" +
-                                    "key INTEGER PRIMARY KEY, " +
-                                    "name TEXT, " +
-                                    "minX INTEGER, " +
-                                    "minY INTEGER, " +
-                                    "minZ INTEGER, " +
-                                    "maxX INTEGER, " +
-                                    "maxY INTEGER, " +
-                                    "maxZ INTEGER, " +
-                                    "world TEXT, " +
-                                    "members TEXT, " +
-                                    "parent INTEGER, " +
-                                    "priority INTEGER" +
-                                    ")";
-                    connection.prepareStatement(createTableSQL).execute();
-                } catch (Exception e) {
-                    plugin.getLogger().severe("Failed to initialize SQLite database! Error: " + e.getMessage());
-                    if (plugin.debug) {
-                        e.printStackTrace();
-                    }
-                }
+            connection.prepareStatement(createTableSQL).execute();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Failed to create table! Error: " + e.getMessage());
+            if (plugin.debug) {
+                e.printStackTrace();
             }
         }
     }
