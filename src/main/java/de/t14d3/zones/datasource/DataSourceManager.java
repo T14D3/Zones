@@ -23,6 +23,10 @@ public class DataSourceManager {
         }
     }
 
+    public void close() {
+        currentDataSource.close();
+    }
+
     public List<Region> loadRegions() {
         return currentDataSource.loadRegions();
     }

@@ -17,4 +17,8 @@ public abstract class AbstractDataSource {
     public abstract Region loadRegion(String key);
 
     public abstract void saveRegion(String key, Region region);
+
+    public void close() {
+
+    }
 }

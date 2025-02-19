@@ -19,10 +19,12 @@ public class SQLDataSource extends AbstractDataSource {
     private final Zones plugin;
     private final Gson gson = new Gson();
     private final String tableName;
+    private final DataSourceManager.DataSourceTypes dbType;
 
     public SQLDataSource(Zones plugin, DataSourceManager.DataSourceTypes type) {
         super(plugin);
         this.plugin = plugin;
+        this.dbType = type;
         this.tableName = plugin.getConfig().getString("storage.table", "regions");
         switch (type) {
             case MYSQL -> {
@@ -46,7 +48,7 @@ public class SQLDataSource extends AbstractDataSource {
             case SQLITE -> {
                 try {
                     Class.forName("org.sqlite.JDBC");
-                    this.connection = DriverManager.getConnection("jdbc:sqlite:plugins/Zones/regions.sqlite.db");
+                    this.connection = DriverManager.getConnection("jdbc:sqlite:./plugins/Zones/regions.sqlite.db");
                 } catch (Exception e) {
                     plugin.getLogger().severe("Failed to initialize SQLite database! Error: " + e.getMessage());
                     if (plugin.debug) {
@@ -57,7 +59,7 @@ public class SQLDataSource extends AbstractDataSource {
             case H2 -> {
                 try {
                     Class.forName("org.h2.Driver");
-                    this.connection = DriverManager.getConnection("jdbc:h2:file:plugins/Zones/regions.h2.db");
+                    this.connection = DriverManager.getConnection("jdbc:h2:file:./plugins/Zones/regions.h2");
                 } catch (Exception e) {
                     plugin.getLogger().severe("Failed to initialize H2 database! Error: " + e.getMessage());
                     if (plugin.debug) {
@@ -100,7 +102,7 @@ public class SQLDataSource extends AbstractDataSource {
         try {
             String createTableSQL =
                     "CREATE TABLE IF NOT EXISTS " + tableName + " (" +
-                            "key INT PRIMARY KEY, " +
+                            "\"key\" INT PRIMARY KEY, " +
                             "name VARCHAR(255), " +
                             "minX INT, " +
                             "minY INT, " +
@@ -119,6 +121,44 @@ public class SQLDataSource extends AbstractDataSource {
             if (plugin.debug) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    @Override
+    public void close() {
+        try {
+            this.connection.close();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Error closing the database connection: " + e.getMessage());
+            if (plugin.debug) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private String buildUpsertSQL() {
+        String columns = "(\"key\", name, minX, minY, minZ, maxX, maxY, maxZ, world, members, parent, priority)";
+        String values = "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String updates;
+        switch (dbType) {
+            case MYSQL:
+                updates = "name=VALUES(name), minX=VALUES(minX), minY=VALUES(minY), minZ=VALUES(minZ), " +
+                        "maxX=VALUES(maxX), maxY=VALUES(maxY), maxZ=VALUES(maxZ), world=VALUES(world), " +
+                        "members=VALUES(members), parent=VALUES(parent), priority=VALUES(priority)";
+                return String.format("INSERT INTO %s %s %s ON DUPLICATE KEY UPDATE %s",
+                        tableName, columns, values, updates);
+            case SQLITE:
+                return String.format("INSERT OR REPLACE INTO %s %s %s", tableName, columns, values);
+            case POSTGRESQL:
+                updates = "name=EXCLUDED.name, minX=EXCLUDED.minX, minY=EXCLUDED.minY, " +
+                        "minZ=EXCLUDED.minZ, maxX=EXCLUDED.maxX, maxY=EXCLUDED.maxY, maxZ=EXCLUDED.maxZ, " +
+                        "world=EXCLUDED.world, members=EXCLUDED.members, parent=EXCLUDED.parent, priority=EXCLUDED.priority";
+                return String.format("INSERT INTO %s %s %s ON CONFLICT (key) DO UPDATE SET %s",
+                        tableName, columns, values, updates);
+            case H2:
+                return String.format("MERGE INTO %s %s %s", tableName, columns, values);
+            default:
+                throw new IllegalArgumentException("Unsupported database type: " + dbType);
         }
     }
 
@@ -171,7 +211,7 @@ public class SQLDataSource extends AbstractDataSource {
 
     @Override
     public void saveRegions(List<Region> regions) {
-        String sql = "INSERT OR REPLACE INTO " + tableName + " VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
+        String sql = buildUpsertSQL();
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             for (Region region : regions) {
                 stmt.setInt(1, region.getKey().getValue());
@@ -219,7 +259,7 @@ public class SQLDataSource extends AbstractDataSource {
 
     @Override
     public void saveRegion(String key, Region region) {
-        String sql = "INSERT OR REPLACE INTO " + tableName + " VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
+        String sql = buildUpsertSQL();
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setInt(1, RegionKey.fromString(key).getValue());
             stmt.setString(2, region.getName());

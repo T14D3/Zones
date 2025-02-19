@@ -44,6 +44,8 @@ dependencies {
     compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit")
     implementation("dev.jorel:commandapi-bukkit-shade-mojang-mapped:9.7.0")
     compileOnly("org.slf4j:slf4j-api:2.1.0-alpha1")
+
+    implementation("com.h2database:h2:2.2.220")
 }
 
 val targetJavaVersion = 21

@@ -11,6 +11,7 @@ import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import dev.jorel.commandapi.arguments.StringArgument;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 public class MigrateCommand {
     private Zones plugin;
@@ -23,7 +24,9 @@ public class MigrateCommand {
             .withPermission("zones.migrate")
             .withArguments(
                     new StringArgument("targetType")
-                            .replaceSuggestions(ArgumentSuggestions.strings("YAML", "SQLITE", "MYSQL")))
+                            .replaceSuggestions(ArgumentSuggestions.strings(info ->
+                                    Stream.of(DataSourceManager.DataSourceTypes.values()).map(
+                                            DataSourceManager.DataSourceTypes::name).toArray(String[]::new))))
             .executes((sender, args) -> {
                 DataSourceManager.DataSourceTypes targetType = DataSourceManager.DataSourceTypes.valueOf(
                         args.getRaw("targetType").toUpperCase());
@@ -38,7 +41,7 @@ public class MigrateCommand {
                     case YAML:
                         targetDataSource = new YamlDataSource(plugin.getDataFolder(), plugin);
                         break;
-                    case SQLITE, MYSQL:
+                    case SQLITE, MYSQL, H2, POSTGRESQL, CUSTOM:
                         targetDataSource = new SQLDataSource(plugin, targetType);
                         break;
                     default:
