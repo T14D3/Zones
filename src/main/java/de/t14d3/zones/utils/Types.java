@@ -1,5 +1,6 @@
 package de.t14d3.zones.utils;
 
+import de.t14d3.zones.Zones;
 import de.t14d3.zones.permissions.flags.Flag;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
@@ -12,7 +13,10 @@ import org.bukkit.entity.EntityType;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Utility class for types.
@@ -20,98 +24,16 @@ import java.util.List;
  * Contains lists for blocks and entities for their respective {@link Flag} type.
  */
 public class Types {
-
-
     static List<String> allTypes = new ArrayList<>();
     static List<String> blockTypes = new ArrayList<>();
     static List<String> entityTypes = new ArrayList<>();
     static List<String> containerTypes = new ArrayList<>();
     static List<String> redstoneTypes = new ArrayList<>();
     static List<String> damageTypes = new ArrayList<>();
+    private final Zones plugin;
 
-
-    /**
-     * Populates the type lists.
-     * Called on plugin enable,
-     * should not be called again.
-     */
-    @SuppressWarnings("UnstableApiUsage")
-    @ApiStatus.Internal
-    public static void populateTypes() {
-        for (Material material : Material.values()) {
-            if (material.isBlock() && !material.name().startsWith("LEGACY_")) {
-                allTypes.add(material.name().toLowerCase());
-                allTypes.add("!" + material.name().toLowerCase());
-            }
-        }
-        for (EntityType entityType : EntityType.values()) {
-            if (entityType.name().startsWith("LEGACY_")) {
-                continue;
-            }
-            allTypes.add(entityType.name().toLowerCase());
-            allTypes.add("!" + entityType.name().toLowerCase());
-        }
-        allTypes.addAll(List.of("owner", "admin", "true", "false"));
-
-        // Populate blockTypes
-        for (Material material : Material.values()) {
-            if (material.isBlock() && !material.name().startsWith("LEGACY_")) {
-                blockTypes.add(material.name().toLowerCase());
-                blockTypes.add("!" + material.name().toLowerCase());
-            }
-        }
-        blockTypes.addAll(List.of("owner", "admin", "true", "false"));
-
-        // Populate entityTypes
-        for (EntityType entityType : EntityType.values()) {
-            if (entityType.name().startsWith("LEGACY_")) {
-                continue;
-            }
-            entityTypes.add(entityType.name().toLowerCase());
-            entityTypes.add("!" + entityType.name().toLowerCase());
-        }
-        entityTypes.addAll(List.of("owner", "admin", "true", "false"));
-
-        // Populate containerTypes
-        for (Material material : Material.values()) {
-            if (material.isBlock() && !material.name().startsWith("LEGACY_")) {
-                BlockState state;
-                try {
-                    state = material.createBlockData().createBlockState();
-                } catch (Exception ignored) {
-                    continue;
-                }
-                if (state instanceof Container) {
-                    containerTypes.add(material.name().toLowerCase());
-                    containerTypes.add("!" + material.name().toLowerCase());
-                }
-            }
-        }
-        containerTypes.addAll(List.of("owner", "admin", "true", "false"));
-
-        // Populate redstoneTypes
-        for (Material material : Material.values()) {
-            if (material.isBlock() && !material.name().startsWith("LEGACY_")) {
-                BlockData data;
-                try {
-                    data = material.createBlockData();
-                } catch (Exception ignored) {
-                    continue;
-                }
-                if (data instanceof Powerable) {
-                    redstoneTypes.add(material.name().toLowerCase());
-                    redstoneTypes.add("!" + material.name().toLowerCase());
-                }
-            }
-        }
-        redstoneTypes.addAll(List.of("owner", "admin", "true", "false"));
-
-        // Populate damageTypes
-        RegistryAccess.registryAccess().getRegistry(RegistryKey.DAMAGE_TYPE).forEach(damageType -> {
-            damageTypes.add(damageType.getTranslationKey().toLowerCase());
-            damageTypes.add("!" + damageType.getTranslationKey().toLowerCase());
-        });
-        damageTypes.addAll(List.of("owner", "admin", "true", "false"));
+    public Types(Zones plugin) {
+        this.plugin = plugin;
     }
 
     public static List<String> all() {
@@ -136,6 +58,82 @@ public class Types {
 
     public static List<String> damage() {
         return damageTypes;
+    }
+
+    /**
+     * Populates the type lists.
+     * Called on plugin enable,
+     * should not be called again.
+     */
+    @SuppressWarnings("UnstableApiUsage")
+    @ApiStatus.Internal
+    public void populateTypes() {
+        plugin.getLogger()
+                .info("Populating Block- and EntityTypes - may take a couple of seconds and will trigger a CraftLegacy warning");
+
+        blockTypes = Arrays.stream(Material.values())
+                .parallel()
+                .filter(material -> !material.isLegacy() && material.isBlock())
+                .flatMap(material -> Stream.of(material.name().toLowerCase(), "!" + material.name().toLowerCase()))
+                .collect(Collectors.toList());
+
+        entityTypes = Arrays.stream(EntityType.values())
+                .parallel()
+                .flatMap(
+                        entityType -> Stream.of(entityType.name().toLowerCase(),
+                                "!" + entityType.name().toLowerCase()))
+                .collect(Collectors.toList());
+
+        allTypes = new ArrayList<>();
+        allTypes.addAll(blockTypes);
+        allTypes.addAll(entityTypes);
+
+        allTypes.addAll(List.of("owner", "admin", "true", "false"));
+        blockTypes.addAll(List.of("owner", "admin", "true", "false"));
+        entityTypes.addAll(List.of("owner", "admin", "true", "false"));
+
+
+        new Thread(() -> {
+            containerTypes = Arrays.stream(Material.values())
+                    .parallel()
+                    .filter(material -> material.isBlock() && !material.isLegacy())
+                    .flatMap(material -> {
+                        try {
+                            BlockData data = material.createBlockData();
+                            BlockState state = data.createBlockState();
+                            return (state instanceof Container) ? Stream.of(material) : Stream.empty();
+                        } catch (Exception e) {
+                            return Stream.empty();
+                        }
+                    })
+                    .flatMap(material -> Stream.of(material.name().toLowerCase(), "!" + material.name().toLowerCase()))
+                    .collect(Collectors.toList());
+            containerTypes.addAll(List.of("owner", "admin", "true", "false"));
+
+            redstoneTypes = Arrays.stream(Material.values())
+                    .parallel()
+                    .filter(material -> material.isBlock() && !material.isLegacy())
+                    .flatMap(material -> {
+                        try {
+                            BlockData data = material.createBlockData();
+                            return (data instanceof Powerable) ? Stream.of(material) : Stream.empty();
+                        } catch (Exception e) {
+                            return Stream.empty();
+                        }
+                    })
+                    .flatMap(material -> Stream.of(material.name().toLowerCase(), "!" + material.name().toLowerCase()))
+                    .collect(Collectors.toList());
+            redstoneTypes.addAll(List.of("owner", "admin", "true", "false"));
+        }).start();
+
+        damageTypes = RegistryAccess.registryAccess().getRegistry(RegistryKey.DAMAGE_TYPE).stream()
+                .parallel()
+                .flatMap(damageType -> Stream.of(
+                        damageType.getTranslationKey().toLowerCase(),
+                        "!" + damageType.getTranslationKey().toLowerCase()
+                ))
+                .collect(Collectors.toList());
+        damageTypes.addAll(List.of("owner", "admin", "true", "false"));
     }
 
 }

@@ -9,10 +9,7 @@ import de.t14d3.zones.listeners.*;
 import de.t14d3.zones.permissions.CacheUtils;
 import de.t14d3.zones.permissions.PermissionManager;
 import de.t14d3.zones.permissions.flags.Flags;
-import de.t14d3.zones.utils.DebugLoggerManager;
-import de.t14d3.zones.utils.Messages;
-import de.t14d3.zones.utils.Types;
-import de.t14d3.zones.utils.Utils;
+import de.t14d3.zones.utils.*;
 import de.t14d3.zones.visuals.BeaconUtils;
 import de.t14d3.zones.visuals.FindBossbar;
 import de.t14d3.zones.visuals.ParticleHandler;
@@ -68,6 +65,8 @@ public final class Zones extends JavaPlugin {
                 .silentLogs(!debug)
                 .usePluginNamespace()
         );
+        types = new Types(this);
+        types.populateTypes();
     }
 
     @Override
@@ -122,8 +121,6 @@ public final class Zones extends JavaPlugin {
         BlockEventListener blockEventListener = new BlockEventListener(this);
 
         // Populate Types
-        types = new Types();
-        Types.populateTypes();
 
         // Register mode permissions
         for (Utils.Modes mode : Utils.Modes.values()) {
@@ -159,6 +156,9 @@ public final class Zones extends JavaPlugin {
         this.flags = new Flags();
 
         RootCommand rootCommand = new RootCommand(this);
+
+        // Config update
+        new ConfigUpdater(this);
 
         getLogger().info("Zones plugin has been enabled! Loaded " + regionManager.regions().size() + " regions.");
     }

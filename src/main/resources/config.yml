@@ -1,3 +1,5 @@
+config-version: 2 # Don't change if you don't want the plugin to screw up your config
+
 selection-particles:
   enabled: true
   # Available particles: https://jd.papermc.io/paper/1.21.4/org/bukkit/Particle.html
