@@ -5,15 +5,21 @@ import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.Zones;
 import de.t14d3.zones.utils.Messages;
+import dev.jorel.commandapi.BukkitTooltip;
 import dev.jorel.commandapi.CommandAPICommand;
+import dev.jorel.commandapi.StringTooltip;
+import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import dev.jorel.commandapi.arguments.StringArgument;
 import it.unimi.dsi.fastutil.Pair;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import static de.t14d3.zones.visuals.BeaconUtils.resetBeacon;
 
@@ -31,7 +37,29 @@ public class SubCreateCommand {
 
     public CommandAPICommand subcreate = new CommandAPICommand("subcreate")
             .withPermission("zones.subcreate")
-            .withOptionalArguments(new StringArgument("key"))
+            .withOptionalArguments(new StringArgument("key")
+                    .replaceSuggestions(ArgumentSuggestions.stringsWithTooltipsAsync(info -> {
+                        return CompletableFuture.supplyAsync(() -> {
+                            List<Region> regions = new ArrayList<>();
+                            if (info.sender().hasPermission("zones.subcreate.other")) {
+                                regions.addAll(regionManager.regions().values());
+                            } else if (info.sender() instanceof Player player) {
+                                for (Region region : regionManager.regions().values()) {
+                                    if (region.isMember(player.getUniqueId())) {
+                                        regions.add(region);
+                                    }
+                                }
+                            }
+                            StringTooltip[] suggestions = new StringTooltip[regions.size()];
+                            int i = 0;
+                            for (Region region : regions) {
+                                suggestions[i++] = StringTooltip.ofMessage(region.getKey().toString(),
+                                        BukkitTooltip.messageFromAdventureComponent(
+                                                Messages.regionInfo(region, false)));
+                            }
+                            return suggestions;
+                        });
+                    })))
             .executes((sender, args) -> {
                 if (sender instanceof Player player) {
                     if (!plugin.selection.containsKey(player.getUniqueId())) {

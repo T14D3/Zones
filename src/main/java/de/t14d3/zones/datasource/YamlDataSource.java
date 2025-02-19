@@ -91,8 +91,23 @@ public class YamlDataSource extends AbstractDataSource {
 
     @Override
     public void saveRegion(String key, Region region) {
-        // Logic to save a Region object to YAML data
         regionsConfig.set("regions." + key + ".name", region.getName());
-        // Add other properties similarly
+        regionsConfig.set("regions." + key + ".priority", region.getPriority());
+        regionsConfig.set("regions." + key + ".world", region.getWorld().getName());
+        regionsConfig.set("regions." + key + ".min.x", region.getMin().getBlockX());
+        regionsConfig.set("regions." + key + ".min.y", region.getMin().getBlockY());
+        regionsConfig.set("regions." + key + ".min.z", region.getMin().getBlockZ());
+        regionsConfig.set("regions." + key + ".max.x", region.getMax().getBlockX());
+        regionsConfig.set("regions." + key + ".max.y", region.getMax().getBlockY());
+        regionsConfig.set("regions." + key + ".max.z", region.getMax().getBlockZ());
+        if (region.getParent() != null) {
+            regionsConfig.set("regions." + key + ".parent", region.getParent().toString());
+        }
+        for (Map.Entry<String, Map<String, String>> entry : region.getMembers().entrySet()) {
+            String who = entry.getKey();
+            for (Map.Entry<String, String> perm : entry.getValue().entrySet()) {
+                regionsConfig.set("regions." + key + ".members." + who + "." + perm.getKey(), perm.getValue());
+            }
+        }
     }
 }

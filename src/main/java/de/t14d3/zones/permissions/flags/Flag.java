@@ -39,6 +39,10 @@ public class Flag implements IFlagHandler {
         return this.customHandler.getDefaultValue();
     }
 
+    public boolean getDefaultValue(Object... optional) {
+        return this.customHandler.getDefaultValue(optional);
+    }
+
     public String getDescription() {
         return description;
     }

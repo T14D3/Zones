@@ -14,9 +14,7 @@ public class DefaultFlagHandler implements IFlagHandler {
 
     @Override
     public boolean getDefaultValue(Object... optional) {
-        if (optional.length == 0) {
-            return this.defaultValue;
-        } else return optional[0].toString().equalsIgnoreCase("+universal");
+        return this.defaultValue;
     }
 
     @Override

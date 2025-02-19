@@ -16,6 +16,7 @@ import dev.jorel.commandapi.arguments.ListArgumentBuilder;
 import dev.jorel.commandapi.arguments.StringArgument;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.util.*;
@@ -125,19 +126,34 @@ public class SetCommand {
             .executes((sender, args) -> {
                 RegionKey regionKey = RegionKey.fromString((String) args.get("key"));
                 Region region = regionManager.regions().get(regionKey.getValue());
-                if (sender instanceof Player player && region.isOwner(player.getUniqueId())) {
+                if (sender.hasPermission("zones.set.other") || (sender instanceof Player player && region.isOwner(
+                        player.getUniqueId()))) {
                     StringBuilder builder = new StringBuilder();
                     List<String> values = (List<String>) args.get("values");
                     for (String value : values) {
                         builder.append(value).append(",");
                     }
-                    regionManager.addMemberPermission((String) args.get("target"), (String) args.get("flag"),
+                    String display = args.getRaw("target");
+                    String target;
+                    if (display.startsWith("+")) {
+                        target = display;
+                    } else {
+                        try {
+                            target = Bukkit.getOfflinePlayerIfCached(display).getUniqueId().toString();
+                        } catch (Exception e) {
+                            sender.sendMessage(mm.deserialize(messages.get("commands.invalid-player")));
+                            return;
+                        }
+                    }
+                    regionManager.addMemberPermission(target, (String) args.get("flag"),
                             builder.toString(), regionKey);
                     sender.sendMessage(mm.deserialize(messages.get("commands.set.success"),
                             parsed("region", regionKey.toString()),
-                            parsed("target", (String) args.get("target")),
+                            parsed("target", display),
                             parsed("permission", (String) args.get("flag")),
                             parsed("value", builder.toString())));
+                } else {
+                    sender.sendMessage(mm.deserialize(messages.get("commands.invalid-region")));
                 }
             });
 

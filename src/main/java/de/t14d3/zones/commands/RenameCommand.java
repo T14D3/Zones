@@ -38,11 +38,11 @@ public class RenameCommand {
                             .replaceSuggestions(ArgumentSuggestions.stringsWithTooltipsAsync(info -> {
                                 return CompletableFuture.supplyAsync(() -> {
                                     List<Region> regions = new ArrayList<>();
-                                    if (info.sender().hasPermission("zones.info.other")) {
+                                    if (info.sender().hasPermission("zones.rename.other")) {
                                         regions.addAll(regionManager.regions().values());
                                     } else if (info.sender() instanceof Player player) {
                                         for (Region region : regionManager.regions().values()) {
-                                            if (region.isMember(player.getUniqueId())) {
+                                            if (region.isAdmin(player.getUniqueId())) {
                                                 regions.add(region);
                                             }
                                         }

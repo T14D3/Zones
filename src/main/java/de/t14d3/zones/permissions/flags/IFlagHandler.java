@@ -17,15 +17,13 @@ public interface IFlagHandler {
     String UNIVERSAL = "universal";
     CacheUtils cacheUtils = CacheUtils.getInstance();
     FlagTypes flagType = FlagTypes.OTHER;
-    List<String> validValues = null;
-    boolean defaultValue = true;
 
     default List<String> getValidValues() {
-        return validValues;
+        return List.of();
     }
 
     default boolean getDefaultValue(Object... optional) {
-        return defaultValue;
+        return true;
     }
 
     default Result evaluate(Region region, String permission, String type, Object... optionals) {

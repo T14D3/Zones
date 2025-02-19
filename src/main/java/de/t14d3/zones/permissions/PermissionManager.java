@@ -99,7 +99,7 @@ public class PermissionManager {
                 cacheUtils.interactionCache.computeIfAbsent(who, k -> new ConcurrentLinkedQueue<>())
                         .add(new CacheEntry(location, action.name(), type, result));
             }
-            debugLogger.log(DebugLoggerManager.CACHE_MISS_ACTION, action.name(), who, location, type);
+            debugLogger.log(DebugLoggerManager.CACHE_MISS_ACTION, action.name(), who, location, type, result);
             return result.equals(Result.TRUE);
 
         } else {
