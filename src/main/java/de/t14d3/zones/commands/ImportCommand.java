@@ -38,18 +38,18 @@ public class ImportCommand {
                                                     Component.text("Imports regions from WorldGuard")));
                                     return suggestions;
                                 });
-                            }))
-                            .executes((sender, args) -> {
-                                if (args.getRaw("source").equalsIgnoreCase("worldguard")) {
-                                    if (plugin.getServer().getPluginManager().getPlugin("WorldGuard") == null) {
-                                        sender.sendMessage(mm.deserialize(messages.get("commands.import.not-loaded"),
-                                                parsed("plugin", "WorldGuard")));
-                                        return;
-                                    }
-                                    WorldGuardImporter worldGuardImporter = new WorldGuardImporter(plugin);
-                                    worldGuardImporter.importRegions();
-                                    sender.sendMessage(mm.deserialize(messages.get("commands.import.success")));
-                                }
-                            })
+                            })))
+            .executes((sender, args) -> {
+                        if (args.getRaw("source").equalsIgnoreCase("worldguard")) {
+                            if (plugin.getServer().getPluginManager().getPlugin("WorldGuard") == null) {
+                                sender.sendMessage(mm.deserialize(messages.get("commands.import.not-loaded"),
+                                        parsed("plugin", "WorldGuard")));
+                                return;
+                            }
+                            WorldGuardImporter worldGuardImporter = new WorldGuardImporter(plugin);
+                            worldGuardImporter.importRegions();
+                            sender.sendMessage(mm.deserialize(messages.get("commands.import.success")));
+                        }
+                    }
             );
 }

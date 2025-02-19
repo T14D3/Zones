@@ -66,6 +66,9 @@ permissions:
   zones.import:
     description: Allow players to use the import function
     default: op
+  zones.migrate:
+    description: Allows migrating between different storage types
+    default: op
 
   zones.info.other:
     description: Allow players to view other player's regions
