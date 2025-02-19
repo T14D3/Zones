@@ -12,6 +12,7 @@ on:
     types: [ released ]
     tags-ignore:
       - 'latest-dev'
+  workflow_dispatch:
 
 jobs:
   build:

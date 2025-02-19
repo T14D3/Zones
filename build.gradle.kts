@@ -122,7 +122,6 @@ publishing {
             groupId = group.toString().lowercase()
             version = version.toString()
             from(components["java"])
-            artifact(tasks.shadowJar.get().outputs.files.singleFile)
         }
     }
 }
