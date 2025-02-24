@@ -1,9 +1,13 @@
 package de.t14d3.zones.utils;
 
 import de.t14d3.zones.Zones;
+import org.spongepowered.configurate.ConfigurationNode;
+import org.spongepowered.configurate.serialize.SerializationException;
+import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
 
 public class ConfigUpdater {
     private final Zones plugin;
@@ -14,20 +18,39 @@ public class ConfigUpdater {
     }
 
     private void update() {
-        ConfigManager config = plugin.getConfig();
+        ConfigManager configManager = new ConfigManager(plugin);
+        ConfigurationNode defaultConfig = loadDefaultConfig();
+        ConfigurationNode currentConfig = configManager.getConfig();
 
-        InputStream defConfigStream = config.getDefaultConfig();
-
-        Map<String, Object> defaultConfig = new ConfigManager(plugin).getConfigData();
-        if (config.getInt("config-version", 0) == (int) defaultConfig.get("config-version")) {
-            plugin.getLogger().info("Config is up to date!");
+        if (defaultConfig == null || currentConfig == null) {
+            plugin.getLogger().error("Cannot update config: default or current config is null.");
             return;
         }
-        plugin.getLogger().info("Updating config...");
-        for (Map.Entry<String, Object> entry : defaultConfig.entrySet()) {
-            config.set(entry.getKey(), entry.getValue());
-        }
 
-        plugin.getConfig().saveConfig();
+        for (Object key : defaultConfig.childrenMap().keySet()) {
+            ConfigurationNode currentNode = currentConfig.node(key);
+            if (!currentNode.virtual()) {
+                continue; // Skip if the current node is not virtual
+            }
+            try {
+                currentNode.set(defaultConfig.node(key).get(Object.class));
+                plugin.getLogger().info("Setting missing config key: " + key);
+            } catch (SerializationException e) {
+                plugin.getLogger().error("Failed to serialize key " + key + ": " + e.getMessage());
+            }
+        }
+        configManager.saveConfig();
+    }
+
+    private ConfigurationNode loadDefaultConfig() {
+        try (InputStream inputStream = plugin.getClass().getResourceAsStream("/config.yml")) {
+            return YamlConfigurationLoader.builder()
+                    .path(new File("plugins/Zones/config.yml").toPath())
+                    .build()
+                    .load();
+        } catch (IOException e) {
+            plugin.getLogger().error("Failed to load default config: " + e.getMessage());
+            return null;
+        }
     }
 }

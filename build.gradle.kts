@@ -68,9 +68,6 @@ tasks.processResources {
     filesMatching("plugin.yml") {
         expand(props)
     }
-    filesMatching("paper-plugin.yml") {
-        expand(props)
-    }
 }
 
 tasks {
@@ -82,6 +79,9 @@ tasks {
 
         dependencies {
             exclude(dependency("org.checkerframework:checker-qual"))
+        }
+        manifest {
+            attributes["paperweight-mappings-namespace"] = "mojang"
         }
     }
     build {

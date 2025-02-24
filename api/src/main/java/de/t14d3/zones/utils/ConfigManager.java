@@ -1,15 +1,18 @@
 package de.t14d3.zones.utils;
 
 import de.t14d3.zones.Zones;
-import org.yaml.snakeyaml.Yaml;
+import org.spongepowered.configurate.ConfigurationNode;
+import org.spongepowered.configurate.serialize.SerializationException;
+import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
-import java.io.*;
-import java.util.Map;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class ConfigManager {
     private final Zones plugin;
-    private final Yaml yaml;
-    private Map<String, Object> configData;
+    private ConfigurationNode configData;
+    private final YamlConfigurationLoader loader;
     private File configFile = new File("plugins/Zones/config.yml");
 
     public ConfigManager(Zones plugin) {
@@ -18,80 +21,71 @@ public class ConfigManager {
 
     public ConfigManager(Zones plugin, File configFile) {
         this.plugin = plugin;
-        this.yaml = new Yaml();
-        this.configFile = configFile;
+        this.loader = YamlConfigurationLoader.builder()
+                .path(configFile.toPath())
+                .build();
         loadConfig();
     }
 
     private void loadConfig() {
-        try (FileInputStream inputStream = new FileInputStream(configFile)) {
-            configData = yaml.load(inputStream);
-        } catch (FileNotFoundException e) {
-            configFile.getParentFile().mkdirs();
-            try {
-                //noinspection ResultOfMethodCallIgnored
-                configFile.createNewFile();
-            } catch (IOException io1) {
-                plugin.getLogger().error("Failed to create config.yml: " + io1.getMessage());
-            }
-            try (FileWriter writer = new FileWriter(configFile)) {
-                yaml.dump(Thread.currentThread().getContextClassLoader().getResourceAsStream("config.yml"), writer);
-            } catch (IOException io2) {
-                plugin.getLogger().error("Failed to save config.yml: " + io2.getMessage());
-            }
+        try {
+            configData = loader.load();
         } catch (IOException e) {
             plugin.getLogger().error("Failed to load config.yml: " + e.getMessage());
         }
     }
 
     public void saveConfig() {
-        try (FileWriter writer = new FileWriter(configFile)) {
-            yaml.dump(configData, writer);
+        try {
+            loader.save(configData);
         } catch (IOException e) {
             plugin.getLogger().error("Failed to save config.yml: " + e.getMessage());
         }
     }
 
+    public InputStream getDefaultConfig() {
+        try {
+            return plugin.getClass().getResourceAsStream("/config.yml");
+        } catch (Exception e) {
+            plugin.getLogger().error("Failed to load default config: " + e.getMessage());
+            return null;
+        }
+    }
+
     public Object get(String path) {
-        return configData.get(path);
+        return configData.node(path).getString();
     }
 
     public int getInt(String path) {
-        return (int) get(path);
-    }
-
-    public String getString(String path) {
-        return (String) get(path);
-    }
-
-    public void set(String path, Object value) {
-        configData.put(path, value);
-        saveConfig();
-    }
-
-    public FileInputStream getDefaultConfig() {
-        try {
-            return new FileInputStream(configFile);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-
-    public String getString(String path, String def) {
-        return (get(path) != null) ? (String) get(path) : def;
+        return configData.node(path).getInt();
     }
 
     public int getInt(String path, int def) {
-        return (get(path) != null) ? (int) get(path) : def;
+        return configData.node(path).getInt(def);
     }
 
-    public Map<String, Object> getConfigData() {
-        return configData;
+    public String getString(String path) {
+        return configData.node(path).getString();
+    }
+
+    public String getString(String path, String def) {
+        return configData.node(path).getString(def);
+    }
+
+    public void set(String path, Object value) {
+        try {
+            configData.node((Object[]) path.split("\\.")).set(value);
+        } catch (SerializationException e) {
+            throw new RuntimeException(e);
+        }
+        saveConfig();
     }
 
     public boolean getBoolean(String path, boolean def) {
-        return (get(path) != null) ? (boolean) get(path) : def;
+        return configData.node(path).getBoolean(def);
+    }
+
+    public ConfigurationNode getConfig() {
+        return configData;
     }
 }

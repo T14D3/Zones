@@ -9,6 +9,7 @@ import de.t14d3.zones.listeners.*;
 import de.t14d3.zones.permissions.CacheUtils;
 import de.t14d3.zones.utils.DebugLoggerManager;
 import de.t14d3.zones.utils.Messages;
+import de.t14d3.zones.utils.Types;
 import de.t14d3.zones.utils.Utils;
 import de.t14d3.zones.visuals.BeaconUtils;
 import de.t14d3.zones.visuals.FindBossbar;
@@ -38,6 +39,7 @@ public final class ZonesBukkit extends JavaPlugin {
     private RegionManager regionManager;
     private Messages messages;
     private DebugLoggerManager debugLogger;
+    private BukkitTypes types;
 
     public static ZonesBukkit getInstance() {
         return instance;
@@ -45,14 +47,7 @@ public final class ZonesBukkit extends JavaPlugin {
 
     @Override
     public void onLoad() {
-        this.zones = new Zones();
-        this.regionManager = zones.getRegionManager();
-        instance = this;
-        this.permissionManager = new BukkitPermissionManager(zones);
-        this.platform = new BukkitPlatform(this);
-        this.messages = zones.getMessages();
-        this.debugLogger = zones.getDebugLogger();
-
+        // TODO: Move to custom config handler
         this.debug = getConfig().getBoolean("debug", false)
                 || Objects.equals(System.getenv("ZONES_DEBUG"), "true");
         // Configure CommandAPI
@@ -62,21 +57,30 @@ public final class ZonesBukkit extends JavaPlugin {
                 .silentLogs(!debug)
                 .usePluginNamespace()
         );
+
+        this.platform = new BukkitPlatform(this);
+        instance = this;
+
+        this.types = new BukkitTypes();
+        this.zones = new Zones(platform);
+
+        this.regionManager = zones.getRegionManager();
+        this.messages = zones.getMessages();
+        this.debugLogger = zones.getDebugLogger();
+
+        this.permissionManager = new BukkitPermissionManager(zones);
     }
 
     @Override
     public void onEnable() {
         CommandAPI.onEnable();
 
-        // Initialize Bukkit-specific logic
-
-
         // Initialize utilities
         this.beaconUtils = new BeaconUtils(this);
         this.particleHandler = new ParticleHandler(this);
         particleHandler.particleScheduler();
 
-        zones.getRegionManager().loadRegions();
+        this.regionManager.loadRegions();
 
         this.saveDefaultConfig();
 
@@ -100,8 +104,6 @@ public final class ZonesBukkit extends JavaPlugin {
         this.getServer().getPluginManager().registerEvents(new ChunkEventListener(), this);
         ExplosivesListener explosivesListener = new ExplosivesListener(this);
         BlockEventListener blockEventListener = new BlockEventListener(zones);
-
-        // Populate Types
 
         // Register mode permissions
         for (Utils.Modes mode : Utils.Modes.values()) {
@@ -191,5 +193,9 @@ public final class ZonesBukkit extends JavaPlugin {
 
     public Zones getZones() {
         return zones;
+    }
+
+    public Types getTypes() {
+        return types;
     }
 }

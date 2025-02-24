@@ -3,6 +3,7 @@ package de.t14d3.zones;
 import de.t14d3.zones.objects.Player;
 import de.t14d3.zones.objects.World;
 import de.t14d3.zones.permissions.PermissionManager;
+import de.t14d3.zones.utils.Types;
 
 import java.io.File;
 import java.util.List;
@@ -28,4 +29,6 @@ public interface ZonesPlatform {
     default PermissionManager getPermissionManager() {
         return Zones.getInstance().getPermissionManager();
     }
+
+    Types getTypes();
 }

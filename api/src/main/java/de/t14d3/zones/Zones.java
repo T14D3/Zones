@@ -5,6 +5,7 @@ import de.t14d3.zones.permissions.PermissionManager;
 import de.t14d3.zones.permissions.flags.Flags;
 import de.t14d3.zones.utils.*;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,30 +15,31 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+@SuppressWarnings("ThisEscapedInObjectConstruction")
 public class Zones {
-    private Flags flags = new Flags();
-    private CacheUtils cacheUtils;
-    private Messages messages;
+    private final Flags flags = new Flags();
+    private final CacheUtils cacheUtils;
+    private final Messages messages;
     private static Zones instance;
 
-    private Types types;
-    private Utils utils;
-
-    private RegionManager regionManager;
-    private PermissionManager permissionManager;
-    private ZonesPlatform platform;
-    private DebugLoggerManager debugLogger;
-    private ConfigManager configManager;
-    private ThreadPoolExecutor executor;
+    private final RegionManager regionManager;
+    private final PermissionManager permissionManager;
+    private final ZonesPlatform platform;
+    private final DebugLoggerManager debugLogger;
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+    private final ConfigManager configManager;
+    private final ThreadPoolExecutor executor;
 
     public boolean debug = false;
 
-    public Zones() {
-        this.cacheUtils = CacheUtils.getInstance();
+    public Zones(ZonesPlatform platform) {
+        instance = this;
+        this.platform = platform;
         this.debugLogger = new DebugLoggerManager(this, true);
 
         this.configManager = new ConfigManager(this);
         new ConfigUpdater(this);
+        this.cacheUtils = new CacheUtils(this);
 
         // TODO: Make this platform agnostic
         Properties messagesConfig = new Properties();
@@ -50,10 +52,10 @@ public class Zones {
 
         this.permissionManager = platform.getPermissionManager();
         this.regionManager = new RegionManager(this, permissionManager);
-        this.permissionManager.setRegionManager(regionManager);
         this.executor = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<>());
 
-        this.types.populateTypes();
+        Types types = platform.getTypes();
+        types.populateTypes();
     }
 
     public static Zones getInstance() {
@@ -69,7 +71,7 @@ public class Zones {
     }
 
     public Logger getLogger() {
-        return null;
+        return logger;
     }
 
     public RegionManager getRegionManager() {
@@ -93,5 +95,9 @@ public class Zones {
 
     public ThreadPoolExecutor getThreadPool() {
         return executor;
+    }
+
+    public CacheUtils getCacheUtils() {
+        return cacheUtils;
     }
 }

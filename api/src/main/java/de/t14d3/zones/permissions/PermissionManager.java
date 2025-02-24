@@ -1,7 +1,6 @@
 package de.t14d3.zones.permissions;
 
 import de.t14d3.zones.Region;
-import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.Zones;
 import de.t14d3.zones.objects.*;
 import de.t14d3.zones.utils.DebugLoggerManager;
@@ -12,20 +11,15 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class PermissionManager {
-
-    private RegionManager regionManager;
     private final CacheUtils cacheUtils;
     private final DebugLoggerManager debugLogger;
+    private Zones zones;
     public static final String UNIVERSAL = "+universal";
 
-    public PermissionManager(Zones plugin) {
-        this.debugLogger = plugin.getDebugLogger();
+    public PermissionManager(Zones zones) {
+        this.zones = zones;
+        this.debugLogger = zones.getDebugLogger();
         this.cacheUtils = CacheUtils.getInstance();
-    }
-
-    // Setter for RegionManager to avoid circular dependency
-    public void setRegionManager(RegionManager regionManager) {
-        this.regionManager = regionManager;
     }
 
     public boolean checkAction(BlockLocation location, World world, UUID playerUUID, Flag action, String type, Object... extra) {
@@ -61,7 +55,7 @@ public class PermissionManager {
             }
         }
 
-        List<Region> regions = regionManager.getRegionsAt(location, world);
+        List<Region> regions = zones.getRegionManager().getRegionsAt(location, world);
         if (!regions.isEmpty()) {
             Result result = Result.UNDEFINED;
             int priority = Integer.MIN_VALUE;
@@ -140,7 +134,7 @@ public class PermissionManager {
             }
         }
 
-        List<Region> regions = regionManager.getRegionsAt(location, world);
+        List<Region> regions = zones.getRegionManager().getRegionsAt(location, world);
         Result result = Result.UNDEFINED;
         if (!regions.isEmpty()) {
             int priority = Integer.MIN_VALUE;

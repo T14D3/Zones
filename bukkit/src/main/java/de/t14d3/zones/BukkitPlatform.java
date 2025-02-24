@@ -4,6 +4,7 @@ import de.t14d3.zones.objects.Player;
 import de.t14d3.zones.objects.World;
 import de.t14d3.zones.permissions.PermissionManager;
 import de.t14d3.zones.utils.PlayerRepository;
+import de.t14d3.zones.utils.Types;
 import org.bukkit.Bukkit;
 
 import java.io.File;
@@ -62,6 +63,11 @@ public class BukkitPlatform implements ZonesPlatform {
     @Override
     public PermissionManager getPermissionManager() {
         return plugin.getPermissionManager();
+    }
+
+    @Override
+    public Types getTypes() {
+        return plugin.getTypes();
     }
 
     public ZonesBukkit getPlugin() {
