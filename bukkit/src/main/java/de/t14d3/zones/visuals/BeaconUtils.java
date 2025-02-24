@@ -1,15 +1,15 @@
 package de.t14d3.zones.visuals;
 
-import de.t14d3.zones.Zones;
+import de.t14d3.zones.ZonesBukkit;
 import org.bukkit.*;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 
 public class BeaconUtils {
 
-    private final Zones plugin;
+    private final ZonesBukkit plugin;
 
-    public BeaconUtils(Zones plugin) {
+    public BeaconUtils(ZonesBukkit plugin) {
         this.plugin = plugin;
     }
 

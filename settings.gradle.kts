@@ -3,3 +3,4 @@ plugins {
 }
 rootProject.name = "Zones"
 include("api")
+include("bukkit")

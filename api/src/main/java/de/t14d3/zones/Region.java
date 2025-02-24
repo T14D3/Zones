@@ -1,9 +1,9 @@
 package de.t14d3.zones;
 
+import de.t14d3.zones.objects.BlockLocation;
+import de.t14d3.zones.objects.Box;
+import de.t14d3.zones.objects.World;
 import de.t14d3.zones.permissions.PermissionManager;
-import org.bukkit.Location;
-import org.bukkit.World;
-import org.bukkit.util.BlockVector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -17,8 +17,8 @@ import java.util.*;
  */
 public class Region {
     private String name;
-    private BlockVector min;
-    private BlockVector max;
+    private BlockLocation min;
+    private BlockLocation max;
     private World world;
     private Map<String, Map<String, String>> members;
     private RegionKey key;
@@ -30,16 +30,16 @@ public class Region {
      * members and parent.
      *
      * @param name     The name of the region (not unique).
-     * @param min      The minimum BlockVector of the region.
-     * @param max      The maximum BlockVector of the region.
+     * @param min      The minimum BlockLocation of the region.
+     * @param max      The maximum BlockLocation of the region.
      * @param world    The world of the region.
      * @param members  The members of the region.
      * @param key      The key of the region.
      * @param parent   The parent (if any) of the region.
      * @param priority The priority of the region.
-     * @see #Region(String, BlockVector, BlockVector, World, Map, RegionKey, int)
+     * @see #Region(String, BlockLocation, BlockLocation, World, Map, RegionKey, int)
      */
-    public Region(@NotNull String name, @NotNull BlockVector min, @NotNull BlockVector max, @NotNull World world,
+    public Region(@NotNull String name, @NotNull BlockLocation min, @NotNull BlockLocation max, @NotNull World world,
                   Map<String, Map<String, String>> members, @NotNull RegionKey key, @Nullable RegionKey parent,
                   int priority) {
         this.name = name;
@@ -64,9 +64,9 @@ public class Region {
      * @param members  The members of the region.
      * @param key      The key of the region.
      * @param priority The priority of the region.
-     * @see #Region(String, BlockVector, BlockVector, World, Map, RegionKey, int)
+     * @see #Region(String, BlockLocation, BlockLocation, World, Map, RegionKey, int)
      */
-    Region(String name, BlockVector min, BlockVector max, World world, Map<String, Map<String, String>> members,
+    Region(String name, BlockLocation min, BlockLocation max, World world, Map<String, Map<String, String>> members,
            RegionKey key, int priority) {
         this(name, min, max, world, members, key, null, priority);
     }
@@ -81,28 +81,28 @@ public class Region {
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
-    public BlockVector getMin() {
+    public BlockLocation getMin() {
         return min;
     }
 
-    void setMin(BlockVector min) {
+    void setMin(BlockLocation min) {
         this.min = min;
     }
 
     public String getMinString() {
-        return min.getBlockX() + "," + min.getBlockY() + "," + min.getBlockZ();
+        return min.getX() + "," + min.getY() + "," + min.getZ();
     }
 
-    public BlockVector getMax() {
+    public BlockLocation getMax() {
         return max;
     }
 
-    void setMax(BlockVector max) {
+    void setMax(BlockLocation max) {
         this.max = max;
     }
 
     public String getMaxString() {
-        return max.getBlockX() + "," + max.getBlockY() + "," + max.getBlockZ();
+        return max.getX() + "," + max.getY() + "," + max.getZ();
     }
 
     /**
@@ -219,21 +219,21 @@ public class Region {
         regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
-    @Deprecated
-    public boolean contains(Location location) {
-        return location.getWorld().equals(this.world) && contains(location.toVector().toBlockVector());
-    }
 
-    public boolean contains(BlockVector vec) {
+    public boolean contains(BlockLocation vec) {
         return vec.getX() >= this.min.getX() && vec.getX() < this.max.getX() + 1
                 && vec.getY() >= this.min.getY() && vec.getY() < this.max.getY() + 1
                 && vec.getZ() >= this.min.getZ() && vec.getZ() < this.max.getZ() + 1;
     }
 
-    public boolean intersects(@NotNull BlockVector min, @NotNull BlockVector max) {
+    public boolean intersects(@NotNull BlockLocation min, @NotNull BlockLocation max) {
         return this.min.getX() <= max.getX() && this.max.getX() >= min.getX()
                 && this.min.getY() <= max.getY() && this.max.getY() >= min.getY()
                 && this.min.getZ() <= max.getZ() && this.max.getZ() >= min.getZ();
+    }
+
+    public Box getBounds() {
+        return new Box(min, max, world);
     }
 
     void addMemberPermission(UUID uuid, String permission, String value, RegionManager regionManager) {

@@ -1,7 +1,9 @@
 package de.t14d3.zones.visuals;
 
 import de.t14d3.zones.Region;
-import de.t14d3.zones.Zones;
+import de.t14d3.zones.ZonesBukkit;
+import de.t14d3.zones.objects.BlockLocation;
+import de.t14d3.zones.objects.World;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -15,20 +17,20 @@ import java.util.List;
 import java.util.Map;
 
 public class FindBossbar {
-    private final Zones plugin;
+    private final ZonesBukkit plugin;
     public Map<Player, BossBar> players = new HashMap<>();
     private final BukkitTask bossbarRunnable;
 
-    public FindBossbar(Zones plugin) {
+    public FindBossbar(ZonesBukkit plugin) {
         this.plugin = plugin;
         bossbarRunnable = new BossbarRunnable(plugin).runTaskTimerAsynchronously(plugin, 0, 20);
     }
 
 
     private class BossbarRunnable extends BukkitRunnable {
-        private final Zones plugin;
+        private final ZonesBukkit plugin;
 
-        public BossbarRunnable(Zones plugin) {
+        public BossbarRunnable(ZonesBukkit plugin) {
             this.plugin = plugin;
         }
 
@@ -37,7 +39,8 @@ public class FindBossbar {
             for (Map.Entry<Player, BossBar> entry : players.entrySet()) {
                 Player player = entry.getKey();
                 List<String> regions = new ArrayList<>();
-                for (Region region : plugin.getRegionManager().getRegionsAt(player.getLocation())) {
+                for (Region region : plugin.getRegionManager()
+                        .getRegionsAt(BlockLocation.of(player.getLocation()), World.of(player.getWorld()))) {
                     regions.add(region.getName());
                 }
                 StringBuilder builder = new StringBuilder();

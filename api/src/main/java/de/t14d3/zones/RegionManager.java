@@ -1,23 +1,17 @@
 package de.t14d3.zones;
 
 import de.t14d3.zones.datasource.DataSourceManager;
+import de.t14d3.zones.objects.BlockLocation;
+import de.t14d3.zones.objects.Player;
+import de.t14d3.zones.objects.World;
 import de.t14d3.zones.permissions.CacheUtils;
 import de.t14d3.zones.permissions.PermissionManager;
 import de.t14d3.zones.utils.Direction;
-import de.t14d3.zones.utils.Utils;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.World;
-import org.bukkit.entity.Player;
-import org.bukkit.util.BlockVector;
-import org.bukkit.util.BoundingBox;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 
 public class RegionManager {
 
@@ -25,6 +19,7 @@ public class RegionManager {
     private final DataSourceManager dataSourceManager;
     private final Zones plugin;
     private static RegionManager instance;
+    private final ZonesPlatform platform;
 
     private final Int2ObjectOpenHashMap<Region> loadedRegions = new Int2ObjectOpenHashMap<>();
     private final Map<World, Int2ObjectOpenHashMap<Region>> worldRegions = new HashMap<>();
@@ -34,6 +29,7 @@ public class RegionManager {
         this.pm = permissionManager;
         this.plugin = plugin;
         this.dataSourceManager = new DataSourceManager(plugin);
+        this.platform = plugin.getPlatform();
         instance = this;
     }
 
@@ -53,9 +49,9 @@ public class RegionManager {
      * @see #saveRegions() #saveRegions() to force-save
      */
     public void triggerSave() {
-        if (plugin.getSavingMode() == Utils.SavingModes.MODIFIED) {
-            saveRegions();
-        }
+//        if (plugin.getSavingMode() == Utils.SavingModes.MODIFIED) {
+//            saveRegions();
+//        }
     }
 
     /**
@@ -64,7 +60,7 @@ public class RegionManager {
     public void loadRegions() {
         loadedRegions.clear();
         worldRegions.clear();
-        Bukkit.getWorlds().forEach(world -> worldRegions.put(world, new Int2ObjectOpenHashMap<>()));
+        platform.getWorlds().forEach(world -> worldRegions.put(world, new Int2ObjectOpenHashMap<>()));
         dataSourceManager.loadRegions();
     }
 
@@ -104,50 +100,6 @@ public class RegionManager {
         CacheUtils.getInstance().invalidateInteractionCaches();
     }
 
-    /**
-     * Creates a new region from two Locations, a UUID for the owner and the owner's permissions
-     *
-     * @param name             Name of the new Region
-     * @param min              First corner of the region
-     * @param max              Second corner of the region
-     * @param playerUUID       Region owner's UUID
-     * @param ownerPermissions Owner's permissions map
-     * @return The newly created region
-     */
-    public Region createNewRegion(String name, Location min, Location max, UUID playerUUID, Map<String, String> ownerPermissions) {
-        RegionKey key = RegionKey.generate();
-
-        Map<String, Map<String, String>> members = new HashMap<>();
-        Region newRegion = new Region(name, min.toVector().toBlockVector(), max.toVector().toBlockVector(),
-                min.getWorld(), members, key, 0);
-
-        ownerPermissions.forEach((permission, value) -> {
-            newRegion.addMemberPermission(playerUUID, permission, value, this);
-        });
-
-        CacheUtils.getInstance().invalidateInteractionCaches();
-        saveRegion(key, newRegion);
-        loadedRegions.put(key.getValue(), newRegion);
-        worldRegions.computeIfAbsent(newRegion.getWorld(), k -> new Int2ObjectOpenHashMap<>())
-                .put(newRegion.getKey().getValue(), newRegion);
-        indexRegion(newRegion); // Add the new region to the spatial index
-        return newRegion;
-    }
-
-    /**
-     * Creates a new region with the given name and minimum and maximum locations
-     * The region will be owned by the given player
-     *
-     * @param name       The name of the new region.
-     * @param min        The minimum location of the new region.
-     * @param max        The maximum location of the new region.
-     * @param playerUUID The UUID of the player who will own the new region.
-     */
-    public Region createNewRegion(String name, Location min, Location max, UUID playerUUID) {
-        Map<String, String> permissions = new HashMap<>();
-        permissions.put("role", "owner");
-        return createNewRegion(name, min, max, playerUUID, permissions);
-    }
 
     /**
      * Creates a new region with the specified key, name, minimum and maximum locations, members and their permissions.
@@ -159,18 +111,28 @@ public class RegionManager {
      * @param members The members of the new region.
      * @return The newly created region.
      */
-    public Region createNewRegion(RegionKey key, String name, Location min, Location max, Map<String, Map<String, String>> members, int priority) {
-        Region region = new Region(name, min.toVector().toBlockVector(), max.toVector().toBlockVector(), min.getWorld(),
-                members, key, priority);
-        saveRegion(key, region);
-        indexRegion(region); // Add the region to the spatial index
-        return region;
+
+    public Region createNewRegion(String name, BlockLocation min, BlockLocation max, World world, Map<String, Map<String, String>> members, RegionKey key, RegionKey parent, int priority) {
+        Region newRegion = new Region(name, min, max, world, members, key, 0);
+
+        CacheUtils.getInstance().invalidateInteractionCaches();
+        saveRegion(key, newRegion);
+        loadedRegions.put(key.getValue(), newRegion);
+        worldRegions.computeIfAbsent(newRegion.getWorld(), k -> new Int2ObjectOpenHashMap<>())
+                .put(newRegion.getKey().getValue(), newRegion);
+        indexRegion(newRegion); // Add the new region to the spatial index
+        return newRegion;
     }
 
-    public Region create2DRegion(String name, Location min, Location max, UUID playerUUID, Map<String, String> ownerPermissions) {
-        min.setY(-63);
-        max.setY(319);
-        return createNewRegion(name, min, max, playerUUID, ownerPermissions);
+    public Region createNewRegion(String name, BlockLocation min, BlockLocation max, World world) {
+        RegionKey key = RegionKey.generate();
+        RegionKey parent = RegionKey.generate();
+        Map<String, Map<String, String>> members = new HashMap<>();
+        return createNewRegion(name, min, max, world, members, key, parent, 0);
+    }
+
+    public Region createNewRegion(RegionKey key, String name, BlockLocation min, BlockLocation max, World of, Map<String, Map<String, String>> members, int priority) {
+        return createNewRegion(name, min, max, of, members, key, null, priority);
     }
 
     /**
@@ -184,7 +146,7 @@ public class RegionManager {
      * @param ownerPermissions The permissions that the player will have for the new region.
      * @param parentRegion     The parent region of the new region.
      */
-    public Region createSubRegion(String name, BlockVector min, BlockVector max, World world, UUID playerUUID, Map<String, String> ownerPermissions, Region parentRegion) {
+    public Region createSubRegion(String name, BlockLocation min, BlockLocation max, World world, UUID playerUUID, Map<String, String> ownerPermissions, Region parentRegion) {
         RegionKey regionKey = RegionKey.generate();
 
         Map<String, Map<String, String>> members = new HashMap<>();
@@ -225,11 +187,11 @@ public class RegionManager {
         region.addMemberPermission(who, permission, value, this);
     }
 
-    public boolean overlapsExistingRegion(BlockVector min, BlockVector max, World world) {
+    public boolean overlapsExistingRegion(BlockLocation min, BlockLocation max, World world) {
         return overlapsExistingRegion(min, max, world, null);
     }
 
-    public boolean overlapsExistingRegion(BlockVector min, BlockVector max, World world, @Nullable RegionKey keyToIgnore) {
+    public boolean overlapsExistingRegion(BlockLocation min, BlockLocation max, World world, @Nullable RegionKey keyToIgnore) {
         for (Region region : worldRegions.get(world).values()) {
             if (region.intersects(min, max) && !region.getKey().equals(keyToIgnore)) {
                 return true;
@@ -238,30 +200,24 @@ public class RegionManager {
         return false;
     }
 
-    public boolean overlapsExistingRegion(Location min, Location max) {
-        return overlapsExistingRegion(min.toVector().toBlockVector(), max.toVector().toBlockVector(), min.getWorld());
-    }
-
     /**
      * Gets a list of regions that overlap with the given location.
      *
      * @param location The location to check for overlaps.
      * @return A list of regions that overlap with the given location.
      */
-    public List<Region> getRegionsAt(@NotNull Location location) {
+    public List<Region> getRegionsAt(BlockLocation location, World world) {
         List<Region> foundRegions = new ArrayList<>();
-        World world = location.getWorld();
         if (world == null) return foundRegions;
 
-        BlockVector loc = location.toVector().toBlockVector();
-        int xChunk = loc.getBlockX() >> 4;
-        int zChunk = loc.getBlockZ() >> 4;
+        int xChunk = location.getX() >> 4;
+        int zChunk = location.getZ() >> 4;
         long key = ((long) xChunk << 32) | (zChunk & 0xFFFFFFFFL);
 
         List<Region> candidates = chunkRegions.getOrDefault(world, new Long2ObjectOpenHashMap<>())
                 .getOrDefault(key, Collections.emptyList());
         for (Region region : candidates) {
-            if (region.contains(loc)) foundRegions.add(region);
+            if (region.contains(location)) foundRegions.add(region);
         }
         return foundRegions;
     }
@@ -272,8 +228,8 @@ public class RegionManager {
      * @param location Location to check
      * @return Region at location, or null if no region found
      */
-    public @Nullable Region getEffectiveRegionAt(Location location) {
-        List<Region> regions = getRegionsAt(location);
+    public @Nullable Region getEffectiveRegionAt(BlockLocation location, World world) {
+        List<Region> regions = getRegionsAt(location, world);
         int priority = Integer.MIN_VALUE;
         Region effectiveRegion = null;
         for (Region region : regions) {
@@ -290,13 +246,13 @@ public class RegionManager {
         Long2ObjectOpenHashMap<List<Region>> worldChunks = chunkRegions.computeIfAbsent(world,
                 k -> new Long2ObjectOpenHashMap<>());
 
-        BlockVector min = region.getMin();
-        BlockVector max = region.getMax();
+        BlockLocation min = region.getMin();
+        BlockLocation max = region.getMax();
 
-        int minXChunk = min.getBlockX() >> 4;
-        int minZChunk = min.getBlockZ() >> 4;
-        int maxXChunk = max.getBlockX() >> 4;
-        int maxZChunk = max.getBlockZ() >> 4;
+        int minXChunk = min.getX() >> 4;
+        int minZChunk = min.getZ() >> 4;
+        int maxXChunk = max.getX() >> 4;
+        int maxZChunk = max.getZ() >> 4;
 
         for (int x = minXChunk; x <= maxXChunk; x++) {
             for (int z = minZChunk; z <= maxZChunk; z++) {
@@ -307,16 +263,6 @@ public class RegionManager {
     }
 
     /**
-     * Gets Regions at location async
-     *
-     * @param location Location to check
-     * @return List of regions at location
-     */
-    public CompletableFuture<List<Region>> getRegionsAtAsync(Location location) {
-        return CompletableFuture.supplyAsync(() -> getRegionsAt(location));
-    }
-
-    /**
      * Redefines the bounds of a region.
      * Does not have any overlap checks.
      *
@@ -324,16 +270,16 @@ public class RegionManager {
      * @param min    The new minimum location of the region.
      * @param max    The new maximum location of the region.
      */
-    public void redefineBounds(Region region, BlockVector min, BlockVector max) {
-        BlockVector oldMin = region.getMin();
-        BlockVector oldMax = region.getMax();
+    public void redefineBounds(Region region, BlockLocation min, BlockLocation max) {
+        BlockLocation oldMin = region.getMin();
+        BlockLocation oldMax = region.getMax();
         region.setMin(min);
         region.setMax(max);
         updateRegionInSpatialIndex(region, oldMin, oldMax);
         triggerSave();
     }
 
-    public void updateRegionInSpatialIndex(Region region, BlockVector oldMin, BlockVector oldMax) {
+    public void updateRegionInSpatialIndex(Region region, BlockLocation oldMin, BlockLocation oldMax) {
         World world = region.getWorld();
         Map<Long, List<Region>> worldChunks = chunkRegions.get(world);
         if (worldChunks == null) return;
@@ -345,11 +291,11 @@ public class RegionManager {
         addRegionToChunks(region, region.getMin(), region.getMax(), worldChunks);
     }
 
-    private void removeRegionFromChunks(Region region, BlockVector min, BlockVector max, Map<Long, List<Region>> worldChunks) {
-        int minXChunk = min.getBlockX() >> 4;
-        int minZChunk = min.getBlockZ() >> 4;
-        int maxXChunk = max.getBlockX() >> 4;
-        int maxZChunk = max.getBlockZ() >> 4;
+    private void removeRegionFromChunks(Region region, BlockLocation min, BlockLocation max, Map<Long, List<Region>> worldChunks) {
+        int minXChunk = min.getX() >> 4;
+        int minZChunk = min.getZ() >> 4;
+        int maxXChunk = max.getX() >> 4;
+        int maxZChunk = max.getZ() >> 4;
 
         for (int x = minXChunk; x <= maxXChunk; x++) {
             for (int z = minZChunk; z <= maxZChunk; z++) {
@@ -363,11 +309,11 @@ public class RegionManager {
         }
     }
 
-    private void addRegionToChunks(Region region, BlockVector min, BlockVector max, Map<Long, List<Region>> worldChunks) {
-        int minXChunk = min.getBlockX() >> 4;
-        int minZChunk = min.getBlockZ() >> 4;
-        int maxXChunk = max.getBlockX() >> 4;
-        int maxZChunk = max.getBlockZ() >> 4;
+    private void addRegionToChunks(Region region, BlockLocation min, BlockLocation max, Map<Long, List<Region>> worldChunks) {
+        int minXChunk = min.getX() >> 4;
+        int minZChunk = min.getZ() >> 4;
+        int maxXChunk = max.getX() >> 4;
+        int maxZChunk = max.getZ() >> 4;
 
         for (int x = minXChunk; x <= maxXChunk; x++) {
             for (int z = minZChunk; z <= maxZChunk; z++) {
@@ -390,36 +336,77 @@ public class RegionManager {
      * @see #expandBounds(Region, Direction, int)
      */
     public boolean expandBounds(Region region, Direction direction, int amount, boolean allowOverlap) {
+        BlockLocation newMin = region.getMin().clone();
+        BlockLocation newMax = region.getMax().clone();
+
+        switch (direction) {
+            case NORTH:
+                newMin.setZ(newMin.getZ() - amount);
+                break;
+            case SOUTH:
+                newMax.setZ(newMax.getZ() + amount);
+                break;
+            case EAST:
+                newMax.setX(newMax.getX() + amount);
+                break;
+            case WEST:
+                newMin.setX(newMin.getX() - amount);
+                break;
+            case UP:
+                newMax.setY(newMax.getY() + amount);
+                break;
+            case DOWN:
+                newMin.setY(newMin.getY() - amount);
+                break;
+        }
+
         if (allowOverlap) {
-            expandBounds(region, direction, amount);
+            region.setMin(newMin);
+            region.setMax(newMax);
+            triggerSave();
             return true;
         }
-        BoundingBox newRegion = BoundingBox.of(region.getMin(), region.getMax());
-        newRegion.expand(direction.toBlockFace(), amount);
-        if (overlapsExistingRegion(newRegion.getMin().toBlockVector(), newRegion.getMax().toBlockVector(),
-                region.getWorld(), region.getKey())) {
+
+        if (overlapsExistingRegion(newMin, newMax, region.getWorld(), region.getKey())) {
             return false;
         }
-        expandBounds(region, direction, amount);
+
+        region.setMin(newMin);
+        region.setMax(newMax);
+        triggerSave();
         return true;
     }
 
-    /**
-     * Expands the bounds of a region in a given direction by a given amount.
-     * Does not have any overlap checks.
-     *
-     * @param region    The region to expand.
-     * @param direction The direction to expand in.
-     * @param amount    The amount to expand by.
-     * @see #expandBounds(Region, Direction, int, boolean)
-     */
     public void expandBounds(Region region, Direction direction, int amount) {
-        BoundingBox newRegion = BoundingBox.of(region.getMin(), region.getMax());
-        newRegion.expand(direction.toBlockFace(), amount);
-        region.setMin(newRegion.getMin().toBlockVector());
-        region.setMax(newRegion.getMax().toBlockVector());
+        BlockLocation newMin = region.getMin().clone();
+        BlockLocation newMax = region.getMax().clone();
+
+        switch (direction) {
+            case NORTH:
+                newMin.setZ(newMin.getZ() - amount);
+                break;
+            case SOUTH:
+                newMax.setZ(newMax.getZ() + amount);
+                break;
+            case EAST:
+                newMax.setX(newMax.getX() + amount);
+                break;
+            case WEST:
+                newMin.setX(newMin.getX() - amount);
+                break;
+            case UP:
+                newMax.setY(newMax.getY() + amount);
+                break;
+            case DOWN:
+                newMin.setY(newMin.getY() - amount);
+                break;
+        }
+
+        region.setMin(newMin);
+        region.setMax(newMax);
         triggerSave();
     }
+
 
     public Map<String, String> getMemberPermissions(Player player, Region region) {
         return region.getMemberPermissions(player.getUniqueId().toString());
@@ -431,7 +418,7 @@ public class RegionManager {
 
     /**
      * Adds a region to the loaded regions map.
-     * Requires an existing region object, to create a new region use {@link #createNewRegion(RegionKey, String, Location, Location, Map, int)}.
+     * Requires an existing region object
      *
      * @param region The region to add.
      * @see #createNewRegion
@@ -449,4 +436,6 @@ public class RegionManager {
         }
         return instance.loadedRegions.get(key.getValue());
     }
+
+
 }

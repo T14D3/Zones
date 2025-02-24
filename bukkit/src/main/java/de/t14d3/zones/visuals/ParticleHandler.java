@@ -1,7 +1,7 @@
 package de.t14d3.zones.visuals;
 
 import com.destroystokyo.paper.ParticleBuilder;
-import de.t14d3.zones.Zones;
+import de.t14d3.zones.ZonesBukkit;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -16,9 +16,9 @@ import java.util.Map;
 import java.util.UUID;
 
 public class ParticleHandler {
-    private final Zones plugin;
+    private final ZonesBukkit plugin;
 
-    public ParticleHandler(Zones plugin) {
+    public ParticleHandler(ZonesBukkit plugin) {
         this.plugin = plugin;
 
     }
@@ -97,7 +97,7 @@ public class ParticleHandler {
         new BukkitRunnable() {
             @Override
             public void run() {
-                for (Map.Entry<UUID, BoundingBox> entry : plugin.particles.entrySet()) {
+                for (Map.Entry<UUID, BoundingBox> entry : plugin.selection.entrySet()) {
                     Player player = Bukkit.getPlayer(entry.getKey());
                     BoundingBox box = entry.getValue();
                     if (player != null) {

@@ -7,8 +7,8 @@ import com.sk89q.worldguard.protection.regions.RegionContainer;
 import com.sk89q.worldguard.protection.regions.RegionType;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionKey;
-import de.t14d3.zones.Zones;
-import org.bukkit.Location;
+import de.t14d3.zones.ZonesBukkit;
+import de.t14d3.zones.objects.BlockLocation;
 import org.bukkit.World;
 
 import java.util.HashMap;
@@ -16,9 +16,9 @@ import java.util.Map;
 
 public class WorldGuardImporter {
 
-    private final Zones plugin;
+    private final ZonesBukkit plugin;
 
-    public WorldGuardImporter(Zones plugin) {
+    public WorldGuardImporter(ZonesBukkit plugin) {
         this.plugin = plugin;
     }
 
@@ -36,8 +36,8 @@ public class WorldGuardImporter {
                     }
                     RegionKey key = RegionKey.generate();
                     String name = entry.getKey();
-                    Location min = BukkitAdapter.adapt(world, region.getMinimumPoint());
-                    Location max = BukkitAdapter.adapt(world, region.getMaximumPoint());
+                    BlockLocation min = BlockLocation.of(BukkitAdapter.adapt(world, region.getMinimumPoint()));
+                    BlockLocation max = BlockLocation.of(BukkitAdapter.adapt(world, region.getMaximumPoint()));
 
                     Map<String, Map<String, String>> members = new HashMap<>();
                     members.put("+group-members",
@@ -50,7 +50,8 @@ public class WorldGuardImporter {
                             .forEach(uuid -> members.put(uuid.toString(), Map.of("role", "owner")));
 
                     Region newRegion = plugin.getRegionManager()
-                            .createNewRegion(key, name, min, max, members, region.getPriority());
+                            .createNewRegion(key, name, min, max, de.t14d3.zones.objects.World.of(world), members,
+                                    region.getPriority());
                     plugin.getRegionManager().addRegion(newRegion);
                     count[0]++;
                 }

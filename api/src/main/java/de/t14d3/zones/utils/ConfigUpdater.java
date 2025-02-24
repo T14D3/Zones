@@ -1,11 +1,9 @@
 package de.t14d3.zones.utils;
 
 import de.t14d3.zones.Zones;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.util.Map;
 
 public class ConfigUpdater {
     private final Zones plugin;
@@ -16,20 +14,20 @@ public class ConfigUpdater {
     }
 
     private void update() {
-        FileConfiguration config = plugin.getConfig();
+        ConfigManager config = plugin.getConfig();
 
-        InputStream defConfigStream = plugin.getResource("config.yml");
+        InputStream defConfigStream = config.getDefaultConfig();
 
-        YamlConfiguration defaultConfig = YamlConfiguration.loadConfiguration(new InputStreamReader(defConfigStream));
-        if (config.getInt("config-version", 0) == defaultConfig.getInt("config-version", 0)) {
+        Map<String, Object> defaultConfig = new ConfigManager(plugin).getConfigData();
+        if (config.getInt("config-version", 0) == (int) defaultConfig.get("config-version")) {
             plugin.getLogger().info("Config is up to date!");
             return;
         }
         plugin.getLogger().info("Updating config...");
-        config.setDefaults(defaultConfig);
-        config.options().copyDefaults(true);
+        for (Map.Entry<String, Object> entry : defaultConfig.entrySet()) {
+            config.set(entry.getKey(), entry.getValue());
+        }
 
-        plugin.saveConfig();
-
+        plugin.getConfig().saveConfig();
     }
 }

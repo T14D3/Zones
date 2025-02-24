@@ -1,183 +1,79 @@
 package de.t14d3.zones;
 
-import com.sk89q.worldedit.WorldEdit;
-import de.t14d3.zones.commands.RootCommand;
-import de.t14d3.zones.integrations.FAWEIntegration;
-import de.t14d3.zones.integrations.PlaceholderAPI;
-import de.t14d3.zones.integrations.WorldEditSession;
-import de.t14d3.zones.listeners.*;
+import de.t14d3.zones.objects.Box;
+import de.t14d3.zones.objects.Player;
 import de.t14d3.zones.permissions.CacheUtils;
 import de.t14d3.zones.permissions.PermissionManager;
 import de.t14d3.zones.permissions.flags.Flags;
 import de.t14d3.zones.utils.*;
-import de.t14d3.zones.visuals.BeaconUtils;
 import de.t14d3.zones.visuals.FindBossbar;
-import de.t14d3.zones.visuals.ParticleHandler;
-import dev.jorel.commandapi.CommandAPI;
-import dev.jorel.commandapi.CommandAPIBukkitConfig;
-import it.unimi.dsi.fastutil.Pair;
-import org.bukkit.Location;
-import org.bukkit.permissions.Permission;
-import org.bukkit.permissions.PermissionDefault;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.util.BoundingBox;
+import org.slf4j.Logger;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
-public final class Zones extends JavaPlugin {
-
-    private static Zones instance;
-    public Map<UUID, Pair<Location, Location>> selection = new HashMap<>();
-    public ConcurrentHashMap<UUID, BoundingBox> particles = new ConcurrentHashMap<>();
-    private RegionManager regionManager;
-    private PermissionManager permissionManager;
-    private BeaconUtils beaconUtils;
-    private ParticleHandler particleHandler;
-    private Types types;
+public class Zones {
+    private Flags flags = new Flags();
+    private CacheUtils cacheUtils;
     private Messages messages;
-    private final PaperBootstrap bootstrap;
+    private static Zones instance;
+
+    private Types types;
     private Utils utils;
     private FindBossbar findBossbar;
-    private DebugLoggerManager debugLogger; // Add debug logger
-    private Flags flags;
+
+    public Map<Player, Box> selection = new HashMap<>();
+    private RegionManager regionManager;
+    private PermissionManager permissionManager;
+    private ZonesPlatform platform;
+    private DebugLoggerManager debugLogger;
+    private ConfigManager configManager;
+    private ThreadPoolExecutor executor;
+
     public boolean debug = false;
 
-    public Zones(PaperBootstrap bootstrap) {
-        this.bootstrap = bootstrap;
+    public Zones() {
+        this.cacheUtils = CacheUtils.getInstance();
+        this.debugLogger = new DebugLoggerManager(this, true);
+
+        this.configManager = new ConfigManager(this);
+        new ConfigUpdater(this);
+
+        this.permissionManager = new PermissionManager(this);
+        this.regionManager = new RegionManager(this, permissionManager);
+        this.permissionManager.setRegionManager(regionManager);
+        this.executor = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<>());
+
+        this.types.populateTypes();
     }
 
     public static Zones getInstance() {
         return instance;
     }
 
-    @Override
-    public void onLoad() {
-        this.debug = getConfig().getBoolean("debug", false)
-                || Objects.equals(System.getenv("ZONES_DEBUG"), "true");
-        // Configure CommandAPI
-        CommandAPI.onLoad(new CommandAPIBukkitConfig(this)
-                .verboseOutput(debug)
-                .skipReloadDatapacks(true)
-                .silentLogs(!debug)
-                .usePluginNamespace()
-        );
-        types = new Types(this);
-        types.populateTypes();
+    public void setPlatform(ZonesPlatform platform) {
+        this.platform = platform;
     }
 
-    @Override
-    public void onEnable() {
-        instance = this;
-        this.debugLogger = new DebugLoggerManager(this);
-        // Initialize CommandAPI
-        CommandAPI.onEnable();
-
-        // Initialize PermissionManager first without RegionManager
-        this.permissionManager = new PermissionManager(this);
-
-        // Initialize RegionManager with PermissionManager
-        this.regionManager = new RegionManager(this, permissionManager);
-
-        // Set RegionManager in PermissionManager to complete dependency setup
-        this.permissionManager.setRegionManager(regionManager);
-
-        // Initialize utilities
-        this.beaconUtils = new BeaconUtils(this);
-        this.particleHandler = new ParticleHandler(this);
-        particleHandler.particleScheduler();
-        this.utils = new Utils(this);
-        utils.populatePlayers();
-
-        // Load regions from regions.yml
-        regionManager.loadRegions();
-
-        this.saveDefaultConfig();
-
-        // Load messages from messages.yml
-        File messagesFile = new File(getDataFolder(), "messages.properties");
-        if (!messagesFile.exists()) {
-            saveResource("messages.properties", false); // Copy default messages.yml from jar
-        }
-        Properties messagesConfig = new Properties();
-        try {
-            messagesConfig.load(new FileInputStream(messagesFile));
-        } catch (IOException e) {
-            getLogger().severe("Failed to load messages.properties");
-        }
-
-        messages = new Messages(messagesConfig, this);
-
-
-        // Register listeners
-        this.getServer().getPluginManager().registerEvents(new PlayerEventListener(this), this);
-        this.getServer().getPluginManager().registerEvents(new PlayerQuitListener(this), this);
-        this.getServer().getPluginManager().registerEvents(new WorldEventListener(this), this);
-        this.getServer().getPluginManager().registerEvents(new ChunkEventListener(), this);
-        ExplosivesListener explosivesListener = new ExplosivesListener(this);
-        BlockEventListener blockEventListener = new BlockEventListener(this);
-
-        // Populate Types
-
-        // Register mode permissions
-        for (Utils.Modes mode : Utils.Modes.values()) {
-            getServer().getPluginManager().addPermission(new Permission("zones.mode." + mode.getName().toLowerCase() + ".main", PermissionDefault.OP));
-            getServer().getPluginManager().addPermission(new Permission("zones.mode." + mode.getName().toLowerCase() + ".sub", PermissionDefault.OP));
-        }
-
-        // Register saving task
-        if (getSavingMode() == Utils.SavingModes.PERIODIC) {
-            getServer().getScheduler().runTaskTimerAsynchronously(this, () -> {
-                regionManager.saveRegions();
-                getLogger().info("Zones have been saved.");
-            }, 20L, getConfig().getInt("zone-saving.period", 60) * 20L);
-        }
-        // Find bossbar
-        this.findBossbar = new FindBossbar(this);
-
-
-        // PlaceholderAPI integration
-        if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
-            new PlaceholderAPI(this).register();
-            getLogger().info("PlaceholderAPI hooked!");
-        }
-
-        if (getServer().getPluginManager().getPlugin("FastAsyncWorldEdit") != null) {
-            new FAWEIntegration(this).register();
-            getLogger().info("FAWE Integration enabled.");
-        } else if (getServer().getPluginManager().getPlugin("WorldEdit") != null) {
-            WorldEdit.getInstance().getEventBus().register(new WorldEditSession(this));
-            getLogger().info("WorldEdit Integration enabled.");
-        }
-        CacheUtils.getInstance().startCacheRunnable();
-        this.flags = new Flags();
-
-        RootCommand rootCommand = new RootCommand(this);
-
-        // Config update
-        new ConfigUpdater(this);
-
-        getLogger().info("Zones plugin has been enabled! Loaded " + regionManager.regions().size() + " regions.");
+    public ZonesPlatform getPlatform() {
+        return platform;
     }
 
-    @Override
-    public void onDisable() {
-        // Save regions to regions.yml before plugin shutdown
-        regionManager.saveRegions();
-        regionManager.regions().clear();
-        CommandAPI.onDisable();
-        regionManager.getDataSourceManager().close();
-        getLogger().info("Zones plugin is disabling and regions are saved.");
+    public DebugLoggerManager getDebugLogger() {
+        return debugLogger;
     }
 
-    // Getters
+    public Logger getLogger() {
+        return null;
+    }
+
     public RegionManager getRegionManager() {
         return regionManager;
     }
-
     public PermissionManager getPermissionManager() {
         return permissionManager;
     }
@@ -186,35 +82,15 @@ public final class Zones extends JavaPlugin {
         return messages;
     }
 
-    public BeaconUtils getBeaconUtils() {
-        return beaconUtils;
+    public ConfigManager getConfig() {
+        return configManager;
     }
 
-    public ParticleHandler getParticleHandler() {
-        return particleHandler;
+    public File getDataFolder() {
+        return platform.getDataFolder();
     }
 
-    public Types getTypes() {
-        return this.types;
-    }
-
-    public Utils getUtils() {
-        return utils;
-    }
-
-    public Utils.SavingModes getSavingMode() {
-        return Utils.SavingModes.fromString(this.getConfig().getString("zone-saving.mode", "MODIFIED"));
-    }
-
-    public FindBossbar getFindBossbar() {
-        return findBossbar;
-    }
-
-    public DebugLoggerManager getDebugLogger() {
-        return debugLogger; // Getter for debug logger
-    }
-
-    public Flags getFlags() {
-        return flags;
+    public ThreadPoolExecutor getThreadPool() {
+        return executor;
     }
 }

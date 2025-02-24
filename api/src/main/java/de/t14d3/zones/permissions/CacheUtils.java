@@ -1,26 +1,23 @@
 package de.t14d3.zones.permissions;
 
 import de.t14d3.zones.Zones;
+import de.t14d3.zones.objects.BlockLocation;
 import de.t14d3.zones.utils.DebugLoggerManager;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class CacheUtils {
     private final int ttl;
     private final int limit;
     private final int checkInterval;
-    protected BukkitRunnable cacheRunnable;
+    private ScheduledFuture<?> cacheTask;
     private static CacheUtils instance;
     private final Zones plugin;
 
-    final ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>> interactionCache = new ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>>();
-    public final ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>> permissionCache = new ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>>();
+    final ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>> interactionCache = new ConcurrentHashMap<>();
+    public final ConcurrentHashMap<String, ConcurrentLinkedQueue<CacheEntry>> permissionCache = new ConcurrentHashMap<>();
 
     public CacheUtils(Zones plugin) {
         instance = this;
@@ -35,18 +32,13 @@ public class CacheUtils {
     }
 
     public void startCacheRunnable() {
-        this.cacheRunnable = new cacheRunnable(plugin.getDebugLogger());
-        this.cacheRunnable.runTaskTimerAsynchronously(plugin, checkInterval, checkInterval);
+        CacheRunnable runnable = new CacheRunnable(plugin.getDebugLogger());
+        Executors.newSingleThreadScheduledExecutor()
+                .scheduleAtFixedRate(runnable, checkInterval, checkInterval, TimeUnit.SECONDS);
         plugin.getLogger()
                 .info("Cache scheduler has been started! (TTL: " + ttl + " seconds, Interval: " + checkInterval + " ticks, Limit: " + limit + ")");
     }
 
-    /**
-     * Invalidates the interaction cache for a player.
-     * Should be called e.g. when a player logs out.
-     *
-     * @param target The player to invalidate the cache for.
-     */
     public void invalidateInteractionCache(UUID target) {
         interactionCache.remove(target.toString());
     }
@@ -55,30 +47,18 @@ public class CacheUtils {
         interactionCache.remove(target);
     }
 
-    /**
-     * Invalidates the interaction cache for all players.
-     * Should be called e.g. when the plugin is reloaded
-     * or when a region area is changed.
-     */
     public void invalidateInteractionCaches() {
         interactionCache.clear();
     }
 
-    /**
-     * Invalidates the interaction cache for a chunk.
-     * Should be called e.g. when a chunk is unloaded.
-     */
     public void invalidateInteractionCacheForChunk(int chunkX, int chunkZ, String world) {
-        Bukkit.getScheduler().runTaskAsynchronously(Zones.getInstance(), () -> {
+        Zones.getInstance().getThreadPool().execute(() -> {
             synchronized (interactionCache) {
                 interactionCache.forEach((uuid, cacheEntries) -> {
                     for (CacheEntry entry : cacheEntries) {
-                        Location location = (Location) entry.getFlag();
-                        if (!world.equals(location.getWorld().getName())) {
-                            continue;
-                        }
-                        int locX = location.getBlockX() >> 4;
-                        int locZ = location.getBlockZ() >> 4;
+                        BlockLocation location = (BlockLocation) entry.getFlag();
+                        int locX = location.getX() >> 4;
+                        int locZ = location.getZ() >> 4;
                         if (chunkX == locX && chunkZ == locZ) {
                             interactionCache.computeIfAbsent(uuid, k -> new ConcurrentLinkedQueue<>()).remove(entry);
                         }
@@ -88,29 +68,18 @@ public class CacheUtils {
         });
     }
 
-    /**
-     * Invalidates the flag/permission cache for a player.
-     * Should be called when a region's permissions are changed
-     *
-     * @param target The target player/group to invalidate the cache for.
-     */
     public void invalidateCache(String target) {
         permissionCache.remove(target);
     }
 
-    /**
-     * Invalidates the flag/permission cache for all players.
-     * Should be called when the plugin is reloaded
-     * or when a region area is changed.
-     */
     public void invalidateCaches() {
         permissionCache.clear();
     }
 
-    public class cacheRunnable extends BukkitRunnable {
+    public class CacheRunnable implements Runnable {
         private final DebugLoggerManager logger;
 
-        public cacheRunnable(DebugLoggerManager logger) {
+        public CacheRunnable(DebugLoggerManager logger) {
             this.logger = logger;
         }
 

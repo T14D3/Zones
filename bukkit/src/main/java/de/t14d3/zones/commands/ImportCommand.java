@@ -1,6 +1,6 @@
 package de.t14d3.zones.commands;
 
-import de.t14d3.zones.Zones;
+import de.t14d3.zones.ZonesBukkit;
 import de.t14d3.zones.integrations.WorldGuardImporter;
 import de.t14d3.zones.utils.Messages;
 import dev.jorel.commandapi.BukkitTooltip;
@@ -16,11 +16,11 @@ import java.util.concurrent.CompletableFuture;
 import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
 
 public class ImportCommand {
-    private Zones plugin;
+    private ZonesBukkit plugin;
     private Messages messages;
     private final MiniMessage mm = MiniMessage.miniMessage();
 
-    public ImportCommand(Zones plugin) {
+    public ImportCommand(ZonesBukkit plugin) {
         this.plugin = plugin;
         this.messages = plugin.getMessages();
     }

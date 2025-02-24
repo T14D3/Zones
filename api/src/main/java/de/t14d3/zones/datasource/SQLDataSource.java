@@ -5,9 +5,8 @@ import com.google.gson.reflect.TypeToken;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.Zones;
-import org.bukkit.Bukkit;
-import org.bukkit.World;
-import org.bukkit.util.BlockVector;
+import de.t14d3.zones.objects.BlockLocation;
+import de.t14d3.zones.objects.World;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -39,7 +38,7 @@ public class SQLDataSource extends AbstractDataSource {
                     String url = "jdbc:mysql://" + host + "/" + database + options;
                     this.connection = DriverManager.getConnection(url, user, password);
                 } catch (Exception e) {
-                    plugin.getLogger().severe("Failed to initialize MySQL database! Error: " + e.getMessage());
+                    plugin.getLogger().error("Failed to initialize MySQL database! Error: " + e.getMessage());
                     if (plugin.debug) {
                         e.printStackTrace();
                     }
@@ -50,7 +49,7 @@ public class SQLDataSource extends AbstractDataSource {
                     Class.forName("org.sqlite.JDBC");
                     this.connection = DriverManager.getConnection("jdbc:sqlite:./plugins/Zones/regions.sqlite.db");
                 } catch (Exception e) {
-                    plugin.getLogger().severe("Failed to initialize SQLite database! Error: " + e.getMessage());
+                    plugin.getLogger().error("Failed to initialize SQLite database! Error: " + e.getMessage());
                     if (plugin.debug) {
                         e.printStackTrace();
                     }
@@ -61,7 +60,7 @@ public class SQLDataSource extends AbstractDataSource {
                     Class.forName("org.h2.Driver");
                     this.connection = DriverManager.getConnection("jdbc:h2:file:./plugins/Zones/regions.h2");
                 } catch (Exception e) {
-                    plugin.getLogger().severe("Failed to initialize H2 database! Error: " + e.getMessage());
+                    plugin.getLogger().error("Failed to initialize H2 database! Error: " + e.getMessage());
                     if (plugin.debug) {
                         e.printStackTrace();
                     }
@@ -79,7 +78,7 @@ public class SQLDataSource extends AbstractDataSource {
                     String url = "jdbc:postgresql://" + host + "/" + database + options;
                     this.connection = DriverManager.getConnection(url, user, password);
                 } catch (Exception e) {
-                    plugin.getLogger().severe("Failed to initialize PostgreSQL database! Error: " + e.getMessage());
+                    plugin.getLogger().error("Failed to initialize PostgreSQL database! Error: " + e.getMessage());
                     if (plugin.debug) {
                         e.printStackTrace();
                     }
@@ -92,7 +91,7 @@ public class SQLDataSource extends AbstractDataSource {
                     Class.forName(driver);
                     this.connection = DriverManager.getConnection(url);
                 } catch (Exception e) {
-                    plugin.getLogger().severe("Failed to initialize custom database! Error: " + e.getMessage());
+                    plugin.getLogger().error("Failed to initialize custom database! Error: " + e.getMessage());
                     if (plugin.debug) {
                         e.printStackTrace();
                     }
@@ -117,7 +116,7 @@ public class SQLDataSource extends AbstractDataSource {
                             ")";
             connection.prepareStatement(createTableSQL).execute();
         } catch (SQLException e) {
-            plugin.getLogger().severe("Failed to create table! Error: " + e.getMessage());
+            plugin.getLogger().error("Failed to create table! Error: " + e.getMessage());
             if (plugin.debug) {
                 e.printStackTrace();
             }
@@ -129,7 +128,7 @@ public class SQLDataSource extends AbstractDataSource {
         try {
             this.connection.close();
         } catch (SQLException e) {
-            plugin.getLogger().severe("Error closing the database connection: " + e.getMessage());
+            plugin.getLogger().error("Error closing the database connection: " + e.getMessage());
             if (plugin.debug) {
                 e.printStackTrace();
             }
@@ -175,7 +174,7 @@ public class SQLDataSource extends AbstractDataSource {
                 regions.add(region);
             }
         } catch (SQLException e) {
-            plugin.getLogger().severe("Failed to load regions! Error: " + e.getMessage());
+            plugin.getLogger().error("Failed to load regions! Error: " + e.getMessage());
             if (plugin.debug) {
                 e.printStackTrace();
             }
@@ -186,17 +185,17 @@ public class SQLDataSource extends AbstractDataSource {
     private Region parseRegion(ResultSet rs) throws SQLException {
         int key = rs.getInt("key");
         String name = rs.getString("name");
-        BlockVector min = new BlockVector(
+        BlockLocation min = new BlockLocation(
                 rs.getInt("minX"),
                 rs.getInt("minY"),
                 rs.getInt("minZ")
         );
-        BlockVector max = new BlockVector(
+        BlockLocation max = new BlockLocation(
                 rs.getInt("maxX"),
                 rs.getInt("maxY"),
                 rs.getInt("maxZ")
         );
-        World world = Bukkit.getWorld(rs.getString("world"));
+        World world = Zones.getInstance().getPlatform().getWorld(rs.getString("world"));
         String membersJson = rs.getString("members");
         Map<String, Map<String, String>> members = gson.fromJson(membersJson,
                 new TypeToken<Map<String, Map<String, String>>>() {
@@ -216,14 +215,14 @@ public class SQLDataSource extends AbstractDataSource {
             for (Region region : regions) {
                 stmt.setInt(1, region.getKey().getValue());
                 stmt.setString(2, region.getName());
-                BlockVector min = region.getMin();
-                stmt.setInt(3, min.getBlockX());
-                stmt.setInt(4, min.getBlockY());
-                stmt.setInt(5, min.getBlockZ());
-                BlockVector max = region.getMax();
-                stmt.setInt(6, max.getBlockX());
-                stmt.setInt(7, max.getBlockY());
-                stmt.setInt(8, max.getBlockZ());
+                BlockLocation min = region.getMin();
+                stmt.setInt(3, min.getX());
+                stmt.setInt(4, min.getY());
+                stmt.setInt(5, min.getZ());
+                BlockLocation max = region.getMax();
+                stmt.setInt(6, max.getX());
+                stmt.setInt(7, max.getY());
+                stmt.setInt(8, max.getZ());
                 stmt.setString(9, region.getWorld() != null ? region.getWorld().getName() : null);
                 stmt.setString(10, gson.toJson(region.getMembers()));
                 stmt.setInt(11, region.getParent() != null ? region.getParent().getValue() : 0);
@@ -232,7 +231,7 @@ public class SQLDataSource extends AbstractDataSource {
             }
             stmt.executeBatch();
         } catch (SQLException e) {
-            plugin.getLogger().severe("Failed to save regions! Error: " + e.getMessage());
+            plugin.getLogger().error("Failed to save regions! Error: " + e.getMessage());
             if (plugin.debug) {
                 e.printStackTrace();
             }
@@ -249,7 +248,7 @@ public class SQLDataSource extends AbstractDataSource {
                 return parseRegion(rs);
             }
         } catch (SQLException e) {
-            plugin.getLogger().severe("Failed to load region " + key + "! Error: " + e.getMessage());
+            plugin.getLogger().error("Failed to load region " + key + "! Error: " + e.getMessage());
             if (plugin.debug) {
                 e.printStackTrace();
             }
@@ -263,14 +262,14 @@ public class SQLDataSource extends AbstractDataSource {
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setInt(1, RegionKey.fromString(key).getValue());
             stmt.setString(2, region.getName());
-            BlockVector min = region.getMin();
-            stmt.setInt(3, min.getBlockX());
-            stmt.setInt(4, min.getBlockY());
-            stmt.setInt(5, min.getBlockZ());
-            BlockVector max = region.getMax();
-            stmt.setInt(6, max.getBlockX());
-            stmt.setInt(7, max.getBlockY());
-            stmt.setInt(8, max.getBlockZ());
+            BlockLocation min = region.getMin();
+            stmt.setInt(3, min.getX());
+            stmt.setInt(4, min.getY());
+            stmt.setInt(5, min.getZ());
+            BlockLocation max = region.getMax();
+            stmt.setInt(6, max.getX());
+            stmt.setInt(7, max.getY());
+            stmt.setInt(8, max.getZ());
             stmt.setString(9, region.getWorld() != null ? region.getWorld().getName() : null);
             stmt.setString(10, gson.toJson(region.getMembers()));
             stmt.setInt(11, region.getParent() != null ? region.getParent().getValue() : 0);
@@ -278,7 +277,7 @@ public class SQLDataSource extends AbstractDataSource {
             stmt.executeUpdate();
         } catch (SQLException e) {
             plugin.getLogger()
-                    .severe("Failed to save region " + region.getKey().toString() + "! Error: " + e.getMessage());
+                    .error("Failed to save region " + region.getKey().toString() + "! Error: " + e.getMessage());
             if (plugin.debug) {
                 e.printStackTrace();
             }

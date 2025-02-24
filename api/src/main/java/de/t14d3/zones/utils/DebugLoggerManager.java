@@ -20,9 +20,8 @@ public final class DebugLoggerManager {
     public static final String RESULT = "Calculated result: ";
 
 
-    public DebugLoggerManager(Zones plugin) {
+    public DebugLoggerManager(Zones plugin, boolean debugEnabled) {
         this.plugin = plugin;
-        boolean debugEnabled = plugin.debug;
         this.logger = debugEnabled ? new DebugLogger() : new DebugLoggerDummy();
         instance = this;
     }

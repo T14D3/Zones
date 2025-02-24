@@ -22,16 +22,6 @@ import java.util.*;
 public class Utils {
     public static List<OfflinePlayer> offlinePlayers = new ArrayList<>();
     public static Map<UUID, String> playerNames = new HashMap<>();
-    private final Zones plugin;
-
-    /**
-     * Constructor for Utility methods.
-     *
-     * @param plugin The plugin instance.
-     */
-    public Utils(Zones plugin) {
-        this.plugin = plugin;
-    }
 
     public static boolean isContainer(BlockState state) {
         return state instanceof Container;
@@ -39,10 +29,6 @@ public class Utils {
 
     public static boolean isPowerable(BlockData data) {
         return data instanceof Powerable;
-    }
-
-    public static void setPDC(Player player, String key, String value) {
-        player.getPersistentDataContainer().set(new NamespacedKey("zones", key), PersistentDataType.STRING, value);
     }
 
     public static OfflinePlayer getOfflinePlayer(UUID uuid) {
@@ -132,6 +118,14 @@ public class Utils {
 
         public String getName() {
             return this.name;
+        }
+    }
+
+    public static de.t14d3.zones.objects.Player getPlayer(String uuid) {
+        try {
+            return Zones.getInstance().getPlatform().getPlayer(UUID.fromString(uuid));
+        } catch (IllegalArgumentException e) {
+            return null;
         }
     }
 
