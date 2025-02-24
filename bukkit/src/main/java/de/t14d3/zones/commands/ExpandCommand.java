@@ -3,8 +3,8 @@ package de.t14d3.zones.commands;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.RegionManager;
-import de.t14d3.zones.Zones;
-import de.t14d3.zones.utils.Direction;
+import de.t14d3.zones.ZonesBukkit;
+import de.t14d3.zones.objects.Direction;
 import de.t14d3.zones.utils.Messages;
 import dev.jorel.commandapi.BukkitTooltip;
 import dev.jorel.commandapi.CommandAPICommand;
@@ -24,12 +24,12 @@ import java.util.concurrent.CompletableFuture;
 import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
 
 public class ExpandCommand {
-    private Zones plugin;
+    private ZonesBukkit plugin;
     private RegionManager regionManager;
     private Messages messages;
     private final MiniMessage mm = MiniMessage.miniMessage();
 
-    public ExpandCommand(Zones plugin) {
+    public ExpandCommand(ZonesBukkit plugin) {
         this.plugin = plugin;
         this.regionManager = plugin.getRegionManager();
         this.messages = plugin.getMessages();

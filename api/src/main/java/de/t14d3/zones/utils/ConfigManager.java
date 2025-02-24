@@ -90,4 +90,8 @@ public class ConfigManager {
     public Map<String, Object> getConfigData() {
         return configData;
     }
+
+    public boolean getBoolean(String path, boolean def) {
+        return (get(path) != null) ? (boolean) get(path) : def;
+    }
 }

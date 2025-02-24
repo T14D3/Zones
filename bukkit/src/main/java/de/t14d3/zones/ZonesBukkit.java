@@ -7,10 +7,8 @@ import de.t14d3.zones.integrations.PlaceholderAPI;
 import de.t14d3.zones.integrations.WorldEditSession;
 import de.t14d3.zones.listeners.*;
 import de.t14d3.zones.permissions.CacheUtils;
-import de.t14d3.zones.permissions.PermissionManager;
 import de.t14d3.zones.utils.DebugLoggerManager;
 import de.t14d3.zones.utils.Messages;
-import de.t14d3.zones.utils.Types;
 import de.t14d3.zones.utils.Utils;
 import de.t14d3.zones.visuals.BeaconUtils;
 import de.t14d3.zones.visuals.FindBossbar;
@@ -36,6 +34,10 @@ public final class ZonesBukkit extends JavaPlugin {
     private ZonesPlatform platform;
     private Zones zones;
     private FindBossbar findBossbar;
+    private BukkitPermissionManager permissionManager;
+    private RegionManager regionManager;
+    private Messages messages;
+    private DebugLoggerManager debugLogger;
 
     public static ZonesBukkit getInstance() {
         return instance;
@@ -43,9 +45,13 @@ public final class ZonesBukkit extends JavaPlugin {
 
     @Override
     public void onLoad() {
-        this.platform = new BukkitPlatform(this);
         this.zones = new Zones();
-
+        this.regionManager = zones.getRegionManager();
+        instance = this;
+        this.permissionManager = new BukkitPermissionManager(zones);
+        this.platform = new BukkitPlatform(this);
+        this.messages = zones.getMessages();
+        this.debugLogger = zones.getDebugLogger();
 
         this.debug = getConfig().getBoolean("debug", false)
                 || Objects.equals(System.getenv("ZONES_DEBUG"), "true");
@@ -60,7 +66,6 @@ public final class ZonesBukkit extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        instance = this;
         CommandAPI.onEnable();
 
         // Initialize Bukkit-specific logic
@@ -71,8 +76,7 @@ public final class ZonesBukkit extends JavaPlugin {
         this.particleHandler = new ParticleHandler(this);
         particleHandler.particleScheduler();
 
-        // Load regions from regions.yml
-        regionManager.loadRegions();
+        zones.getRegionManager().loadRegions();
 
         this.saveDefaultConfig();
 
@@ -85,18 +89,16 @@ public final class ZonesBukkit extends JavaPlugin {
         try {
             messagesConfig.load(new FileInputStream(messagesFile));
         } catch (IOException e) {
-            getLogger().severe("Failed to load messages.properties");
+            zones.getLogger().error("Failed to load messages.properties");
         }
-
-        messages = new Messages(messagesConfig, this);
 
 
         // Register listeners
-        this.getServer().getPluginManager().registerEvents(new PlayerEventListener(zones), this);
+        this.getServer().getPluginManager().registerEvents(new PlayerEventListener(this), this);
         this.getServer().getPluginManager().registerEvents(new PlayerQuitListener(zones), this);
         this.getServer().getPluginManager().registerEvents(new WorldEventListener(zones), this);
         this.getServer().getPluginManager().registerEvents(new ChunkEventListener(), this);
-        ExplosivesListener explosivesListener = new ExplosivesListener(zones);
+        ExplosivesListener explosivesListener = new ExplosivesListener(this);
         BlockEventListener blockEventListener = new BlockEventListener(zones);
 
         // Populate Types
@@ -130,7 +132,7 @@ public final class ZonesBukkit extends JavaPlugin {
             new FAWEIntegration(this).register();
             getLogger().info("FAWE Integration enabled.");
         } else if (getServer().getPluginManager().getPlugin("WorldEdit") != null) {
-            WorldEdit.getInstance().getEventBus().register(new WorldEditSession(this));
+            WorldEdit.getInstance().getEventBus().register(new WorldEditSession(zones));
             getLogger().info("WorldEdit Integration enabled.");
         }
         CacheUtils.getInstance().startCacheRunnable();
@@ -155,12 +157,8 @@ public final class ZonesBukkit extends JavaPlugin {
         return regionManager;
     }
 
-    public PermissionManager getPermissionManager() {
+    public BukkitPermissionManager getPermissionManager() {
         return permissionManager;
-    }
-
-    public Messages getMessages() {
-        return messages;
     }
 
     public BeaconUtils getBeaconUtils() {
@@ -169,14 +167,6 @@ public final class ZonesBukkit extends JavaPlugin {
 
     public ParticleHandler getParticleHandler() {
         return particleHandler;
-    }
-
-    public Types getTypes() {
-        return this.types;
-    }
-
-    public Utils getUtils() {
-        return utils;
     }
 
     public Utils.SavingModes getSavingMode() {
@@ -188,6 +178,18 @@ public final class ZonesBukkit extends JavaPlugin {
     }
 
     public DebugLoggerManager getDebugLogger() {
-        return debugLogger; // Getter for debug logger
+        return debugLogger;
+    }
+
+    public Messages getMessages() {
+        return messages;
+    }
+
+    public ZonesPlatform getPlatform() {
+        return platform;
+    }
+
+    public Zones getZones() {
+        return zones;
     }
 }

@@ -8,10 +8,6 @@ version = "0.2.1"
 repositories {
     mavenCentral()
     maven {
-        name = "papermc-repo"
-        url = uri("https://repo.papermc.io/repository/maven-public/")
-    }
-    maven {
         name = "ExtendedClip"
         url = uri("https://repo.extendedclip.com/releases/")
     }
@@ -26,6 +22,7 @@ repositories {
 }
 
 dependencies {
+    implementation(project(":api"))
     compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
     compileOnly("me.clip:placeholderapi:2.11.6")
     compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.3.10")

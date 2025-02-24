@@ -3,16 +3,18 @@ package de.t14d3.zones.commands;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.RegionManager;
-import de.t14d3.zones.Zones;
+import de.t14d3.zones.ZonesBukkit;
+import de.t14d3.zones.objects.BlockLocation;
+import de.t14d3.zones.objects.Box;
+import de.t14d3.zones.objects.World;
 import de.t14d3.zones.utils.Messages;
+import de.t14d3.zones.utils.PlayerRepository;
 import dev.jorel.commandapi.BukkitTooltip;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.StringTooltip;
 import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import dev.jorel.commandapi.arguments.StringArgument;
-import it.unimi.dsi.fastutil.Pair;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
@@ -27,9 +29,9 @@ public class SubCreateCommand {
     private final MiniMessage mm = MiniMessage.miniMessage();
     private RegionManager regionManager;
     private Messages messages;
-    private Zones plugin;
+    private ZonesBukkit plugin;
 
-    public SubCreateCommand(Zones plugin) {
+    public SubCreateCommand(ZonesBukkit plugin) {
         this.plugin = plugin;
         this.regionManager = plugin.getRegionManager();
         this.messages = plugin.getMessages();
@@ -62,21 +64,22 @@ public class SubCreateCommand {
                     })))
             .executes((sender, args) -> {
                 if (sender instanceof Player player) {
-                    if (!plugin.selection.containsKey(player.getUniqueId())) {
-                        plugin.selection.put(player.getUniqueId(), Pair.of(null, null));
+                    de.t14d3.zones.objects.Player zplayer = PlayerRepository.get(player.getUniqueId());
+                    if (zplayer.getSelection() == null) {
+                        zplayer.setSelection(new Box(null, null, World.of(player.getWorld())));
                         player.sendMessage(mm.deserialize(messages.get("commands.create.click-corners")));
-                        return; // Failure
+                        return;
                     }
-
-                    Pair<Location, Location> selectionPair = plugin.selection.get(player.getUniqueId());
-                    if (selectionPair.first() == null || selectionPair.second() == null) {
+                    Box selection = zplayer.getSelection();
+                    if (selection.getMin() == null || selection.getMax() == null) {
                         player.sendMessage(mm.deserialize(messages.get("commands.create.click-corners")));
-                        return; // Failure
+                        return;
                     }
 
                     Region parentRegion = null;
                     if (args.get("key") == null) {
-                        for (Region region : regionManager.getRegionsAt(player.getLocation())) {
+                        for (Region region : regionManager.getRegionsAt(BlockLocation.of(player.getLocation()),
+                                World.of(player.getWorld()))) {
                             if (region.isAdmin(player.getUniqueId())) {
                                 parentRegion = region;
                                 break;
@@ -98,9 +101,8 @@ public class SubCreateCommand {
                         return; // Failure
                     }
 
-                    if (!parentRegion.contains(
-                            selectionPair.first().toVector().toBlockVector()) || !parentRegion.contains(
-                            selectionPair.second().toVector().toBlockVector())) {
+                    if (!parentRegion.contains(selection.getMin())
+                            || !parentRegion.contains(selection.getMax())) {
                         player.sendMessage(mm.deserialize(messages.get("commands.subcreate.outside-parent")));
                         return; // Failure
                     }
@@ -108,13 +110,12 @@ public class SubCreateCommand {
                     Map<String, String> perms = new HashMap<>();
                     perms.put("role", "owner");
 
-                    regionManager.createSubRegion(player.getName(), selectionPair.first().toVector().toBlockVector(),
-                            selectionPair.second().toVector().toBlockVector(),
-                            selectionPair.first().getWorld(), player.getUniqueId(), perms, parentRegion);
-                    resetBeacon(player, selectionPair.first());
-                    resetBeacon(player, selectionPair.second());
+                    regionManager.createSubRegion(parentRegion.getName() + "_sub", selection.getMin(),
+                            selection.getMax(), selection.getWorld(), player.getUniqueId(), perms, parentRegion);
+                    resetBeacon(player, selection.getMin(), selection.getWorld());
+                    resetBeacon(player, selection.getMax(), selection.getWorld());
                     player.sendMessage(mm.deserialize(messages.get("commands.subcreate.success")));
-                    plugin.selection.remove(player.getUniqueId());
+                    zplayer.setSelection(null);
                 } else {
                     sender.sendMessage(mm.deserialize(messages.get("commands.only-player")));
                 }

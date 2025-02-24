@@ -15,6 +15,10 @@ public class Box {
         this(new BlockLocation(x1, y1, z1), new BlockLocation(x2, y2, z2), world);
     }
 
+    public Box(org.bukkit.Location min, org.bukkit.Location max, org.bukkit.World world) {
+        this(BlockLocation.of(min), BlockLocation.of(max), World.of(world));
+    }
+
     public BlockLocation getMin() {
         return min;
     }

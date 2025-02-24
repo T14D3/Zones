@@ -2,6 +2,7 @@ package de.t14d3.zones.commands;
 
 import de.t14d3.zones.Region;
 import de.t14d3.zones.Zones;
+import de.t14d3.zones.ZonesBukkit;
 import de.t14d3.zones.datasource.AbstractDataSource;
 import de.t14d3.zones.datasource.DataSourceManager;
 import de.t14d3.zones.datasource.SQLDataSource;
@@ -14,10 +15,12 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class MigrateCommand {
-    private Zones plugin;
+    private Zones zones;
+    private ZonesBukkit plugin;
 
-    public MigrateCommand(Zones plugin) {
+    public MigrateCommand(ZonesBukkit plugin) {
         this.plugin = plugin;
+        this.zones = plugin.getZones();
     }
 
     public CommandAPICommand migrate = new CommandAPICommand("migrate")
@@ -30,7 +33,7 @@ public class MigrateCommand {
             .executes((sender, args) -> {
                 DataSourceManager.DataSourceTypes targetType = DataSourceManager.DataSourceTypes.valueOf(
                         args.getRaw("targetType").toUpperCase());
-                DataSourceManager dataSourceManager = plugin.getRegionManager().getDataSourceManager();
+                DataSourceManager dataSourceManager = zones.getRegionManager().getDataSourceManager();
 
                 // Load current regions from the existing datasource
                 List<Region> regions = dataSourceManager.loadRegions();
@@ -39,10 +42,10 @@ public class MigrateCommand {
                 AbstractDataSource targetDataSource;
                 switch (targetType) {
                     case YAML:
-                        targetDataSource = new YamlDataSource(plugin.getDataFolder(), plugin);
+                        targetDataSource = new YamlDataSource(plugin.getDataFolder(), zones);
                         break;
                     case SQLITE, MYSQL, H2, POSTGRESQL, CUSTOM:
-                        targetDataSource = new SQLDataSource(plugin, targetType);
+                        targetDataSource = new SQLDataSource(zones, targetType);
                         break;
                     default:
                         sender.sendMessage("Invalid target datasource type.");

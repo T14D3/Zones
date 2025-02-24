@@ -1,8 +1,6 @@
 package de.t14d3.zones.listeners;
 
-import de.t14d3.zones.RegionManager;
-import de.t14d3.zones.Zones;
-import de.t14d3.zones.permissions.PermissionManager;
+import de.t14d3.zones.*;
 import de.t14d3.zones.permissions.flags.Flags;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.event.EventHandler;
@@ -12,13 +10,15 @@ import org.bukkit.event.entity.EntityDamageEvent;
 
 public class EntityEventListener implements Listener {
 
-    private final Zones plugin;
+    private final Zones zones;
+    private final ZonesBukkit plugin;
     private final RegionManager regionManager;
-    private final PermissionManager permissionManager;
+    private final BukkitPermissionManager permissionManager;
 
-    public EntityEventListener(Zones plugin) {
-        this.plugin = plugin;
-        this.regionManager = plugin.getRegionManager();
+    public EntityEventListener(Zones zones) {
+        this.zones = zones;
+        this.regionManager = zones.getRegionManager();
+        this.plugin = ((BukkitPlatform) zones.getPlatform()).getPlugin();
         this.permissionManager = plugin.getPermissionManager();
     }
 

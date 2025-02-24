@@ -3,7 +3,9 @@ package de.t14d3.zones.commands;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.RegionManager;
-import de.t14d3.zones.Zones;
+import de.t14d3.zones.ZonesBukkit;
+import de.t14d3.zones.objects.BlockLocation;
+import de.t14d3.zones.objects.World;
 import de.t14d3.zones.utils.Messages;
 import dev.jorel.commandapi.BukkitTooltip;
 import dev.jorel.commandapi.CommandAPICommand;
@@ -20,7 +22,7 @@ public class InfoCommand {
     private RegionManager regionManager;
     private Messages messages;
 
-    public InfoCommand(Zones plugin) {
+    public InfoCommand(ZonesBukkit plugin) {
         this.regionManager = plugin.getRegionManager();
         this.messages = plugin.getMessages();
     }
@@ -57,7 +59,8 @@ public class InfoCommand {
                 }
                 if (args.get("key") == null) {
                     if (player != null) {
-                        regions = regionManager.getRegionsAt(player.getLocation());
+                        regions = regionManager.getRegionsAt(BlockLocation.of(player.getLocation()),
+                                World.of(player.getWorld()));
                     } else {
                         sender.sendMessage(messages.getCmp("commands.invalid-region"));
                         return;

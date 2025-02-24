@@ -1,6 +1,6 @@
 package de.t14d3.zones.commands;
 
-import de.t14d3.zones.Zones;
+import de.t14d3.zones.ZonesBukkit;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.StringTooltip;
 import dev.jorel.commandapi.arguments.ArgumentSuggestions;
@@ -12,9 +12,9 @@ import org.bukkit.persistence.PersistentDataType;
 import java.util.concurrent.CompletableFuture;
 
 public class ModeCommand {
-    private Zones plugin;
+    private ZonesBukkit plugin;
 
-    public ModeCommand(Zones plugin) {
+    public ModeCommand(ZonesBukkit plugin) {
         this.plugin = plugin;
     }
 

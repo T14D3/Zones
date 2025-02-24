@@ -2,6 +2,7 @@ package de.t14d3.zones;
 
 import de.t14d3.zones.objects.Player;
 import de.t14d3.zones.objects.World;
+import de.t14d3.zones.permissions.PermissionManager;
 
 import java.io.File;
 import java.util.List;
@@ -23,4 +24,8 @@ public interface ZonesPlatform {
     }
 
     File getDataFolder();
+
+    default PermissionManager getPermissionManager() {
+        return Zones.getInstance().getPermissionManager();
+    }
 }

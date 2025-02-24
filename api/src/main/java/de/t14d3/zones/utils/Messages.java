@@ -67,6 +67,7 @@ public class Messages {
             // Iterate over members to format permissions
             for (Map.Entry<String, Map<String, String>> member : region.getMembers().entrySet()) {
                 String playerName = null;
+                // TODO: Make this platform agnostic
                 try {
                     playerName = Bukkit.getOfflinePlayer(UUID.fromString(member.getKey())).getName();
                 } catch (IllegalArgumentException ignored) {

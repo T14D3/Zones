@@ -1,4 +1,4 @@
-package de.t14d3.zones.permissions;
+package de.t14d3.zones.objects;
 
 /**
  * The result of a permission check

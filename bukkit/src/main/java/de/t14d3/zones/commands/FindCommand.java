@@ -1,15 +1,15 @@
 package de.t14d3.zones.commands;
 
-import de.t14d3.zones.Zones;
+import de.t14d3.zones.ZonesBukkit;
 import dev.jorel.commandapi.CommandAPICommand;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 
 public class FindCommand {
-    private Zones plugin;
+    private ZonesBukkit plugin;
 
-    public FindCommand(Zones plugin) {
+    public FindCommand(ZonesBukkit plugin) {
         this.plugin = plugin;
     }
 

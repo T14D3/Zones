@@ -1,5 +1,7 @@
 package de.t14d3.zones.permissions;
 
+import de.t14d3.zones.objects.Result;
+
 public class CacheEntry {
     private final Object flag;
     private final String value;

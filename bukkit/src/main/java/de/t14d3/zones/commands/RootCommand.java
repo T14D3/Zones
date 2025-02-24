@@ -1,12 +1,12 @@
 package de.t14d3.zones.commands;
 
-import de.t14d3.zones.Zones;
+import de.t14d3.zones.ZonesBukkit;
 import dev.jorel.commandapi.CommandAPICommand;
 
 public class RootCommand {
-    private final Zones plugin;
+    private final ZonesBukkit plugin;
 
-    public RootCommand(Zones plugin) {
+    public RootCommand(ZonesBukkit plugin) {
         this.plugin = plugin;
 
         new CommandAPICommand("zone")

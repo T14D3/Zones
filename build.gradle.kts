@@ -13,11 +13,27 @@ version = "0.2.1"
 
 repositories {
     mavenCentral()
+    maven {
+        name = "sonatype"
+        url = uri("https://oss.sonatype.org/content/groups/public/")
+    }
+    maven {
+        name = "papermc-repo"
+        url = uri("https://repo.papermc.io/repository/maven-public/")
+    }
 
 }
 
 dependencies {
-    implementation(project(":api")) // Add dependency on the api module
+    implementation(project(":api"))
+    implementation(project(":bukkit"))
+
+    compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
+    compileOnly("org.jetbrains:annotations:23.0.0")
+
+    implementation("org.yaml:snakeyaml:2.5-SNAPSHOT")
+    implementation("net.kyori:adventure-api:4.19.0")
+    implementation("net.kyori:adventure-text-minimessage:4.19.0")
 }
 
 val targetJavaVersion = 21

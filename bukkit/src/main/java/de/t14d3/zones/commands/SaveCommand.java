@@ -1,7 +1,7 @@
 package de.t14d3.zones.commands;
 
 import de.t14d3.zones.RegionManager;
-import de.t14d3.zones.Zones;
+import de.t14d3.zones.ZonesBukkit;
 import de.t14d3.zones.utils.Messages;
 import dev.jorel.commandapi.CommandAPICommand;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -9,12 +9,12 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
 
 public class SaveCommand {
-    private Zones plugin;
+    private ZonesBukkit plugin;
     private RegionManager regionManager;
     private Messages messages;
     private final MiniMessage mm = MiniMessage.miniMessage();
 
-    public SaveCommand(Zones plugin) {
+    public SaveCommand(ZonesBukkit plugin) {
         this.plugin = plugin;
         this.regionManager = plugin.getRegionManager();
         this.messages = plugin.getMessages();

@@ -2,9 +2,9 @@ package de.t14d3.zones.permissions.flags;
 
 import de.t14d3.zones.Region;
 import de.t14d3.zones.Zones;
+import de.t14d3.zones.objects.Result;
 import de.t14d3.zones.permissions.CacheEntry;
 import de.t14d3.zones.permissions.CacheUtils;
-import de.t14d3.zones.permissions.Result;
 import de.t14d3.zones.utils.DebugLoggerManager;
 
 import java.util.List;
@@ -73,11 +73,11 @@ public interface IFlagHandler {
                 if (who.startsWith("+group-") && !Zones.getInstance().getConfig()
                         .getBoolean("allow-group-recursion", false)) {
                     Zones.getInstance().getLogger()
-                            .severe("Recursive group permissions detected!! Groups are not allowed to contain other groups!");
-                    Zones.getInstance().getLogger().severe("Group '" + who.substring(
+                            .error("Recursive group permissions detected!! Groups are not allowed to contain other groups!");
+                    Zones.getInstance().getLogger().error("Group '" + who.substring(
                             7) + "' contains 'group' permission entry in region '" + region.getKey() + "'");
                     Zones.getInstance().getLogger()
-                            .severe("If you are 100% sure this is fine, add 'allow-group-recursion: true' to your config.yml");
+                            .error("If you are 100% sure this is fine, add 'allow-group-recursion: true' to your config.yml");
                     return Result.FALSE;
                 }
                 for (String group : permissions.get("group").split(",")) {

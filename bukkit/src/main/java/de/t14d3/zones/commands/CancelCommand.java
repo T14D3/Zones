@@ -1,12 +1,13 @@
 package de.t14d3.zones.commands;
 
+import de.t14d3.zones.BukkitPlatform;
 import de.t14d3.zones.RegionManager;
-import de.t14d3.zones.Zones;
+import de.t14d3.zones.ZonesBukkit;
 import de.t14d3.zones.utils.Messages;
+import de.t14d3.zones.utils.PlayerRepository;
 import dev.jorel.commandapi.CommandAPICommand;
-import it.unimi.dsi.fastutil.Pair;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 
 import static de.t14d3.zones.visuals.BeaconUtils.resetBeacon;
@@ -15,9 +16,9 @@ public class CancelCommand {
     private final MiniMessage mm = MiniMessage.miniMessage();
     private RegionManager regionManager;
     private Messages messages;
-    private Zones plugin;
+    private ZonesBukkit plugin;
 
-    public CancelCommand(Zones plugin) {
+    public CancelCommand(ZonesBukkit plugin) {
         this.plugin = plugin;
         this.regionManager = plugin.getRegionManager();
         this.messages = plugin.getMessages();
@@ -27,11 +28,12 @@ public class CancelCommand {
             .withPermission("zones.cancel")
             .executes((sender, args) -> {
                 if (sender instanceof Player player) {
-                    if (plugin.selection.containsKey(player.getUniqueId())) {
-                        Pair<Location, Location> selection = plugin.selection.get(player.getUniqueId());
-                        resetBeacon(player, selection.first());
-                        resetBeacon(player, selection.second());
-                        plugin.particles.remove(player.getUniqueId());
+                    de.t14d3.zones.objects.Player zplayer = PlayerRepository.get(player.getUniqueId());
+                    if (zplayer.getSelection() != null) {
+                        World world = BukkitPlatform.getWorld(zplayer.getSelection().getWorld());
+                        resetBeacon(player, zplayer.getSelection().getMin().toLocation(world));
+                        resetBeacon(player, zplayer.getSelection().getMax().toLocation(world));
+                        zplayer.setSelection(null);
                         player.sendMessage(mm.deserialize(messages.get("commands.cancel.success")));
                     } else {
                         player.sendMessage(mm.deserialize(messages.get("commands.cancel.success")));

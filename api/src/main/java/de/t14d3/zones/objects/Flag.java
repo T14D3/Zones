@@ -1,5 +1,8 @@
-package de.t14d3.zones.permissions.flags;
+package de.t14d3.zones.objects;
 
+import de.t14d3.zones.permissions.flags.DefaultFlagHandler;
+import de.t14d3.zones.permissions.flags.Flags;
+import de.t14d3.zones.permissions.flags.IFlagHandler;
 import de.t14d3.zones.utils.Types;
 
 import java.util.List;

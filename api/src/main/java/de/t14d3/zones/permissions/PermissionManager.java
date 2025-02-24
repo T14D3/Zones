@@ -3,12 +3,9 @@ package de.t14d3.zones.permissions;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.Zones;
-import de.t14d3.zones.objects.BlockLocation;
-import de.t14d3.zones.objects.Player;
-import de.t14d3.zones.objects.World;
-import de.t14d3.zones.permissions.flags.Flag;
+import de.t14d3.zones.objects.*;
 import de.t14d3.zones.utils.DebugLoggerManager;
-import de.t14d3.zones.utils.Utils;
+import de.t14d3.zones.utils.PlayerRepository;
 
 import java.util.List;
 import java.util.UUID;
@@ -106,7 +103,7 @@ public class PermissionManager {
         } else {
             // No region found, check player permissions
             boolean bypass = false;
-            Player player = Utils.getPlayer(who);
+            Player player = PlayerRepository.get(UUID.fromString(who));
             if (player != null && player.hasPermission("zones.bypass.unclaimed")) {
                 bypass = true;
             }

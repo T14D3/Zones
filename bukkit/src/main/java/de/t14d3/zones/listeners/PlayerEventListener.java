@@ -1,15 +1,18 @@
 package de.t14d3.zones.listeners;
 
+import de.t14d3.zones.BukkitPermissionManager;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionManager;
-import de.t14d3.zones.Zones;
-import de.t14d3.zones.permissions.PermissionManager;
-import de.t14d3.zones.permissions.flags.Flag;
+import de.t14d3.zones.ZonesBukkit;
+import de.t14d3.zones.objects.BlockLocation;
+import de.t14d3.zones.objects.Box;
+import de.t14d3.zones.objects.Flag;
+import de.t14d3.zones.objects.World;
 import de.t14d3.zones.permissions.flags.Flags;
 import de.t14d3.zones.utils.Messages;
+import de.t14d3.zones.utils.PlayerRepository;
 import de.t14d3.zones.utils.Utils;
 import de.t14d3.zones.visuals.BeaconUtils;
-import it.unimi.dsi.fastutil.Pair;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
@@ -29,7 +32,6 @@ import org.bukkit.event.player.*;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.util.BoundingBox;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,14 +44,14 @@ import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.pars
 public class PlayerEventListener implements Listener {
 
     private final RegionManager regionManager;
-    private final PermissionManager permissionManager;
-    private final Zones plugin;
+    private final BukkitPermissionManager permissionManager;
+    private final ZonesBukkit plugin;
     private final BeaconUtils beaconUtils;
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
     private final Messages messages;
     private final String ACTIONBAR_MESSAGE;
 
-    public PlayerEventListener(Zones plugin) {
+    public PlayerEventListener(ZonesBukkit plugin) {
         this.plugin = plugin;
         this.regionManager = plugin.getRegionManager();
         this.permissionManager = plugin.getPermissionManager();
@@ -61,6 +63,7 @@ public class PlayerEventListener implements Listener {
     @EventHandler
     private void onPlayerInteract(PlayerInteractEvent event) {
         Player player = event.getPlayer();
+        de.t14d3.zones.objects.Player zonesPlayer = PlayerRepository.get(player.getUniqueId());
         if (event.getClickedBlock() == null) {
             return; // No block clicked, exit early
         }
@@ -68,15 +71,14 @@ public class PlayerEventListener implements Listener {
         Location location = event.getClickedBlock().getLocation();
         UUID playerUUID = player.getUniqueId();
 
-        if (plugin.selection.containsKey(playerUUID)) {
+        if (zonesPlayer.getSelection() != null) {
             if (event.getHand() == EquipmentSlot.OFF_HAND) {
                 return;
             }
             event.setCancelled(true);
 
-            Pair<Location, Location> selection = plugin.selection.get(playerUUID);
-            Location min = selection.first(); // Current minimum location
-            Location max = selection.second(); // Current maximum location
+            Location min = zonesPlayer.getSelection().getMin().toLocation(player.getWorld());
+            Location max = zonesPlayer.getSelection().getMax().toLocation(player.getWorld());
 
             if (event.getAction() == Action.LEFT_CLICK_BLOCK) {
                 resetBeacon(player, min);
@@ -97,16 +99,14 @@ public class PlayerEventListener implements Listener {
                         , parsed("z", String.valueOf(location.getBlockZ()))
                 ));
             }
-
-            plugin.selection.put(playerUUID, Pair.of(min, max));
             if (min != null && max != null) {
                 Utils.Modes mode = Utils.Modes.getPlayerMode(player);
                 if (mode == Utils.Modes.CUBOID_3D) {
-                    plugin.particles.put(playerUUID, BoundingBox.of(min.toBlockLocation(), max.toBlockLocation()));
+                    zonesPlayer.setSelection(new Box(min, max, player.getWorld()));
                 } else {
                     min.setY(-63);
                     max.setY(319);
-                    plugin.particles.put(playerUUID, BoundingBox.of(min.toBlockLocation(), max.toBlockLocation()));
+                    zonesPlayer.setSelection(new Box(min, max, player.getWorld()));
                 }
 
             }
@@ -406,7 +406,7 @@ public class PlayerEventListener implements Listener {
         }
 
         // Proceed to send action bar
-        List<Region> regions = regionManager.getRegionsAt(location);
+        List<Region> regions = regionManager.getRegionsAt(BlockLocation.of(location), World.of(location.getWorld()));
         String regionNames = regions.stream().map(Region::getName).collect(Collectors.joining(", "));
 
         StringBuilder permissionsString = new StringBuilder();

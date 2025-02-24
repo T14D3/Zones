@@ -1,6 +1,5 @@
 package de.t14d3.zones.utils;
 
-import de.t14d3.zones.Zones;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
@@ -120,14 +119,4 @@ public class Utils {
             return this.name;
         }
     }
-
-    public static de.t14d3.zones.objects.Player getPlayer(String uuid) {
-        try {
-            return Zones.getInstance().getPlatform().getPlayer(UUID.fromString(uuid));
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
-    }
-
-
 }

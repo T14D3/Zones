@@ -1,7 +1,5 @@
 package de.t14d3.zones.objects;
 
-import org.bukkit.Location;
-
 public class BlockLocation {
     private int x;
     private int y;
@@ -37,6 +35,10 @@ public class BlockLocation {
         this.z = z;
     }
 
+    public org.bukkit.Location toLocation(org.bukkit.World world) {
+        return BlockLocation.asLocation(this, world);
+    }
+
     public double getDistance(BlockLocation other) {
         return Math.sqrt(Math.pow(other.getX() - this.getX(), 2) + Math.pow(other.getY() - this.getY(), 2) + Math.pow(
                 other.getZ() - this.getZ(), 2));
@@ -54,8 +56,8 @@ public class BlockLocation {
         return new BlockLocation(blockVector.getBlockX(), blockVector.getBlockY(), blockVector.getBlockZ());
     }
 
-    public static Location toLocation(BlockLocation blockLocation, org.bukkit.World world) {
-        return new Location(world, blockLocation.getX(), blockLocation.getY(), blockLocation.getZ());
+    public static org.bukkit.Location asLocation(BlockLocation blockLocation, org.bukkit.World world) {
+        return new org.bukkit.Location(world, blockLocation.getX(), blockLocation.getY(), blockLocation.getZ());
     }
 
     @Override

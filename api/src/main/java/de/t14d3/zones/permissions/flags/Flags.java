@@ -1,7 +1,8 @@
 package de.t14d3.zones.permissions.flags;
 
 import de.t14d3.zones.Region;
-import de.t14d3.zones.permissions.Result;
+import de.t14d3.zones.objects.Flag;
+import de.t14d3.zones.objects.Result;
 import de.t14d3.zones.utils.Types;
 
 import java.util.ArrayList;

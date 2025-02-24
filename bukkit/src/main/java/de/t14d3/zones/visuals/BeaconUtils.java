@@ -1,6 +1,8 @@
 package de.t14d3.zones.visuals;
 
+import de.t14d3.zones.BukkitPlatform;
 import de.t14d3.zones.ZonesBukkit;
+import de.t14d3.zones.objects.BlockLocation;
 import org.bukkit.*;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
@@ -11,6 +13,10 @@ public class BeaconUtils {
 
     public BeaconUtils(ZonesBukkit plugin) {
         this.plugin = plugin;
+    }
+
+    public static void resetBeacon(Player player, BlockLocation location, de.t14d3.zones.objects.World world) {
+        resetBeacon(player, location.toLocation(BukkitPlatform.getWorld(world)));
     }
 
     /**
@@ -25,7 +31,7 @@ public class BeaconUtils {
         }
 
         int x = location.getBlockX();
-        int y = 0;
+        int y = -62;
         int z = location.getBlockZ();
         World world = location.getWorld();
 

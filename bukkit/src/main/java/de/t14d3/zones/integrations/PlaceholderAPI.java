@@ -1,7 +1,9 @@
 package de.t14d3.zones.integrations;
 
 import de.t14d3.zones.Region;
-import de.t14d3.zones.Zones;
+import de.t14d3.zones.ZonesBukkit;
+import de.t14d3.zones.objects.BlockLocation;
+import de.t14d3.zones.objects.World;
 import de.t14d3.zones.permissions.flags.Flags;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.Bukkit;
@@ -12,9 +14,9 @@ import java.util.List;
 import java.util.UUID;
 
 public class PlaceholderAPI extends PlaceholderExpansion {
-    private final Zones plugin;
+    private final ZonesBukkit plugin;
 
-    public PlaceholderAPI(Zones plugin) {
+    public PlaceholderAPI(ZonesBukkit plugin) {
         this.plugin = plugin;
     }
 
@@ -65,7 +67,8 @@ public class PlaceholderAPI extends PlaceholderExpansion {
 
     @Override
     public String onPlaceholderRequest(Player player, @NotNull String params) {
-        List<Region> regions = plugin.getRegionManager().getRegionsAtAsync(player.getLocation()).join();
+        List<Region> regions = plugin.getRegionManager()
+                .getRegionsAt(BlockLocation.of(player.getLocation()), World.of(player.getWorld()));
         if (params.equalsIgnoreCase("get_name")) {
             String name = "";
             if (!regions.isEmpty()) {
@@ -118,20 +121,20 @@ public class PlaceholderAPI extends PlaceholderExpansion {
         }
         if (params.equalsIgnoreCase("get_min_x")) {
             if (!regions.isEmpty()) {
-                return String.valueOf(regions.get(0).getMin().getBlockX());
+                return String.valueOf(regions.get(0).getMin().getX());
             }
             return "";
         }
         if (params.equalsIgnoreCase("get_min_y")) {
             int minY = 0;
             if (!regions.isEmpty()) {
-                minY = regions.get(0).getMin().getBlockY();
+                minY = regions.get(0).getMin().getY();
             }
             return String.valueOf(minY);
         }
         if (params.equalsIgnoreCase("get_min_z")) {
             if (!regions.isEmpty()) {
-                return String.valueOf(regions.get(0).getMin().getBlockZ());
+                return String.valueOf(regions.get(0).getMin().getZ());
             }
             return "";
         }
@@ -143,19 +146,19 @@ public class PlaceholderAPI extends PlaceholderExpansion {
         }
         if (params.equalsIgnoreCase("get_max_x")) {
             if (!regions.isEmpty()) {
-                return String.valueOf(regions.get(0).getMax().getBlockX());
+                return String.valueOf(regions.get(0).getMax().getX());
             }
             return "";
         }
         if (params.equalsIgnoreCase("get_max_y")) {
             if (!regions.isEmpty()) {
-                return String.valueOf(regions.get(0).getMax().getBlockY());
+                return String.valueOf(regions.get(0).getMax().getY());
             }
             return "";
         }
         if (params.equalsIgnoreCase("get_max_z")) {
             if (!regions.isEmpty()) {
-                return String.valueOf(regions.get(0).getMax().getBlockZ());
+                return String.valueOf(regions.get(0).getMax().getZ());
             }
             return "";
         }

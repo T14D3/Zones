@@ -1,4 +1,4 @@
-package de.t14d3.zones.utils;
+package de.t14d3.zones.objects;
 
 import org.bukkit.block.BlockFace;
 import org.bukkit.util.Vector;

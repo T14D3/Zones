@@ -7,7 +7,7 @@ import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.util.eventbus.Subscribe;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.Zones;
-import de.t14d3.zones.permissions.Result;
+import de.t14d3.zones.objects.Result;
 import de.t14d3.zones.permissions.flags.Flags;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;

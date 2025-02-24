@@ -2,6 +2,8 @@ package de.t14d3.zones.visuals;
 
 import com.destroystokyo.paper.ParticleBuilder;
 import de.t14d3.zones.ZonesBukkit;
+import de.t14d3.zones.objects.Box;
+import de.t14d3.zones.utils.PlayerRepository;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -12,8 +14,6 @@ import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 public class ParticleHandler {
     private final ZonesBukkit plugin;
@@ -97,20 +97,21 @@ public class ParticleHandler {
         new BukkitRunnable() {
             @Override
             public void run() {
-                for (Map.Entry<UUID, BoundingBox> entry : plugin.selection.entrySet()) {
-                    Player player = Bukkit.getPlayer(entry.getKey());
-                    BoundingBox box = entry.getValue();
-                    if (player != null) {
-                        spawnParticleOutline(
-                                primary,
-                                secondary,
-                                player,
-                                new Location(player.getWorld(), box.getMin().getBlockX(), box.getMin().getBlockY(),
-                                        box.getMin().getBlockZ()),
-                                new Location(player.getWorld(), box.getMax().getBlockX(), box.getMax().getBlockY(),
-                                        box.getMax().getBlockZ()),
-                                range);
+                for (Player player : Bukkit.getOnlinePlayers()) {
+                    Box selection = PlayerRepository.get(player.getUniqueId()).getSelection();
+                    if (selection == null) {
+                        continue;
                     }
+                    BoundingBox box = selection.toBoundingBox();
+                    spawnParticleOutline(
+                            primary,
+                            secondary,
+                            player,
+                            new Location(player.getWorld(), box.getMin().getBlockX(), box.getMin().getBlockY(),
+                                    box.getMin().getBlockZ()),
+                            new Location(player.getWorld(), box.getMax().getBlockX(), box.getMax().getBlockY(),
+                                    box.getMax().getBlockZ()),
+                            range);
 
                 }
             }

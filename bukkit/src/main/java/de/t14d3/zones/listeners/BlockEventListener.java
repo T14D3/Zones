@@ -1,9 +1,7 @@
 package de.t14d3.zones.listeners;
 
-import de.t14d3.zones.RegionManager;
-import de.t14d3.zones.Zones;
-import de.t14d3.zones.permissions.PermissionManager;
-import de.t14d3.zones.permissions.flags.Flag;
+import de.t14d3.zones.*;
+import de.t14d3.zones.objects.Flag;
 import de.t14d3.zones.permissions.flags.Flags;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
@@ -13,16 +11,19 @@ import org.bukkit.event.world.StructureGrowEvent;
 
 public class BlockEventListener implements Listener {
 
-    private final Zones plugin;
+    private final Zones zones;
+    private final ZonesBukkit plugin;
     private final RegionManager regionManager;
-    private final PermissionManager permissionManager;
+    private final BukkitPermissionManager permissionManager;
 
-    public BlockEventListener(Zones plugin) {
-        this.plugin = plugin;
-        this.regionManager = plugin.getRegionManager();
+    public BlockEventListener(Zones zones) {
+        this.zones = zones;
+        this.regionManager = zones.getRegionManager();
+        this.plugin = ((BukkitPlatform) zones.getPlatform()).getPlugin();
         this.permissionManager = plugin.getPermissionManager();
+
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
-        if (plugin.getConfig().getBoolean("events.block-physics.enabled", false)) {
+        if (zones.getConfig().getBoolean("events.block-physics.enabled", false)) {
             plugin.getServer().getPluginManager().registerEvents(new BlockPhysicsEventListener(), plugin);
         }
     }

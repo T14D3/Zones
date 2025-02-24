@@ -2,14 +2,15 @@ package de.t14d3.zones.commands;
 
 import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.RegionManager;
-import de.t14d3.zones.Zones;
+import de.t14d3.zones.ZonesBukkit;
+import de.t14d3.zones.objects.Box;
+import de.t14d3.zones.objects.World;
 import de.t14d3.zones.utils.Messages;
+import de.t14d3.zones.utils.PlayerRepository;
 import de.t14d3.zones.utils.Utils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.StringArgument;
-import it.unimi.dsi.fastutil.Pair;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 import java.util.HashMap;
@@ -22,9 +23,9 @@ public class CreateCommand {
     private final MiniMessage mm = MiniMessage.miniMessage();
     private RegionManager regionManager;
     private Messages messages;
-    private Zones plugin;
+    private ZonesBukkit plugin;
 
-    public CreateCommand(Zones plugin) {
+    public CreateCommand(ZonesBukkit plugin) {
         this.plugin = plugin;
         this.regionManager = plugin.getRegionManager();
         this.messages = plugin.getMessages();
@@ -35,37 +36,34 @@ public class CreateCommand {
             .withOptionalArguments(new StringArgument("name"))
             .executes((sender, args) -> {
                 if (sender instanceof Player player) {
-                    if (!plugin.selection.containsKey(player.getUniqueId())) {
-                        plugin.selection.put(player.getUniqueId(), Pair.of(null, null));
+                    de.t14d3.zones.objects.Player zplayer = PlayerRepository.get(player.getUniqueId());
+                    if (zplayer.getSelection() == null) {
+                        zplayer.setSelection(new de.t14d3.zones.objects.Box(null, null, World.of(player.getWorld())));
                         sender.sendMessage(mm.deserialize(messages.get("commands.create.click-corners")));
                         return;
                     }
-                    Pair<Location, Location> selectionPair = plugin.selection.get(player.getUniqueId());
-                    if (selectionPair.first() != null && selectionPair.second() != null) {
-                        if (regionManager.overlapsExistingRegion(selectionPair.first(),
-                                selectionPair.second()) && !sender.hasPermission("zones.create.overlap")) {
+                    Box selection = zplayer.getSelection();
+                    if (selection.getMin() != null && selection.getMax() != null) {
+                        if (regionManager.overlapsExistingRegion(selection) && !sender.hasPermission(
+                                "zones.create.overlap")) {
                             sender.sendMessage(mm.deserialize(messages.get("commands.create.overlap")));
                             return;
                         }
-                        Map<String, String> perms = new HashMap<>();
-                        perms.put("role", "owner");
+                        Map<String, String> ownerPerms = new HashMap<>();
+                        ownerPerms.put("role", "owner");
+                        Map<String, Map<String, String>> members = new HashMap<>();
+                        members.put(player.getUniqueId().toString(), ownerPerms);
+                        RegionKey key = RegionKey.generate();
+                        regionManager.createNewRegion(key.toString(), selection.getMin(),
+                                selection.getMax(), selection.getWorld(), members, key, null, 0);
                         Utils.Modes mode = Utils.Modes.getPlayerMode(player);
-                        RegionKey key;
-                        if (mode == Utils.Modes.CUBOID_3D && player.hasPermission("zones.mode.3d.main")) {
-                            key = regionManager.createNewRegion(sender.getName(), selectionPair.first(),
-                                    selectionPair.second(),
-                                    player.getUniqueId(), perms).getKey();
-                        } else {
-                            key = regionManager.create2DRegion(sender.getName(), selectionPair.first(),
-                                    selectionPair.second(),
-                                    player.getUniqueId(), perms).getKey();
-                        }
-                        resetBeacon(player, selectionPair.first());
-                        resetBeacon(player, selectionPair.second());
+
+                        resetBeacon(player, selection.getMin(), selection.getWorld());
+                        resetBeacon(player, selection.getMax(), selection.getWorld());
                         sender.sendMessage(
                                 mm.deserialize(messages.get("commands.create.success"),
                                         parsed("region", key.toString())));
-                        plugin.selection.remove(player.getUniqueId());
+                        zplayer.setSelection(null);
                     } else {
                         sender.sendMessage(mm.deserialize(messages.get("commands.create.click-corners")));
                     }

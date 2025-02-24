@@ -3,8 +3,12 @@ package de.t14d3.zones.commands;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.RegionManager;
-import de.t14d3.zones.Zones;
+import de.t14d3.zones.ZonesBukkit;
+import de.t14d3.zones.objects.BlockLocation;
+import de.t14d3.zones.objects.Box;
+import de.t14d3.zones.objects.World;
 import de.t14d3.zones.utils.Messages;
+import de.t14d3.zones.utils.PlayerRepository;
 import dev.jorel.commandapi.BukkitTooltip;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.StringTooltip;
@@ -12,7 +16,6 @@ import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import dev.jorel.commandapi.arguments.StringArgument;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.entity.Player;
-import org.bukkit.util.BoundingBox;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,9 +27,9 @@ public class SelectCommand {
     private final MiniMessage mm = MiniMessage.miniMessage();
     private RegionManager regionManager;
     private Messages messages;
-    private Zones plugin;
+    private ZonesBukkit plugin;
 
-    public SelectCommand(Zones plugin) {
+    public SelectCommand(ZonesBukkit plugin) {
         this.plugin = plugin;
         this.regionManager = plugin.getRegionManager();
         this.messages = plugin.getMessages();
@@ -62,10 +65,12 @@ public class SelectCommand {
             .executes((sender, args) -> {
                 if (sender instanceof Player player) {
                     Region region;
+                    de.t14d3.zones.objects.Player zplayer = PlayerRepository.get(player.getUniqueId());
                     if (args.get("key") == null) {
-                        region = regionManager.getEffectiveRegionAt(player.getLocation());
+                        region = regionManager.getEffectiveRegionAt(BlockLocation.of(player.getLocation()),
+                                World.of(player.getWorld()));
                         if (region == null) {
-                            plugin.particles.remove(player.getUniqueId());
+                            zplayer.setSelection(null);
                             player.sendMessage(mm.deserialize(messages.get("commands.select.deselected")));
                             return;
                         }
@@ -76,12 +81,12 @@ public class SelectCommand {
                         player.sendMessage(mm.deserialize(messages.get("commands.invalid-region")));
                         return;
                     }
-                    if (!plugin.particles.containsKey(player.getUniqueId()) || args.get("key") == null) {
-                        plugin.particles.put(player.getUniqueId(), BoundingBox.of(region.getMin(), region.getMax()));
+                    if (zplayer.getSelection() == null || args.get("key") == null) {
+                        zplayer.setSelection(new Box(region.getMin(), region.getMax(), World.of(player.getWorld())));
                         player.sendMessage(mm.deserialize(messages.get("commands.select.selected"),
                                 parsed("region", region.getName())));
                     } else {
-                        plugin.particles.remove(player.getUniqueId());
+                        zplayer.setSelection(null);
                         player.sendMessage(mm.deserialize(messages.get("commands.select.deselected")));
                     }
                 }

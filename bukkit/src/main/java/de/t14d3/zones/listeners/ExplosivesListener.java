@@ -1,8 +1,10 @@
 package de.t14d3.zones.listeners;
 
+import de.t14d3.zones.BukkitPermissionManager;
 import de.t14d3.zones.Region;
-import de.t14d3.zones.Zones;
-import de.t14d3.zones.permissions.PermissionManager;
+import de.t14d3.zones.ZonesBukkit;
+import de.t14d3.zones.objects.BlockLocation;
+import de.t14d3.zones.objects.World;
 import de.t14d3.zones.permissions.flags.Flags;
 import de.t14d3.zones.utils.DebugLoggerManager;
 import org.bukkit.Bukkit;
@@ -18,15 +20,15 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ExplosivesListener {
-    private final Zones plugin;
-    private final PermissionManager permissionManager;
+    private final ZonesBukkit plugin;
+    private final BukkitPermissionManager permissionManager;
 
     private final int limit;
     private final boolean limitExceededCancel;
     private final AtomicInteger explosionCount = new AtomicInteger(0);
     private final DebugLoggerManager logger;
 
-    public ExplosivesListener(Zones plugin) {
+    public ExplosivesListener(ZonesBukkit plugin) {
         this.plugin = plugin;
         this.permissionManager = plugin.getPermissionManager();
         this.logger = plugin.getDebugLogger();
@@ -142,9 +144,12 @@ public class ExplosivesListener {
                         if (permissionManager.checkAction(event.getBlock().getLocation(), Flags.EXPLOSION,
                                 event.getBlock().getType().name(), event.getExplodedBlockState().getType())) {
                             Region region = plugin.getRegionManager()
-                                    .getEffectiveRegionAt(event.getBlock().getLocation());
+                                    .getEffectiveRegionAt(BlockLocation.of(event.getBlock().getLocation()),
+                                            World.of(event.getBlock().getWorld()));
                             event.blockList().removeIf(block -> !Objects.equals(
-                                    plugin.getRegionManager().getEffectiveRegionAt(block.getLocation()), region));
+                                    plugin.getRegionManager()
+                                            .getEffectiveRegionAt(BlockLocation.of(block.getLocation()),
+                                                    World.of(block.getWorld())), region));
                         } else {
                             event.setCancelled(true);
                         }
@@ -164,9 +169,12 @@ public class ExplosivesListener {
                         };
                         if (permissionManager.checkAction(location, Flags.EXPLOSION,
                                 event.getEntityType().name())) {
-                            Region region = plugin.getRegionManager().getEffectiveRegionAt(location);
+                            Region region = plugin.getRegionManager()
+                                    .getEffectiveRegionAt(BlockLocation.of(location), World.of(location.getWorld()));
                             event.blockList().removeIf(block -> !Objects.equals(
-                                    plugin.getRegionManager().getEffectiveRegionAt(block.getLocation()), region));
+                                    plugin.getRegionManager()
+                                            .getEffectiveRegionAt(BlockLocation.of(block.getLocation()),
+                                                    World.of(block.getWorld())), region));
                         } else {
                             event.setCancelled(true);
                         }
@@ -214,7 +222,8 @@ public class ExplosivesListener {
         @EventHandler
         public void onTNTPrime(TNTPrimeEvent event) {
             if (event.getPrimingEntity() instanceof org.bukkit.entity.Player player) {
-                if (!permissionManager.checkAction(event.getBlock().getLocation(), player.getUniqueId(), Flags.IGNITE,
+                if (!permissionManager.checkAction(event.getBlock().getLocation(), player.getUniqueId().toString(),
+                        Flags.IGNITE,
                         event.getBlock().getType().name())) {
                     event.setCancelled(true);
                 }

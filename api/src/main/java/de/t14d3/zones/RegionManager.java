@@ -1,12 +1,9 @@
 package de.t14d3.zones;
 
 import de.t14d3.zones.datasource.DataSourceManager;
-import de.t14d3.zones.objects.BlockLocation;
-import de.t14d3.zones.objects.Player;
-import de.t14d3.zones.objects.World;
+import de.t14d3.zones.objects.*;
 import de.t14d3.zones.permissions.CacheUtils;
 import de.t14d3.zones.permissions.PermissionManager;
-import de.t14d3.zones.utils.Direction;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import org.jetbrains.annotations.Nullable;
@@ -189,6 +186,10 @@ public class RegionManager {
 
     public boolean overlapsExistingRegion(BlockLocation min, BlockLocation max, World world) {
         return overlapsExistingRegion(min, max, world, null);
+    }
+
+    public boolean overlapsExistingRegion(Box box) {
+        return overlapsExistingRegion(box.getMin(), box.getMax(), box.getWorld(), null);
     }
 
     public boolean overlapsExistingRegion(BlockLocation min, BlockLocation max, World world, @Nullable RegionKey keyToIgnore) {

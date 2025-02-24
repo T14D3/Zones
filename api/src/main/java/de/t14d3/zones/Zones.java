@@ -1,7 +1,5 @@
 package de.t14d3.zones;
 
-import de.t14d3.zones.objects.Box;
-import de.t14d3.zones.objects.Player;
 import de.t14d3.zones.permissions.CacheUtils;
 import de.t14d3.zones.permissions.PermissionManager;
 import de.t14d3.zones.permissions.flags.Flags;
@@ -9,8 +7,9 @@ import de.t14d3.zones.utils.*;
 import org.slf4j.Logger;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Properties;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -24,7 +23,6 @@ public class Zones {
     private Types types;
     private Utils utils;
 
-    public Map<Player, Box> selection = new HashMap<>();
     private RegionManager regionManager;
     private PermissionManager permissionManager;
     private ZonesPlatform platform;
@@ -41,7 +39,16 @@ public class Zones {
         this.configManager = new ConfigManager(this);
         new ConfigUpdater(this);
 
-        this.permissionManager = new PermissionManager(this);
+        // TODO: Make this platform agnostic
+        Properties messagesConfig = new Properties();
+        try {
+            messagesConfig.load(new FileInputStream(new File("plugins/Zones/messages.properties")));
+        } catch (IOException e) {
+            getLogger().error("Failed to load messages.properties");
+        }
+        this.messages = new Messages(messagesConfig, this);
+
+        this.permissionManager = platform.getPermissionManager();
         this.regionManager = new RegionManager(this, permissionManager);
         this.permissionManager.setRegionManager(regionManager);
         this.executor = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<>());
@@ -51,10 +58,6 @@ public class Zones {
 
     public static Zones getInstance() {
         return instance;
-    }
-
-    public void setPlatform(ZonesPlatform platform) {
-        this.platform = platform;
     }
 
     public ZonesPlatform getPlatform() {
