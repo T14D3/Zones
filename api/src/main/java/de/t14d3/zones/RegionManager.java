@@ -87,9 +87,7 @@ public class RegionManager {
         return this.worldRegions.get(world);
     }
 
-
-
-    // Save a region to the YAML file
+    // Save a region to the configured data source
     public void saveRegion(RegionKey key, Region region) {
         String keyString = key.toString();
         dataSourceManager.saveRegion(keyString, region);
@@ -120,7 +118,8 @@ public class RegionManager {
         RegionKey key = RegionKey.generate();
 
         Map<String, Map<String, String>> members = new HashMap<>();
-        Region newRegion = new Region(name, min, max, members, key, 0);
+        Region newRegion = new Region(name, min.toVector().toBlockVector(), max.toVector().toBlockVector(),
+                min.getWorld(), members, key, 0);
 
         ownerPermissions.forEach((permission, value) -> {
             newRegion.addMemberPermission(playerUUID, permission, value, this);
@@ -161,7 +160,8 @@ public class RegionManager {
      * @return The newly created region.
      */
     public Region createNewRegion(RegionKey key, String name, Location min, Location max, Map<String, Map<String, String>> members, int priority) {
-        Region region = new Region(name, min, max, members, key, priority);
+        Region region = new Region(name, min.toVector().toBlockVector(), max.toVector().toBlockVector(), min.getWorld(),
+                members, key, priority);
         saveRegion(key, region);
         indexRegion(region); // Add the region to the spatial index
         return region;
@@ -172,7 +172,6 @@ public class RegionManager {
         max.setY(319);
         return createNewRegion(name, min, max, playerUUID, ownerPermissions);
     }
-
 
     /**
      * Creates a new region as a sub-region of the given parent region.

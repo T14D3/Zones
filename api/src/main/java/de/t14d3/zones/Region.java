@@ -10,10 +10,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-
 /**
  * Represents a region in the plugin.
- * Constructive or destructive methods are implemented in the {@link de.t14d3.zones.RegionManager}.
+ * Constructive or destructive methods are implemented in the
+ * {@link de.t14d3.zones.RegionManager}.
  */
 public class Region {
     private String name;
@@ -25,35 +25,9 @@ public class Region {
     private RegionKey parent;
     private int priority;
 
-    // Constructor
-
     /**
-     * Constructs a new region with the given name, minimum and maximum locations, members and parent.
-     *
-     * @param name     The name of the region (not unique).
-     * @param min      The minimum location of the region.
-     * @param max      The maximum location of the region.
-     * @param members  The members of the region.
-     * @param key      The key of the region.
-     * @param parent   The parent (if any) of the region.
-     * @param priority The priority of the region.
-     * @see #Region(String, BlockVector, BlockVector, World, Map, RegionKey, RegionKey, int)
-     * @deprecated use {@link #Region(String, BlockVector, BlockVector, World, Map, RegionKey, RegionKey, int)}
-     */
-    @Deprecated(since = "0.2.0", forRemoval = true)
-    Region(@NotNull String name, @NotNull Location min, @NotNull Location max, Map<String, Map<String, String>> members, @NotNull RegionKey key, @Nullable RegionKey parent, int priority) {
-        this.name = name;
-        this.min = min.toVector().toBlockVector();
-        this.max = max.toVector().toBlockVector();
-        this.world = min.getWorld();
-        this.members = (members != null) ? members : new HashMap<>();
-        this.key = key;
-        this.parent = parent;
-        this.priority = priority;
-    }
-
-    /**
-     * Constructs a new region with the given name, minimum and maximum locations, members and parent.
+     * Constructs a new region with the given name, minimum and maximum locations,
+     * members and parent.
      *
      * @param name     The name of the region (not unique).
      * @param min      The minimum BlockVector of the region.
@@ -63,9 +37,11 @@ public class Region {
      * @param key      The key of the region.
      * @param parent   The parent (if any) of the region.
      * @param priority The priority of the region.
-     * @see #Region(String, Location, Location, Map, RegionKey, int)
+     * @see #Region(String, BlockVector, BlockVector, World, Map, RegionKey, int)
      */
-    public Region(@NotNull String name, @NotNull BlockVector min, @NotNull BlockVector max, @NotNull World world, Map<String, Map<String, String>> members, @NotNull RegionKey key, @Nullable RegionKey parent, int priority) {
+    public Region(@NotNull String name, @NotNull BlockVector min, @NotNull BlockVector max, @NotNull World world,
+                  Map<String, Map<String, String>> members, @NotNull RegionKey key, @Nullable RegionKey parent,
+                  int priority) {
         this.name = name;
         this.min = min;
         this.max = max;
@@ -79,7 +55,8 @@ public class Region {
     // Constructor overload for regions without parent
 
     /**
-     * Constructs a new region with the given name, minimum and maximum locations, and members.
+     * Constructs a new region with the given name, minimum and maximum locations,
+     * and members.
      *
      * @param name     The name of the region (not unique).
      * @param min      The minimum location of the region.
@@ -87,10 +64,11 @@ public class Region {
      * @param members  The members of the region.
      * @param key      The key of the region.
      * @param priority The priority of the region.
-     * @see #Region(String, Location, Location, Map, RegionKey, int)
+     * @see #Region(String, BlockVector, BlockVector, World, Map, RegionKey, int)
      */
-    Region(String name, Location min, Location max, Map<String, Map<String, String>> members, RegionKey key, int priority) {
-        this(name, min, max, members, key, null, priority);
+    Region(String name, BlockVector min, BlockVector max, World world, Map<String, Map<String, String>> members,
+           RegionKey key, int priority) {
+        this(name, min, max, world, members, key, null, priority);
     }
 
     // Getters and Setters
@@ -283,7 +261,6 @@ public class Region {
     public boolean isOwner(UUID uuid) {
         return getOwner() != null && getOwner().equals(uuid);
     }
-
 
     public int getPriority() {
         return priority;
