@@ -6,7 +6,6 @@ import de.t14d3.zones.permissions.CacheUtils;
 import de.t14d3.zones.permissions.PermissionManager;
 import de.t14d3.zones.permissions.flags.Flags;
 import de.t14d3.zones.utils.*;
-import de.t14d3.zones.visuals.FindBossbar;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -24,7 +23,6 @@ public class Zones {
 
     private Types types;
     private Utils utils;
-    private FindBossbar findBossbar;
 
     public Map<Player, Box> selection = new HashMap<>();
     private RegionManager regionManager;
