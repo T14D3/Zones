@@ -6,10 +6,8 @@ import de.t14d3.zones.permissions.PermissionManager;
 import de.t14d3.zones.utils.PlayerRepository;
 import de.t14d3.zones.utils.Types;
 import me.lucko.fabric.api.permissions.v0.Permissions;
-import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.kyori.adventure.audience.Audience;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.ActionResult;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -22,13 +20,6 @@ public class FabricPlatform implements ZonesPlatform {
 
     public FabricPlatform(ZonesFabric mod) {
         this.mod = mod;
-        this.permissionManager = (FabricPermissionManager) mod.getPermissionManager();
-        registerCallbacks();
-    }
-
-    private void registerCallbacks() {
-        UseBlockCallback.EVENT.register((player, world, hand, hitResult) ->
-                permissionManager.checkAction(hitResult, world, player) ? ActionResult.PASS : ActionResult.FAIL);
     }
 
     @Override

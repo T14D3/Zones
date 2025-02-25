@@ -1,11 +1,11 @@
 package de.t14d3.zones;
 
 import de.t14d3.zones.objects.BlockLocation;
+import de.t14d3.zones.objects.Flag;
 import de.t14d3.zones.objects.World;
 import de.t14d3.zones.permissions.PermissionManager;
-import de.t14d3.zones.permissions.flags.Flags;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.math.BlockPos;
 
 public class FabricPermissionManager extends PermissionManager {
     private final Zones zones;
@@ -14,11 +14,14 @@ public class FabricPermissionManager extends PermissionManager {
         this.zones = zones;
     }
 
-    public boolean checkAction(BlockHitResult hitResult, net.minecraft.world.World nativeWorld, PlayerEntity nativePlayer) {
-        BlockLocation location = BlockLocation.of(hitResult.getBlockPos().getX(), hitResult.getBlockPos().getY(),
-                hitResult.getBlockPos().getZ());
+    public boolean checkAction(BlockPos pos, net.minecraft.world.World nativeWorld, PlayerEntity nativePlayer, Flag flag) {
+        return checkAction(pos, nativeWorld, nativePlayer,
+                nativePlayer.getMainHandStack().getItem().getTranslationKey(), flag);
+    }
+
+    public boolean checkAction(BlockPos pos, net.minecraft.world.World nativeWorld, PlayerEntity nativePlayer, String type, Flag flag) {
+        BlockLocation location = BlockLocation.of(pos.getX(), pos.getY(), pos.getZ());
         World world = ((FabricPlatform) zones.getPlatform()).getWorld(nativeWorld);
-        String type = nativePlayer.getActiveItem().getItem().getTranslationKey();
-        return super.checkAction(location, world, Flags.PLACE, type);
+        return super.checkAction(location, world, nativePlayer.getUuidAsString(), flag, type);
     }
 }

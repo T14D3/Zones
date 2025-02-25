@@ -3,7 +3,7 @@ package de.t14d3.zones;
 import de.t14d3.zones.fabric.commands.CancelCommand;
 import de.t14d3.zones.fabric.commands.CreateCommand;
 import de.t14d3.zones.fabric.commands.DeleteCommand;
-import de.t14d3.zones.permissions.PermissionManager;
+import de.t14d3.zones.fabric.listeners.PlayerListener;
 import de.t14d3.zones.utils.Messages;
 import de.t14d3.zones.utils.Types;
 import net.fabricmc.api.DedicatedServerModInitializer;
@@ -58,13 +58,14 @@ public class ZonesFabric implements DedicatedServerModInitializer {
     private void onEnable(@NotNull MinecraftServer server) {
         this.server = server;
         this.playerManager = server.getPlayerManager();
+        new PlayerListener(this);
     }
 
     public File getDataFolder() {
         return dataFolder;
     }
 
-    public PermissionManager getPermissionManager() {
+    public FabricPermissionManager getPermissionManager() {
         return this.permissionManager;
     }
 
