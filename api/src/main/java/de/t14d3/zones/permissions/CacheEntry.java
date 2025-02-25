@@ -1,5 +1,6 @@
 package de.t14d3.zones.permissions;
 
+import de.t14d3.zones.objects.BlockLocation;
 import de.t14d3.zones.objects.Result;
 
 public class CacheEntry {
@@ -32,6 +33,10 @@ public class CacheEntry {
     }
 
     public boolean isEqual(Object flag, String value, Object key) {
+        // Weird stupid special handling for BlockLocation caches
+        if (flag instanceof BlockLocation loc) {
+            return loc.equals(this.flag) && this.value.equals(value) && this.key.equals(key);
+        }
         return this.flag.equals(flag) && this.value.equals(value) && this.key.equals(key);
     }
 }

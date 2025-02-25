@@ -221,15 +221,11 @@ public class Region {
 
 
     public boolean contains(BlockLocation vec) {
-        return vec.getX() >= this.min.getX() && vec.getX() < this.max.getX() + 1
-                && vec.getY() >= this.min.getY() && vec.getY() < this.max.getY() + 1
-                && vec.getZ() >= this.min.getZ() && vec.getZ() < this.max.getZ() + 1;
+        return getBounds().contains(vec);
     }
 
-    public boolean intersects(@NotNull BlockLocation min, @NotNull BlockLocation max) {
-        return this.min.getX() <= max.getX() && this.max.getX() >= min.getX()
-                && this.min.getY() <= max.getY() && this.max.getY() >= min.getY()
-                && this.min.getZ() <= max.getZ() && this.max.getZ() >= min.getZ();
+    public boolean intersects(@NotNull BlockLocation min, @NotNull BlockLocation max, World world) {
+        return getBounds().intersects(min, max, world);
     }
 
     public Box getBounds() {

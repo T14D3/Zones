@@ -146,11 +146,14 @@ public final class ZonesBukkit extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        // Save regions to regions.yml before plugin shutdown
+        // Save regions to datasource before plugin shutdown
         regionManager.saveRegions();
         regionManager.regions().clear();
         CommandAPI.onDisable();
         regionManager.getDataSourceManager().close();
+        // Close audiences
+        ((BukkitPlatform) getPlatform()).getAudiences().close();
+
         getLogger().info("Zones plugin is disabling and regions are saved.");
     }
 

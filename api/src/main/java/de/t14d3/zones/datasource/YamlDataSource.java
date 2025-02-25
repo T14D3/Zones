@@ -90,23 +90,28 @@ public class YamlDataSource extends AbstractDataSource {
 
     @Override
     public void saveRegion(String key, Region region) {
-        regionsConfig.set("regions." + key + ".name", region.getName());
-        regionsConfig.set("regions." + key + ".priority", region.getPriority());
-        regionsConfig.set("regions." + key + ".world", region.getWorld().getName());
-        regionsConfig.set("regions." + key + ".min.x", region.getMin().getX());
-        regionsConfig.set("regions." + key + ".min.y", region.getMin().getY());
-        regionsConfig.set("regions." + key + ".min.z", region.getMin().getZ());
-        regionsConfig.set("regions." + key + ".max.x", region.getMax().getX());
-        regionsConfig.set("regions." + key + ".max.y", region.getMax().getY());
-        regionsConfig.set("regions." + key + ".max.z", region.getMax().getZ());
-        if (region.getParent() != null) {
-            regionsConfig.set("regions." + key + ".parent", region.getParent().toString());
-        }
-        for (Map.Entry<String, Map<String, String>> entry : region.getMembers().entrySet()) {
-            String who = entry.getKey();
-            for (Map.Entry<String, String> perm : entry.getValue().entrySet()) {
-                regionsConfig.set("regions." + key + ".members." + who + "." + perm.getKey(), perm.getValue());
+        try {
+            ConfigurationNode regionNode = regionsConfig.getConfig().node("regions", key);
+            regionNode.node("name").set(region.getName());
+            regionNode.node("priority").set(region.getPriority());
+            regionNode.node("world").set(region.getWorld().getName());
+            regionNode.node("min", "x").set(region.getMin().getX());
+            regionNode.node("min", "y").set(region.getMin().getY());
+            regionNode.node("min", "z").set(region.getMin().getZ());
+            regionNode.node("max", "x").set(region.getMax().getX());
+            regionNode.node("max", "y").set(region.getMax().getY());
+            regionNode.node("max", "z").set(region.getMax().getZ());
+            if (region.getParent() != null) {
+                regionNode.node("parent").set(region.getParent().toString());
             }
+            for (Map.Entry<String, Map<String, String>> entry : region.getMembers().entrySet()) {
+                String who = entry.getKey();
+                for (Map.Entry<String, String> perm : entry.getValue().entrySet()) {
+                    regionNode.node("members", who, perm.getKey()).set(perm.getValue());
+                }
+            }
+        } catch (Exception e) {
+            plugin.getLogger().error("Failed to save region " + key + ": " + e.getMessage());
         }
     }
 }

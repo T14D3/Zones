@@ -22,4 +22,12 @@ public class World {
     public static World of(org.bukkit.World world) {
         return new World(world.getName(), world.getUID());
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        World world = (World) o;
+        return uid.equals(world.uid);
+    }
 }

@@ -51,12 +51,25 @@ public class Box {
     }
 
     public boolean intersects(Box other) {
-        return other.min.getX() <= max.getX() && other.max.getX() >= min.getX()
+        return other.world.equals(world) &&
+                other.min.getX() <= max.getX() && other.max.getX() >= min.getX()
                 && other.min.getY() <= max.getY() && other.max.getY() >= min.getY()
                 && other.min.getZ() <= max.getZ() && other.max.getZ() >= min.getZ();
     }
 
+    public boolean intersects(BlockLocation min, BlockLocation max, World world) {
+        return intersects(new Box(min, max, world));
+    }
+
     public org.bukkit.util.BoundingBox toBoundingBox() {
         return new org.bukkit.util.BoundingBox(min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Box box = (Box) o;
+        return world.equals(box.world) && min.equals(box.min) && max.equals(box.max);
     }
 }

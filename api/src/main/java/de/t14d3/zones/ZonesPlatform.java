@@ -4,6 +4,7 @@ import de.t14d3.zones.objects.Player;
 import de.t14d3.zones.objects.World;
 import de.t14d3.zones.permissions.PermissionManager;
 import de.t14d3.zones.utils.Types;
+import net.kyori.adventure.audience.Audience;
 
 import java.io.File;
 import java.util.List;
@@ -15,6 +16,7 @@ public interface ZonesPlatform {
 
     Player getPlayer(UUID uuid);
 
+    Audience getAudience(Player player);
 
     boolean hasPermission(Player player, String permission);
 

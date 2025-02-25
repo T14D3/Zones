@@ -5,7 +5,6 @@ import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.ZonesBukkit;
 import de.t14d3.zones.objects.BlockLocation;
-import de.t14d3.zones.objects.Box;
 import de.t14d3.zones.objects.World;
 import de.t14d3.zones.utils.Messages;
 import de.t14d3.zones.utils.PlayerRepository;
@@ -69,7 +68,7 @@ public class SelectCommand {
                     if (args.get("key") == null) {
                         region = regionManager.getEffectiveRegionAt(BlockLocation.of(player.getLocation()),
                                 World.of(player.getWorld()));
-                        if (region == null) {
+                        if (region == null || region.getBounds().equals(zplayer.getSelection())) {
                             zplayer.setSelection(null);
                             player.sendMessage(mm.deserialize(messages.get("commands.select.deselected")));
                             return;
@@ -82,7 +81,7 @@ public class SelectCommand {
                         return;
                     }
                     if (zplayer.getSelection() == null || args.get("key") == null) {
-                        zplayer.setSelection(new Box(region.getMin(), region.getMax(), World.of(player.getWorld())));
+                        zplayer.setSelection(region.getBounds());
                         player.sendMessage(mm.deserialize(messages.get("commands.select.selected"),
                                 parsed("region", region.getName())));
                     } else {

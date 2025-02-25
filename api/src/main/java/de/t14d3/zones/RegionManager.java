@@ -19,8 +19,8 @@ public class RegionManager {
     private final ZonesPlatform platform;
 
     private final Int2ObjectOpenHashMap<Region> loadedRegions = new Int2ObjectOpenHashMap<>();
-    private final Map<World, Int2ObjectOpenHashMap<Region>> worldRegions = new HashMap<>();
-    private final Map<World, Long2ObjectOpenHashMap<List<Region>>> chunkRegions = new HashMap<>();
+    private final Map<UUID, Int2ObjectOpenHashMap<Region>> worldRegions = new HashMap<>();
+    private final Map<UUID, Long2ObjectOpenHashMap<List<Region>>> chunkRegions = new HashMap<>();
 
     public RegionManager(Zones plugin, PermissionManager permissionManager) {
         this.pm = permissionManager;
@@ -57,13 +57,13 @@ public class RegionManager {
     public void loadRegions() {
         loadedRegions.clear();
         worldRegions.clear();
-        platform.getWorlds().forEach(world -> worldRegions.put(world, new Int2ObjectOpenHashMap<>()));
+        platform.getWorlds().forEach(world -> worldRegions.put(world.getUID(), new Int2ObjectOpenHashMap<>()));
         dataSourceManager.loadRegions();
     }
 
     public void loadRegions(World world) {
-        worldRegions.computeIfAbsent(world, k -> new Int2ObjectOpenHashMap<>());
-        worldRegions.get(world).clear();
+        worldRegions.computeIfAbsent(world.getUID(), k -> new Int2ObjectOpenHashMap<>());
+        worldRegions.get(world.getUID()).clear();
         dataSourceManager.loadRegions();
     }
 
@@ -115,7 +115,7 @@ public class RegionManager {
         CacheUtils.getInstance().invalidateInteractionCaches();
         saveRegion(key, newRegion);
         loadedRegions.put(key.getValue(), newRegion);
-        worldRegions.computeIfAbsent(newRegion.getWorld(), k -> new Int2ObjectOpenHashMap<>())
+        worldRegions.computeIfAbsent(newRegion.getWorld().getUID(), k -> new Int2ObjectOpenHashMap<>())
                 .put(newRegion.getKey().getValue(), newRegion);
         indexRegion(newRegion); // Add the new region to the spatial index
         return newRegion;
@@ -156,7 +156,7 @@ public class RegionManager {
         CacheUtils.getInstance().invalidateInteractionCaches();
         saveRegion(regionKey, newRegion);
         loadedRegions.put(regionKey.getValue(), newRegion);
-        worldRegions.computeIfAbsent(newRegion.getWorld(), k -> new Int2ObjectOpenHashMap<>())
+        worldRegions.computeIfAbsent(newRegion.getWorld().getUID(), k -> new Int2ObjectOpenHashMap<>())
                 .put(newRegion.getKey().getValue(), newRegion);
         indexRegion(newRegion); // Add the new region to the spatial index
         return newRegion;
@@ -193,8 +193,8 @@ public class RegionManager {
     }
 
     public boolean overlapsExistingRegion(BlockLocation min, BlockLocation max, World world, @Nullable RegionKey keyToIgnore) {
-        for (Region region : worldRegions.get(world).values()) {
-            if (region.intersects(min, max) && !region.getKey().equals(keyToIgnore)) {
+        for (Region region : worldRegions.get(world.getUID()).values()) {
+            if (region.intersects(min, max, world) && !region.getKey().equals(keyToIgnore)) {
                 return true;
             }
         }
@@ -215,7 +215,7 @@ public class RegionManager {
         int zChunk = location.getZ() >> 4;
         long key = ((long) xChunk << 32) | (zChunk & 0xFFFFFFFFL);
 
-        List<Region> candidates = chunkRegions.getOrDefault(world, new Long2ObjectOpenHashMap<>())
+        List<Region> candidates = chunkRegions.getOrDefault(world.getUID(), new Long2ObjectOpenHashMap<>())
                 .getOrDefault(key, Collections.emptyList());
         for (Region region : candidates) {
             if (region.contains(location)) foundRegions.add(region);
@@ -244,7 +244,7 @@ public class RegionManager {
 
     private void indexRegion(Region region) {
         World world = region.getWorld();
-        Long2ObjectOpenHashMap<List<Region>> worldChunks = chunkRegions.computeIfAbsent(world,
+        Long2ObjectOpenHashMap<List<Region>> worldChunks = chunkRegions.computeIfAbsent(world.getUID(),
                 k -> new Long2ObjectOpenHashMap<>());
 
         BlockLocation min = region.getMin();
@@ -282,7 +282,7 @@ public class RegionManager {
 
     public void updateRegionInSpatialIndex(Region region, BlockLocation oldMin, BlockLocation oldMax) {
         World world = region.getWorld();
-        Map<Long, List<Region>> worldChunks = chunkRegions.get(world);
+        Map<Long, List<Region>> worldChunks = chunkRegions.get(world.getUID());
         if (worldChunks == null) return;
 
         // Remove from old chunks
@@ -426,7 +426,7 @@ public class RegionManager {
      */
     public void addRegion(Region region) {
         loadedRegions.put(region.getKey().getValue(), region);
-        worldRegions.computeIfAbsent(region.getWorld(), k -> new Int2ObjectOpenHashMap<>())
+        worldRegions.computeIfAbsent(region.getWorld().getUID(), k -> new Int2ObjectOpenHashMap<>())
                 .put(region.getKey().getValue(), region);
         indexRegion(region); // Ensure the region is indexed
     }

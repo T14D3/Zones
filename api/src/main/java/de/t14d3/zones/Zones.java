@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("ThisEscapedInObjectConstruction")
 public class Zones {
-    private final Flags flags = new Flags();
+    private final Flags flags;
     private final CacheUtils cacheUtils;
     private final Messages messages;
     private static Zones instance;
@@ -40,19 +40,26 @@ public class Zones {
         this.configManager = new ConfigManager(this);
         new ConfigUpdater(this);
         this.cacheUtils = new CacheUtils(this);
+        this.flags = new Flags();
 
-        // TODO: Make this platform agnostic
         Properties messagesConfig = new Properties();
         try {
-            messagesConfig.load(new FileInputStream(new File("plugins/Zones/messages.properties")));
+            messagesConfig.load(new FileInputStream(platform.getDataFolder().getPath() + "/messages.properties"));
         } catch (IOException e) {
-            getLogger().error("Failed to load messages.properties");
+            getLogger().error("Failed to load messages.properties: {}", e.getMessage());
         }
         this.messages = new Messages(messagesConfig, this);
 
         this.permissionManager = platform.getPermissionManager();
         this.regionManager = new RegionManager(this, permissionManager);
-        this.executor = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<>());
+        var config = configManager.getConfig().node("advanced", "threadpool");
+        this.executor = new ThreadPoolExecutor(
+                0,
+                config.node("max-size").getInt(Runtime.getRuntime().availableProcessors() * 2),
+                config.node("keepalive").getLong(60L),
+                TimeUnit.SECONDS,
+                new SynchronousQueue<>()
+        );
 
         Types types = platform.getTypes();
         types.populateTypes();

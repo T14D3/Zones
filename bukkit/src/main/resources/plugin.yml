@@ -3,6 +3,9 @@ version: '${version}'
 main: de.t14d3.zones.ZonesBukkit
 api-version: '1.21'
 softdepend: [ WorldEdit, FastAsyncWorldEdit, PlaceholderAPI, WorldGuard ]
+libraries:
+  - "com.h2database:h2:2.3.232"
+  - "org.postgresql:postgresql:42.7.2"
 
 permissions:
   zones.info:

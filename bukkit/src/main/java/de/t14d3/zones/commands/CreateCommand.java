@@ -38,7 +38,8 @@ public class CreateCommand {
                 if (sender instanceof Player player) {
                     de.t14d3.zones.objects.Player zplayer = PlayerRepository.get(player.getUniqueId());
                     if (zplayer.getSelection() == null) {
-                        zplayer.setSelection(new de.t14d3.zones.objects.Box(null, null, World.of(player.getWorld())));
+                        zplayer.setSelection(new Box(null, null, World.of(player.getWorld())));
+                        zplayer.setSelectionCreating(true);
                         sender.sendMessage(mm.deserialize(messages.get("commands.create.click-corners")));
                         return;
                     }
@@ -64,6 +65,7 @@ public class CreateCommand {
                                 mm.deserialize(messages.get("commands.create.success"),
                                         parsed("region", key.toString())));
                         zplayer.setSelection(null);
+                        zplayer.setSelectionCreating(false);
                     } else {
                         sender.sendMessage(mm.deserialize(messages.get("commands.create.click-corners")));
                     }

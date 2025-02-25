@@ -5,6 +5,8 @@ import de.t14d3.zones.objects.World;
 import de.t14d3.zones.permissions.PermissionManager;
 import de.t14d3.zones.utils.PlayerRepository;
 import de.t14d3.zones.utils.Types;
+import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import org.bukkit.Bukkit;
 
 import java.io.File;
@@ -14,9 +16,11 @@ import java.util.UUID;
 
 public class BukkitPlatform implements ZonesPlatform {
     private final ZonesBukkit plugin;
+    private final BukkitAudiences audiences;
 
     public BukkitPlatform(ZonesBukkit plugin) {
         this.plugin = plugin;
+        this.audiences = BukkitAudiences.create(plugin);
     }
 
     @Override
@@ -70,7 +74,16 @@ public class BukkitPlatform implements ZonesPlatform {
         return plugin.getTypes();
     }
 
+    @Override
+    public Audience getAudience(Player player) {
+        return audiences.player(player.getUUID());
+    }
+
     public ZonesBukkit getPlugin() {
         return plugin;
+    }
+
+    public BukkitAudiences getAudiences() {
+        return audiences;
     }
 }

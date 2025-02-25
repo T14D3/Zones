@@ -64,4 +64,12 @@ public class BlockLocation {
     public BlockLocation clone() {
         return new BlockLocation(this.x, this.y, this.z);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BlockLocation that = (BlockLocation) o;
+        return x == that.x && y == that.y && z == that.z;
+    }
 }

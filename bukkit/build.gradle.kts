@@ -23,7 +23,7 @@ repositories {
 
 dependencies {
     implementation(project(":api"))
-    compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
+
     compileOnly("me.clip:placeholderapi:2.11.6")
     compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.3.10")
     compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.13")
@@ -31,6 +31,17 @@ dependencies {
     compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Core")
     compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit")
     implementation("dev.jorel:commandapi-bukkit-shade-mojang-mapped:9.7.0")
+
+    implementation("net.kyori:adventure-platform-bukkit:4.3.4")
+}
+
+tasks.processResources {
+    val props = mapOf("version" to version)
+    inputs.properties(props)
+    filteringCharset = "UTF-8"
+    filesMatching("plugin.yml") {
+        expand(props)
+    }
 }
 
 tasks.test {

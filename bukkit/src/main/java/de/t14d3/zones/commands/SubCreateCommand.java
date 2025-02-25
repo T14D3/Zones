@@ -67,6 +67,7 @@ public class SubCreateCommand {
                     de.t14d3.zones.objects.Player zplayer = PlayerRepository.get(player.getUniqueId());
                     if (zplayer.getSelection() == null) {
                         zplayer.setSelection(new Box(null, null, World.of(player.getWorld())));
+                        zplayer.setSelectionCreating(true);
                         player.sendMessage(mm.deserialize(messages.get("commands.create.click-corners")));
                         return;
                     }
@@ -116,6 +117,7 @@ public class SubCreateCommand {
                     resetBeacon(player, selection.getMax(), selection.getWorld());
                     player.sendMessage(mm.deserialize(messages.get("commands.subcreate.success")));
                     zplayer.setSelection(null);
+                    zplayer.setSelectionCreating(false);
                 } else {
                     sender.sendMessage(mm.deserialize(messages.get("commands.only-player")));
                 }

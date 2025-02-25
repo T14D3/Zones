@@ -71,7 +71,7 @@ public class PlayerEventListener implements Listener {
         Location location = event.getClickedBlock().getLocation();
         UUID playerUUID = player.getUniqueId();
 
-        if (zonesPlayer.getSelection() != null) {
+        if (zonesPlayer.getSelection() != null && zonesPlayer.isSelectionCreating()) {
             if (event.getHand() == EquipmentSlot.OFF_HAND) {
                 return;
             }

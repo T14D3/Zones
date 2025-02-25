@@ -53,7 +53,8 @@ public class ConfigManager {
     }
 
     public Object get(String path) {
-        return configData.node(path).getString();
+        String[] pathParts = path.split("\\.");
+        return configData.node((Object[]) pathParts).getString();
     }
 
     public int getInt(String path) {

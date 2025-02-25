@@ -22,21 +22,23 @@ public class CacheUtils {
     public CacheUtils(Zones plugin) {
         instance = this;
         this.ttl = plugin.getConfig().getInt("cache.ttl", 300);
-        this.checkInterval = plugin.getConfig().getInt("cache.check-interval", 10) * 20 * 60;
+        this.checkInterval = plugin.getConfig().getInt("cache.check-interval", 10);
         this.limit = plugin.getConfig().getInt("cache.limit", 0);
         this.plugin = plugin;
     }
 
     public static CacheUtils getInstance() {
+        if (instance == null) throw new IllegalStateException("CacheUtils is not yet initialized!");
         return instance;
     }
 
     public void startCacheRunnable() {
         CacheRunnable runnable = new CacheRunnable(plugin.getDebugLogger());
-        Executors.newSingleThreadScheduledExecutor()
-                .scheduleAtFixedRate(runnable, checkInterval, checkInterval, TimeUnit.SECONDS);
+        cacheTask = Executors.newSingleThreadScheduledExecutor()
+                .scheduleAtFixedRate(runnable, checkInterval, checkInterval, TimeUnit.MINUTES);
         plugin.getLogger()
-                .info("Cache scheduler has been started! (TTL: " + ttl + " seconds, Interval: " + checkInterval + " ticks, Limit: " + limit + ")");
+                .info("Cache scheduler has been started! (TTL: {} seconds, Interval: {} minutes, Limit: {})", ttl,
+                        checkInterval, limit);
     }
 
     public void invalidateInteractionCache(UUID target) {
