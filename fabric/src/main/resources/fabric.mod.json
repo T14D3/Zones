@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "zones",
+  "version": "${version}",
+  "name": "Zones",
+  "description": "A zones plugin for Fabric.",
+  "authors": [
+    "t14d3"
+  ],
+  "depends": {
+    "fabric-api": "*"
+  },
+  "mixins": [],
+  "entrypoints": {
+    "server": [
+      "de.t14d3.zones.ZonesFabric"
+    ]
+  }
+}

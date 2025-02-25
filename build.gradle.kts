@@ -5,6 +5,7 @@ plugins {
     id("com.gradleup.shadow") version "9.0.0-beta8"
     id("xyz.jpenilla.run-paper") version "2.3.1"
     id("java-library")
+    id("fabric-loom") version "1.10-SNAPSHOT" apply false
 }
 
 group = "de.t14d3"
@@ -48,6 +49,7 @@ allprojects {
 dependencies {
     implementation(project(":api"))
     implementation(project(":bukkit"))
+    implementation(project(":fabric"))
 }
 
 val targetJavaVersion = 21

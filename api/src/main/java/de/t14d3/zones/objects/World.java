@@ -23,6 +23,10 @@ public class World {
         return new World(world.getName(), world.getUID());
     }
 
+    public static World of(String name, UUID uid) {
+        return new World(name, uid);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
