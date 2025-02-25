@@ -3,9 +3,13 @@ package de.t14d3.zones;
 import de.t14d3.zones.objects.Player;
 import de.t14d3.zones.objects.World;
 import de.t14d3.zones.permissions.PermissionManager;
+import de.t14d3.zones.utils.PlayerRepository;
 import de.t14d3.zones.utils.Types;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.kyori.adventure.audience.Audience;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.ActionResult;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -14,17 +18,17 @@ import java.util.UUID;
 
 public class FabricPlatform implements ZonesPlatform {
     private final ZonesFabric mod;
+    private FabricPermissionManager permissionManager;
 
     public FabricPlatform(ZonesFabric mod) {
         this.mod = mod;
+        this.permissionManager = (FabricPermissionManager) mod.getPermissionManager();
         registerCallbacks();
     }
 
     private void registerCallbacks() {
-        UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
-            // Handle block usage events
-            return null;
-        });
+        UseBlockCallback.EVENT.register((player, world, hand, hitResult) ->
+                permissionManager.checkAction(hitResult, world, player) ? ActionResult.PASS : ActionResult.FAIL);
     }
 
     @Override
@@ -39,22 +43,32 @@ public class FabricPlatform implements ZonesPlatform {
 
     @Override
     public Player getPlayer(UUID uuid) {
-        return null;
+        String name = mod.getServer().getUserCache().getByUuid(uuid).get().getName();
+        return PlayerRepository.getOrAdd(name, uuid);
+    }
+
+    public ServerPlayerEntity getNativePlayer(Player player) {
+        return mod.getServer().getPlayerManager().getPlayer(player.getUUID());
     }
 
     @Override
     public Audience getAudience(Player player) {
-        return null;
+        return getNativePlayer(player);
     }
 
     @Override
     public boolean hasPermission(Player player, String permission) {
-        return false;
+        return Permissions.check(player.getUUID(), permission).join();
     }
 
     @Override
     public ZonesPlatform getPlatform() {
         return this;
+    }
+
+
+    public World getWorld(net.minecraft.world.World nativeWorld) {
+        return getWorld(nativeWorld.getRegistryKey().getValue().toString());
     }
 
     @Override

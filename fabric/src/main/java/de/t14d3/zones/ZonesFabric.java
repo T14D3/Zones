@@ -1,6 +1,10 @@
 package de.t14d3.zones;
 
+import de.t14d3.zones.fabric.commands.CancelCommand;
+import de.t14d3.zones.fabric.commands.CreateCommand;
+import de.t14d3.zones.fabric.commands.DeleteCommand;
 import de.t14d3.zones.permissions.PermissionManager;
+import de.t14d3.zones.utils.Messages;
 import de.t14d3.zones.utils.Types;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -17,6 +21,15 @@ public class ZonesFabric implements DedicatedServerModInitializer {
     private PlayerManager playerManager;
     private File dataFolder;
     private MinecraftServer server;
+    private Zones zones;
+    private FabricPermissionManager permissionManager;
+
+    private RegionManager regionManager;
+    private Messages messages;
+
+    private CancelCommand cancelCommand;
+    private CreateCommand createCommand;
+    private DeleteCommand deleteCommand;
 
     @Override
     public void onInitializeServer() {
@@ -25,6 +38,19 @@ public class ZonesFabric implements DedicatedServerModInitializer {
 
         this.types = new FabricTypes();
         this.dataFolder = FabricLoader.getInstance().getConfigDir().toFile();
+
+        this.zones = new Zones(platform);
+        this.regionManager = zones.getRegionManager();
+        this.messages = zones.getMessages();
+
+        this.permissionManager = new FabricPermissionManager(zones);
+
+        this.cancelCommand = new CancelCommand(this);
+        this.createCommand = new CreateCommand(this);
+        this.deleteCommand = new DeleteCommand(this);
+        this.cancelCommand.register();
+        this.createCommand.register();
+        this.deleteCommand.register();
 
         Zones.getInstance().getLogger().info("Zones Fabric mod initialized!");
     }
@@ -39,7 +65,7 @@ public class ZonesFabric implements DedicatedServerModInitializer {
     }
 
     public PermissionManager getPermissionManager() {
-        return null;
+        return this.permissionManager;
     }
 
     public Types getTypes() {
@@ -48,5 +74,17 @@ public class ZonesFabric implements DedicatedServerModInitializer {
 
     public MinecraftServer getServer() {
         return server;
+    }
+
+    public RegionManager getRegionManager() {
+        return regionManager;
+    }
+
+    public Messages getMessages() {
+        return messages;
+    }
+
+    public Zones getZones() {
+        return zones;
     }
 }

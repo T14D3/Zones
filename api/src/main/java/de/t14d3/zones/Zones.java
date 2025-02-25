@@ -50,6 +50,8 @@ public class Zones {
         }
         this.messages = new Messages(messagesConfig, this);
 
+        new PlayerRepository();
+
         this.permissionManager = platform.getPermissionManager();
         this.regionManager = new RegionManager(this, permissionManager);
         var config = configManager.getConfig().node("advanced", "threadpool");
