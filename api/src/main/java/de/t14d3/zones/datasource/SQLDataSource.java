@@ -38,7 +38,7 @@ public class SQLDataSource extends AbstractDataSource {
                     String url = "jdbc:mysql://" + host + "/" + database + options;
                     this.connection = DriverManager.getConnection(url, user, password);
                 } catch (Exception e) {
-                    plugin.getLogger().error("Failed to initialize MySQL database! Error: " + e.getMessage());
+                    plugin.getLogger().error("Failed to initialize MySQL database! Error: {}", e.getMessage());
                     if (plugin.debug) {
                         e.printStackTrace();
                     }
@@ -49,7 +49,7 @@ public class SQLDataSource extends AbstractDataSource {
                     Class.forName("org.sqlite.JDBC");
                     this.connection = DriverManager.getConnection("jdbc:sqlite:./plugins/Zones/regions.sqlite.db");
                 } catch (Exception e) {
-                    plugin.getLogger().error("Failed to initialize SQLite database! Error: " + e.getMessage());
+                    plugin.getLogger().error("Failed to initialize SQLite database! Error: {}", e.getMessage());
                     if (plugin.debug) {
                         e.printStackTrace();
                     }
@@ -60,7 +60,7 @@ public class SQLDataSource extends AbstractDataSource {
                     Class.forName("org.h2.Driver");
                     this.connection = DriverManager.getConnection("jdbc:h2:file:./plugins/Zones/regions.h2");
                 } catch (Exception e) {
-                    plugin.getLogger().error("Failed to initialize H2 database! Error: " + e.getMessage());
+                    plugin.getLogger().error("Failed to initialize H2 database! Error: {}", e.getMessage());
                     if (plugin.debug) {
                         e.printStackTrace();
                     }
@@ -78,7 +78,7 @@ public class SQLDataSource extends AbstractDataSource {
                     String url = "jdbc:postgresql://" + host + "/" + database + options;
                     this.connection = DriverManager.getConnection(url, user, password);
                 } catch (Exception e) {
-                    plugin.getLogger().error("Failed to initialize PostgreSQL database! Error: " + e.getMessage());
+                    plugin.getLogger().error("Failed to initialize PostgreSQL database! Error: {}", e.getMessage());
                     if (plugin.debug) {
                         e.printStackTrace();
                     }
@@ -91,7 +91,7 @@ public class SQLDataSource extends AbstractDataSource {
                     Class.forName(driver);
                     this.connection = DriverManager.getConnection(url);
                 } catch (Exception e) {
-                    plugin.getLogger().error("Failed to initialize custom database! Error: " + e.getMessage());
+                    plugin.getLogger().error("Failed to initialize custom database! Error: {}", e.getMessage());
                     if (plugin.debug) {
                         e.printStackTrace();
                     }
@@ -116,7 +116,7 @@ public class SQLDataSource extends AbstractDataSource {
                             ")";
             connection.prepareStatement(createTableSQL).execute();
         } catch (SQLException e) {
-            plugin.getLogger().error("Failed to create table! Error: " + e.getMessage());
+            plugin.getLogger().error("Failed to create table! Error: {}", e.getMessage());
             if (plugin.debug) {
                 e.printStackTrace();
             }
@@ -128,7 +128,7 @@ public class SQLDataSource extends AbstractDataSource {
         try {
             this.connection.close();
         } catch (SQLException e) {
-            plugin.getLogger().error("Error closing the database connection: " + e.getMessage());
+            plugin.getLogger().error("Error closing the database connection: {}", e.getMessage());
             if (plugin.debug) {
                 e.printStackTrace();
             }
@@ -174,7 +174,7 @@ public class SQLDataSource extends AbstractDataSource {
                 regions.add(region);
             }
         } catch (SQLException e) {
-            plugin.getLogger().error("Failed to load regions! Error: " + e.getMessage());
+            plugin.getLogger().error("Failed to load regions! Error: {}", e.getMessage());
             if (plugin.debug) {
                 e.printStackTrace();
             }
@@ -231,7 +231,7 @@ public class SQLDataSource extends AbstractDataSource {
             }
             stmt.executeBatch();
         } catch (SQLException e) {
-            plugin.getLogger().error("Failed to save regions! Error: " + e.getMessage());
+            plugin.getLogger().error("Failed to save regions! Error: {}", e.getMessage());
             if (plugin.debug) {
                 e.printStackTrace();
             }
@@ -248,7 +248,7 @@ public class SQLDataSource extends AbstractDataSource {
                 return parseRegion(rs);
             }
         } catch (SQLException e) {
-            plugin.getLogger().error("Failed to load region " + key + "! Error: " + e.getMessage());
+            plugin.getLogger().error("Failed to load region {}! Error: {}", key, e.getMessage());
             if (plugin.debug) {
                 e.printStackTrace();
             }
@@ -277,7 +277,7 @@ public class SQLDataSource extends AbstractDataSource {
             stmt.executeUpdate();
         } catch (SQLException e) {
             plugin.getLogger()
-                    .error("Failed to save region " + region.getKey().toString() + "! Error: " + e.getMessage());
+                    .error("Failed to save region {}! Error: {}", region.getKey().toString(), e.getMessage());
             if (plugin.debug) {
                 e.printStackTrace();
             }

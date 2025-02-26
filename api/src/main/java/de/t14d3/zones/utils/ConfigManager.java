@@ -48,7 +48,7 @@ public class ConfigManager {
         try {
             configData = loader.load();
         } catch (IOException e) {
-            zones.getLogger().error("Failed to load config.yml: " + e.getMessage());
+            zones.getLogger().error("Failed to load config.yml: {}", e.getMessage());
         }
     }
 
@@ -56,7 +56,7 @@ public class ConfigManager {
         try {
             loader.save(configData);
         } catch (IOException e) {
-            zones.getLogger().error("Failed to save config.yml: " + e.getMessage());
+            zones.getLogger().error("Failed to save config.yml: {}", e.getMessage());
         }
     }
 

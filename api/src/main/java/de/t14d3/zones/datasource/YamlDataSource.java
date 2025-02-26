@@ -118,7 +118,7 @@ public class YamlDataSource extends AbstractDataSource {
                 }
             }
         } catch (Exception e) {
-            plugin.getLogger().error("Failed to save region " + key + ": " + e.getMessage());
+            plugin.getLogger().error("Failed to save region {}: {}", key, e.getMessage());
         }
     }
 }

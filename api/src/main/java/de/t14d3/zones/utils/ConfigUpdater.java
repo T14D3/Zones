@@ -34,9 +34,9 @@ public class ConfigUpdater {
             }
             try {
                 currentNode.set(defaultConfig.node(key).get(Object.class));
-                plugin.getLogger().info("Setting missing config key: " + key);
+                plugin.getLogger().info("Setting missing config key: {}", key);
             } catch (SerializationException e) {
-                plugin.getLogger().error("Failed to serialize key " + key + ": " + e.getMessage());
+                plugin.getLogger().error("Failed to serialize key {}: {}", key, e.getMessage());
             }
         }
         configManager.saveConfig();
@@ -49,7 +49,7 @@ public class ConfigUpdater {
                     .build()
                     .load();
         } catch (IOException e) {
-            plugin.getLogger().error("Failed to load default config: " + e.getMessage());
+            plugin.getLogger().error("Failed to load default config: {}", e.getMessage());
             return null;
         }
     }

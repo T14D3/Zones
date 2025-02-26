@@ -74,8 +74,9 @@ public interface IFlagHandler {
                         .getBoolean("allow-group-recursion", false)) {
                     Zones.getInstance().getLogger()
                             .error("Recursive group permissions detected!! Groups are not allowed to contain other groups!");
-                    Zones.getInstance().getLogger().error("Group '" + who.substring(
-                            7) + "' contains 'group' permission entry in region '" + region.getKey() + "'");
+                    Zones.getInstance().getLogger()
+                            .error("Group '{}' contains 'group' permission entry in region '{}'", who.substring(
+                                    7), region.getKey());
                     Zones.getInstance().getLogger()
                             .error("If you are 100% sure this is fine, add 'allow-group-recursion: true' to your config.yml");
                     return Result.FALSE;
