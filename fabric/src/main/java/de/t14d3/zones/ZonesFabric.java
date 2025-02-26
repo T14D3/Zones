@@ -24,6 +24,7 @@ public class ZonesFabric implements DedicatedServerModInitializer {
     private MinecraftServer server;
     private Zones zones;
     private FabricPermissionManager permissionManager;
+    private PlayerListener playerListener;
 
     private RegionManager regionManager;
     private Messages messages;
@@ -32,8 +33,9 @@ public class ZonesFabric implements DedicatedServerModInitializer {
     @Override
     public void onInitializeServer() {
         ServerLifecycleEvents.SERVER_STARTING.register(this::onEnable);
-        ServerLifecycleEvents.SERVER_STARTED.register(this::onWorldsLoaded);
+        ServerLifecycleEvents.SERVER_STARTED.register(this::onStarted);
         ServerLifecycleEvents.SERVER_STOPPING.register(this::onDisable);
+
         this.dataFolder = new File(FabricLoader.getInstance().getConfigDir().toFile(), "Zones");
         this.platform = new FabricPlatform(this);
 
@@ -53,26 +55,28 @@ public class ZonesFabric implements DedicatedServerModInitializer {
     private void onEnable(@NotNull MinecraftServer server) {
         this.server = server;
         this.playerManager = server.getPlayerManager();
-        new PlayerListener(this);
+        this.playerListener = new PlayerListener(this);
 
-        if (FabricLoader.getInstance().isModLoaded("luckperms"))
-            return; // Skip registering our own scuffed permission system if luckperms is loaded
-        PermissionCheckEvent.EVENT.register((source, permission) -> {
-            if (!permission.startsWith("zones.")) {
-                return TriState.DEFAULT;
-            }
-            AtomicReference<TriState> result = new AtomicReference<>(TriState.DEFAULT);
-            permissionManager.getPermissions().stream().filter(p -> p.getName().equals(permission)).findFirst()
-                    .ifPresent(p -> {
-                        if (source.hasPermissionLevel(p.getLevel())) {
-                            result.set(TriState.TRUE);
-                        }
-                    });
-            return result.get();
-        });
+        // If luckperms is not loaded, register our own scuffed permission system,
+        // otherwise skip to have luckperms handle permissions
+        if (!FabricLoader.getInstance().isModLoaded("luckperms")) {
+            PermissionCheckEvent.EVENT.register((source, permission) -> {
+                if (!permission.startsWith("zones.")) {
+                    return TriState.DEFAULT;
+                }
+                AtomicReference<TriState> result = new AtomicReference<>(TriState.DEFAULT);
+                permissionManager.getPermissions().stream().filter(p -> p.getName().equals(permission)).findFirst()
+                        .ifPresent(p -> {
+                            if (source.hasPermissionLevel(p.getLevel())) {
+                                result.set(TriState.TRUE);
+                            }
+                        });
+                return result.get();
+            });
+        }
     }
 
-    private void onWorldsLoaded(MinecraftServer server) {
+    private void onStarted(MinecraftServer server) {
         ((FabricPlatform) zones.getPlatform()).loadWorlds(server);
 
         regionManager.loadRegions();
@@ -109,5 +113,9 @@ public class ZonesFabric implements DedicatedServerModInitializer {
 
     public Zones getZones() {
         return zones;
+    }
+
+    public FabricPlatform getPlatform() {
+        return (FabricPlatform) platform;
     }
 }

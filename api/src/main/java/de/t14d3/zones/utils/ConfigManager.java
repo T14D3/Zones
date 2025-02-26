@@ -15,6 +15,7 @@ public class ConfigManager {
     private ConfigurationNode configData;
     private final YamlConfigurationLoader loader;
     private File dataFolder;
+    private Utils.SavingModes savingMode;
 
     /**
      * Instantiates a new ConfigManager for the given parameters.
@@ -50,6 +51,7 @@ public class ConfigManager {
         } catch (IOException e) {
             zones.getLogger().error("Failed to load config.yml: {}", e.getMessage());
         }
+        savingMode = Utils.SavingModes.fromString(configData.node("zone-saving", "mode").getString("MODIFIED"));
     }
 
     public void saveConfig() {

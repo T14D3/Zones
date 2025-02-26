@@ -1,7 +1,6 @@
 package de.t14d3.zones.fabric.commands;
 
 import com.mojang.brigadier.context.CommandContext;
-import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.ZonesFabric;
 import de.t14d3.zones.objects.Player;
 import de.t14d3.zones.utils.Messages;
@@ -10,13 +9,9 @@ import net.minecraft.command.ControlFlowAware;
 import net.minecraft.server.command.ServerCommandSource;
 
 public class CancelCommand {
-    private final ZonesFabric mod;
-    private RegionManager regionManager;
-    private Messages messages;
+    private final Messages messages;
 
     public CancelCommand(ZonesFabric mod) {
-        this.mod = mod;
-        this.regionManager = mod.getRegionManager();
         this.messages = mod.getMessages();
     }
 

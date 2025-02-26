@@ -19,17 +19,15 @@ import java.util.List;
 import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
 
 public class ListCommand {
-    private final ZonesFabric mod;
     private final MiniMessage mm = MiniMessage.miniMessage();
-    private RegionManager regionManager;
-    private Messages messages;
-    private FabricPlatform platform;
+    private final RegionManager regionManager;
+    private final Messages messages;
+    private final FabricPlatform platform;
 
     public ListCommand(ZonesFabric mod) {
-        this.mod = mod;
         this.regionManager = mod.getRegionManager();
         this.messages = mod.getMessages();
-        this.platform = (FabricPlatform) mod.getZones().getPlatform();
+        this.platform = mod.getPlatform();
     }
 
     int execute(CommandContext<ServerCommandSource> context, int page) {

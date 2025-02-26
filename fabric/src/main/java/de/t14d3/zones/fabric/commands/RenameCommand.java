@@ -13,13 +13,11 @@ import net.minecraft.server.command.ServerCommandSource;
 import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
 
 public class RenameCommand {
-    private final ZonesFabric mod;
-    private RegionManager regionManager;
-    private Messages messages;
+    private final RegionManager regionManager;
+    private final Messages messages;
     private final MiniMessage mm = MiniMessage.miniMessage();
 
     public RenameCommand(ZonesFabric mod) {
-        this.mod = mod;
         this.regionManager = mod.getRegionManager();
         this.messages = mod.getMessages();
     }

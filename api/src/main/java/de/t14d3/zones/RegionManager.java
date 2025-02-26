@@ -4,6 +4,7 @@ import de.t14d3.zones.datasource.DataSourceManager;
 import de.t14d3.zones.objects.*;
 import de.t14d3.zones.permissions.CacheUtils;
 import de.t14d3.zones.permissions.PermissionManager;
+import de.t14d3.zones.utils.Utils;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import org.jetbrains.annotations.Nullable;
@@ -12,7 +13,6 @@ import java.util.*;
 
 public class RegionManager {
 
-    private final PermissionManager pm;
     private final DataSourceManager dataSourceManager;
     private final Zones plugin;
     private static RegionManager instance;
@@ -23,7 +23,6 @@ public class RegionManager {
     private final Map<UUID, Long2ObjectOpenHashMap<List<Region>>> chunkRegions = new HashMap<>();
 
     public RegionManager(Zones plugin, PermissionManager permissionManager) {
-        this.pm = permissionManager;
         this.plugin = plugin;
         this.dataSourceManager = new DataSourceManager(plugin);
         this.platform = plugin.getPlatform();
@@ -46,9 +45,9 @@ public class RegionManager {
      * @see #saveRegions() #saveRegions() to force-save
      */
     public void triggerSave() {
-//        if (plugin.getSavingMode() == Utils.SavingModes.MODIFIED) {
-//            saveRegions();
-//        }
+        if (plugin.getSavingMode() == Utils.SavingModes.MODIFIED) {
+            saveRegions();
+        }
     }
 
     /**
@@ -77,7 +76,7 @@ public class RegionManager {
     }
 
     public Int2ObjectOpenHashMap<Region> regions(World world) {
-        return this.worldRegions.get(world);
+        return this.worldRegions.get(world.getUID());
     }
 
     // Save a region to the configured data source
@@ -292,7 +291,7 @@ public class RegionManager {
         addRegionToChunks(region, region.getMin(), region.getMax(), worldChunks);
     }
 
-    private void removeRegionFromChunks(Region region, BlockLocation min, BlockLocation max, Map<Long, List<Region>> worldChunks) {
+    private static void removeRegionFromChunks(Region region, BlockLocation min, BlockLocation max, Map<Long, List<Region>> worldChunks) {
         int minXChunk = min.getX() >> 4;
         int minZChunk = min.getZ() >> 4;
         int maxXChunk = max.getX() >> 4;
@@ -310,7 +309,7 @@ public class RegionManager {
         }
     }
 
-    private void addRegionToChunks(Region region, BlockLocation min, BlockLocation max, Map<Long, List<Region>> worldChunks) {
+    private static void addRegionToChunks(Region region, BlockLocation min, BlockLocation max, Map<Long, List<Region>> worldChunks) {
         int minXChunk = min.getX() >> 4;
         int minZChunk = min.getZ() >> 4;
         int maxXChunk = max.getX() >> 4;

@@ -18,7 +18,6 @@ import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("ThisEscapedInObjectConstruction")
 public class Zones {
-    private final Flags flags;
     private final CacheUtils cacheUtils;
     private final Messages messages;
     private static Zones instance;
@@ -46,12 +45,13 @@ public class Zones {
 
         new ConfigUpdater(this);
         this.cacheUtils = new CacheUtils(this);
-        this.flags = new Flags();
+        Flags flags = new Flags();
 
         Properties messagesConfig = new Properties();
         File messagesFile = new File(platform.getDataFolder(), "messages.properties");
         if (!messagesFile.exists()) {
             try {
+                //noinspection DataFlowIssue // File is always included in jar
                 Files.copy(getClass().getResourceAsStream("/messages.properties"), messagesFile.toPath());
             } catch (Exception e1) {
                 getLogger().error("Failed to copy default messages.properties: {}", e1.getMessage());
@@ -65,15 +65,15 @@ public class Zones {
         }
         this.messages = new Messages(messagesConfig, this);
 
-        new PlayerRepository();
+        PlayerRepository playerRepository = new PlayerRepository();
 
         this.permissionManager = platform.getPermissionManager();
         this.regionManager = new RegionManager(this, permissionManager);
-        var config = configManager.getConfig().node("advanced", "threadpool");
+        var threadConfig = configManager.getConfig().node("advanced", "threadpool");
         this.executor = new ThreadPoolExecutor(
                 0,
-                config.node("max-size").getInt(Runtime.getRuntime().availableProcessors() * 2),
-                config.node("keepalive").getLong(60L),
+                threadConfig.node("max-size").getInt(Runtime.getRuntime().availableProcessors() * 2),
+                threadConfig.node("keepalive").getLong(60L),
                 TimeUnit.SECONDS,
                 new SynchronousQueue<>()
         );
@@ -123,5 +123,9 @@ public class Zones {
 
     public CacheUtils getCacheUtils() {
         return cacheUtils;
+    }
+
+    public Utils.SavingModes getSavingMode() {
+        return null;
     }
 }

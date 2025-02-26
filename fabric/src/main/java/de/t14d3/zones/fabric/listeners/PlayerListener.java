@@ -35,9 +35,10 @@ public class PlayerListener {
     private final FabricPlatform platform;
     private final MiniMessage mm = MiniMessage.miniMessage();
 
+    @SuppressWarnings("deprecation")
     public PlayerListener(ZonesFabric mod) {
         this.mod = mod;
-        this.platform = (FabricPlatform) mod.getZones().getPlatform();
+        this.platform = mod.getPlatform();
 
         UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
             de.t14d3.zones.objects.Player zplayer = platform.getPlayer(player.getUuid());

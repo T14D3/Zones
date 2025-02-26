@@ -18,24 +18,22 @@ import java.util.Map;
 import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
 
 public class CreateCommand {
-    private final ZonesFabric mod;
-    private RegionManager regionManager;
-    private Messages messages;
-    private FabricPlatform platform;
+    private final RegionManager regionManager;
+    private final Messages messages;
+    private final FabricPlatform platform;
     private final MiniMessage mm = MiniMessage.miniMessage();
 
     public CreateCommand(ZonesFabric mod) {
-        this.mod = mod;
         this.regionManager = mod.getRegionManager();
         this.messages = mod.getMessages();
-        this.platform = (FabricPlatform) mod.getZones().getPlatform();
+        this.platform = mod.getPlatform();
     }
 
     int execute(CommandContext<ServerCommandSource> context) {
         if (context.getSource().getPlayer() != null) {
             Player player = platform.getPlayer(context.getSource().getPlayer().getUuid());
             if (player.getSelection() == null) {
-                player.setSelection(new Box(null, null, platform.getWorld(context.getSource().getWorld())));
+                player.setSelection(new Box(platform.getWorld(context.getSource().getWorld())));
                 player.setSelectionCreating(true);
                 player.sendMessage(messages.getCmp("commands.create.click-corners"));
                 return 1;

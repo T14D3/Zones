@@ -1,7 +1,10 @@
 package de.t14d3.zones.fabric.commands;
 
 import com.mojang.brigadier.context.CommandContext;
-import de.t14d3.zones.*;
+import de.t14d3.zones.Region;
+import de.t14d3.zones.RegionKey;
+import de.t14d3.zones.RegionManager;
+import de.t14d3.zones.ZonesFabric;
 import de.t14d3.zones.objects.BlockLocation;
 import de.t14d3.zones.objects.Player;
 import de.t14d3.zones.objects.World;
@@ -14,8 +17,8 @@ import java.util.List;
 
 public class InfoCommand {
     private final ZonesFabric mod;
-    private RegionManager regionManager;
-    private Messages messages;
+    private final RegionManager regionManager;
+    private final Messages messages;
 
     public InfoCommand(ZonesFabric mod) {
         this.mod = mod;
@@ -31,12 +34,12 @@ public class InfoCommand {
                     .get(RegionKey.fromString(context.getArgument("key", String.class)).getValue()));
         } catch (Exception ignored) {
             if (context.getSource().getPlayer() != null) {
-                player = mod.getZones().getPlatform().getPlayer(context.getSource().getPlayer().getUuid());
+                player = mod.getPlatform().getPlayer(context.getSource().getPlayer().getUuid());
 
                 BlockLocation location = new BlockLocation(context.getSource().getPlayer().getBlockX(),
                         context.getSource().getPlayer().getBlockY(),
                         context.getSource().getPlayer().getBlockZ());
-                World world = ((FabricPlatform) mod.getZones().getPlatform()).getWorld(
+                World world = (mod.getPlatform()).getWorld(
                         context.getSource().getPlayer().getWorld());
                 regions = regionManager.getRegionsAt(location, world);
             } else {

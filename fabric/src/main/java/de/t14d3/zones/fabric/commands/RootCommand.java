@@ -23,8 +23,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class RootCommand {
-    private final ZonesFabric mod;
-    private final RegionManager regionManager;
     private final CancelCommand cancelCommand;
     private final CreateCommand createCommand;
     private final DeleteCommand deleteCommand;
@@ -35,8 +33,7 @@ public class RootCommand {
     private final ExpandCommand expandCommand;
 
     public RootCommand(ZonesFabric mod) {
-        this.mod = mod;
-        this.regionManager = mod.getRegionManager();
+        RegionManager regionManager = mod.getRegionManager();
         this.cancelCommand = new CancelCommand(mod);
         this.createCommand = new CreateCommand(mod);
         this.deleteCommand = new DeleteCommand(mod);
@@ -74,45 +71,43 @@ public class RootCommand {
     }
 
     public void register() {
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-            dispatcher.register(
-                    CommandManager.literal("zone")
-                            .then(CommandManager.literal("cancel")
-                                    .requires(source -> Permissions.check(source, "zones.cancel"))
-                                    .executes(cancelCommand::execute))
-                            .then(CommandManager.literal("create")
-                                    .requires(source -> Permissions.check(source, "zones.create"))
-                                    .executes(createCommand::execute))
-                            .then(CommandManager.literal("delete")
-                                    .requires(source -> Permissions.check(source, "zones.delete"))
-                                    .then(CommandManager.argument("key", StringArgumentType.string())
-                                            .suggests(RootCommand::regionKeySuggestion)
-                                            .executes(deleteCommand::execute)))
-                            .then(CommandManager.literal("list")
-                                    .requires(source -> Permissions.check(source, "zones.list"))
-                                    .executes(context -> listCommand.execute(context, 1))
-                                    .then(CommandManager.argument("page", IntegerArgumentType.integer())
-                                            .executes(context -> listCommand.execute(context,
-                                                    context.getArgument("page", Integer.class)))
-                                    ))
-                            .then(setCommand.command()
-                                    .requires(source -> Permissions.check(source, "zones.set"))
-                            )
-                            .then(CommandManager.literal("info")
-                                    .requires(source -> Permissions.check(source, "zones.info"))
-                                    .executes(infoCommand::execute)
-                                    .then(CommandManager.argument("key", StringArgumentType.string())
-                                            .suggests(RootCommand::regionKeySuggestion)
-                                            .executes(infoCommand::execute)))
-                            .then(CommandManager.literal("rename")
-                                    .requires(source -> Permissions.check(source, "zones.rename"))
-                                    .then(CommandManager.argument("key", StringArgumentType.string())
-                                            .suggests(RootCommand::regionKeySuggestion)
-                                            .then(CommandManager.argument("New Name", StringArgumentType.string())
-                                                    .executes(renameCommand::execute))))
-                            .then(expandCommand.command()
-                                    .requires(source -> Permissions.check(source, "zones.expand")))
-            );
-        });
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
+                CommandManager.literal("zone")
+                        .then(CommandManager.literal("cancel")
+                                .requires(source -> Permissions.check(source, "zones.cancel"))
+                                .executes(cancelCommand::execute))
+                        .then(CommandManager.literal("create")
+                                .requires(source -> Permissions.check(source, "zones.create"))
+                                .executes(createCommand::execute))
+                        .then(CommandManager.literal("delete")
+                                .requires(source -> Permissions.check(source, "zones.delete"))
+                                .then(CommandManager.argument("key", StringArgumentType.string())
+                                        .suggests(RootCommand::regionKeySuggestion)
+                                        .executes(deleteCommand::execute)))
+                        .then(CommandManager.literal("list")
+                                .requires(source -> Permissions.check(source, "zones.list"))
+                                .executes(context -> listCommand.execute(context, 1))
+                                .then(CommandManager.argument("page", IntegerArgumentType.integer())
+                                        .executes(context -> listCommand.execute(context,
+                                                context.getArgument("page", Integer.class)))
+                                ))
+                        .then(setCommand.command()
+                                .requires(source -> Permissions.check(source, "zones.set"))
+                        )
+                        .then(CommandManager.literal("info")
+                                .requires(source -> Permissions.check(source, "zones.info"))
+                                .executes(infoCommand::execute)
+                                .then(CommandManager.argument("key", StringArgumentType.string())
+                                        .suggests(RootCommand::regionKeySuggestion)
+                                        .executes(infoCommand::execute)))
+                        .then(CommandManager.literal("rename")
+                                .requires(source -> Permissions.check(source, "zones.rename"))
+                                .then(CommandManager.argument("key", StringArgumentType.string())
+                                        .suggests(RootCommand::regionKeySuggestion)
+                                        .then(CommandManager.argument("New Name", StringArgumentType.string())
+                                                .executes(renameCommand::execute))))
+                        .then(expandCommand.command()
+                                .requires(source -> Permissions.check(source, "zones.expand")))
+        ));
     }
 }

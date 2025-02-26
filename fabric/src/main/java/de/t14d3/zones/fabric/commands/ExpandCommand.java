@@ -5,7 +5,10 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import de.t14d3.zones.*;
+import de.t14d3.zones.Region;
+import de.t14d3.zones.RegionKey;
+import de.t14d3.zones.RegionManager;
+import de.t14d3.zones.ZonesFabric;
 import de.t14d3.zones.objects.Direction;
 import de.t14d3.zones.utils.Messages;
 import me.lucko.fabric.api.permissions.v0.Permissions;
@@ -16,17 +19,13 @@ import net.minecraft.server.command.ServerCommandSource;
 import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
 
 public class ExpandCommand {
-    private final ZonesFabric mod;
-    private RegionManager regionManager;
-    private Messages messages;
-    private FabricPlatform platform;
+    private final RegionManager regionManager;
+    private final Messages messages;
     private final MiniMessage mm = MiniMessage.miniMessage();
 
     public ExpandCommand(ZonesFabric mod) {
-        this.mod = mod;
         this.regionManager = mod.getRegionManager();
         this.messages = mod.getMessages();
-        this.platform = (FabricPlatform) mod.getZones().getPlatform();
     }
 
     int execute(CommandContext<ServerCommandSource> context) {

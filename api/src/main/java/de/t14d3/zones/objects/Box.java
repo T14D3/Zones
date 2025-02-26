@@ -21,6 +21,12 @@ public class Box {
         this(BlockLocation.of(min), BlockLocation.of(max), World.of(world));
     }
 
+    public Box(World world) {
+        this.min = null;
+        this.max = null;
+        this.world = world;
+    }
+
     public BlockLocation getMin() {
         return min;
     }

@@ -3,7 +3,10 @@ package de.t14d3.zones.fabric.commands;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import de.t14d3.zones.*;
+import de.t14d3.zones.Region;
+import de.t14d3.zones.RegionKey;
+import de.t14d3.zones.RegionManager;
+import de.t14d3.zones.ZonesFabric;
 import de.t14d3.zones.objects.Flag;
 import de.t14d3.zones.objects.Player;
 import de.t14d3.zones.permissions.flags.Flags;
@@ -23,9 +26,9 @@ import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.pars
 
 public class SetCommand {
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
-    private RegionManager regionManager;
-    private Messages messages;
-    private ZonesFabric mod;
+    private final RegionManager regionManager;
+    private final Messages messages;
+    private final ZonesFabric mod;
 
     public SetCommand(ZonesFabric mod) {
         this.mod = mod;
@@ -56,7 +59,7 @@ public class SetCommand {
                                         List<String> groupMembers = new ArrayList<>();
                                         region.getGroupMembers(group).forEach(
                                                 val -> groupMembers.add(
-                                                        mod.getZones().getPlatform().getPlayer(UUID.fromString(val))
+                                                        mod.getPlatform().getPlayer(UUID.fromString(val))
                                                                 .getName()));
                                         targets.put(group, Component.text(groupMembers.toString()));
                                     });
@@ -115,7 +118,7 @@ public class SetCommand {
             String target = context.getArgument("target", String.class);
             String display = target;
             if (!display.startsWith("+")) {
-                Player temp = ((FabricPlatform) mod.getZones().getPlatform()).getPlayer(target);
+                Player temp = mod.getPlatform().getPlayer(target);
                 if (temp != null) {
                     target = temp.getUniqueId().toString();
                 }
