@@ -1,9 +1,6 @@
-import xyz.jpenilla.runtask.task.AbstractRun
-
 plugins {
     id("maven-publish")
     id("com.gradleup.shadow") version "9.0.0-beta8"
-    id("xyz.jpenilla.run-paper") version "2.3.1"
     id("java-library")
     id("fabric-loom") version "1.10-SNAPSHOT" apply false
 }
@@ -69,13 +66,6 @@ tasks.withType<JavaCompile>().configureEach {
         options.release.set(targetJavaVersion)
     }
 }
-tasks.withType<AbstractRun>().configureEach {
-    javaLauncher = javaToolchains.launcherFor {
-        vendor.set(JvmVendorSpec.JETBRAINS)
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-    jvmArgs("-XX:+AllowEnhancedClassRedefinition")
-}
 
 
 
@@ -97,9 +87,6 @@ tasks {
     }
     build {
         dependsOn(shadowJar)
-    }
-    runServer {
-        minecraftVersion("1.21.4")
     }
 }
 

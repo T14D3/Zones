@@ -49,4 +49,8 @@ public class PlayerRepository {
     public static void remove(UUID uuid) {
         knownPlayers.removeIf(player -> player.getUUID().equals(uuid));
     }
+
+    public static Set<Player> getPlayers() {
+        return knownPlayers;
+    }
 }

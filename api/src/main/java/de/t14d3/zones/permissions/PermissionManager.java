@@ -22,13 +22,13 @@ public class PermissionManager {
     private final DebugLoggerManager debugLogger;
     private Zones zones;
     public static final String UNIVERSAL = "+universal";
-    public List<Permission> permissionMap;
+    private List<Permission> permissionMap;
 
     public PermissionManager(Zones zones) {
         this.zones = zones;
         this.debugLogger = zones.getDebugLogger();
         this.cacheUtils = CacheUtils.getInstance();
-        this.permissionMap = getPermissions();
+        this.permissionMap = readPermissions();
     }
 
     public boolean checkAction(BlockLocation location, World world, UUID playerUUID, Flag action, String type, Object... extra) {
@@ -196,7 +196,7 @@ public class PermissionManager {
         return result;
     }
 
-    public List<Permission> getPermissions() {
+    public List<Permission> readPermissions() {
         List<Permission> permissions = new ArrayList<>();
         Gson gson = new Gson();
         JsonObject obj = gson.fromJson(
@@ -212,11 +212,30 @@ public class PermissionManager {
         return permissions;
     }
 
+    /**
+     * Gets a list of all permissions recognized this platform.
+     *
+     * @return List of {@link Permission} objects.
+     */
+    public List<Permission> getPermissions() {
+        return permissionMap;
+    }
+
+    /**
+     * Simple permission object.
+     * Contains a name, description, and level (Vanilla operator level equivalent).
+     */
     public static class Permission {
         private final String value;
         private final String description;
         private final int level;
 
+        /**
+         * Creates a new permission object.
+         * @param value The permission name.
+         * @param description The permission description.
+         * @param level The permission level.
+         */
         public Permission(String value, String description, int level) {
             this.value = value;
             this.description = description;

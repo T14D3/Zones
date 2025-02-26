@@ -16,11 +16,10 @@ import java.util.UUID;
 
 public class BukkitPlatform implements ZonesPlatform {
     private final ZonesBukkit plugin;
-    private final BukkitAudiences audiences;
+    public BukkitAudiences audiences;
 
     public BukkitPlatform(ZonesBukkit plugin) {
         this.plugin = plugin;
-        this.audiences = BukkitAudiences.create(plugin);
     }
 
     @Override
@@ -38,11 +37,12 @@ public class BukkitPlatform implements ZonesPlatform {
 
     @Override
     public Player getPlayer(UUID uuid) {
-        org.bukkit.entity.Player player = plugin.getServer().getPlayer(uuid);
-        if (player != null) {
-            return PlayerRepository.getOrAdd(player.getName(), player.getUniqueId());
+        org.bukkit.OfflinePlayer player = plugin.getServer().getOfflinePlayer(uuid);
+        String name = player.getName();
+        if (name == null) {
+            name = player.getUniqueId().toString();
         }
-        return null;
+        return PlayerRepository.getOrAdd(name, player.getUniqueId());
     }
 
     @Override

@@ -9,6 +9,7 @@ import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.kyori.adventure.audience.Audience;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -41,6 +42,11 @@ public class FabricPlatform implements ZonesPlatform {
     public Player getPlayer(UUID uuid) {
         String name = mod.getServer().getUserCache().getByUuid(uuid).get().getName();
         return PlayerRepository.getOrAdd(name, uuid);
+    }
+
+    public @Nullable Player getPlayer(String name) {
+        return PlayerRepository.getPlayers().stream().filter(player -> player.getName().equals(name)).findFirst()
+                .orElse(null);
     }
 
     public ServerPlayerEntity getNativePlayer(Player player) {
@@ -85,5 +91,9 @@ public class FabricPlatform implements ZonesPlatform {
     @Override
     public Types getTypes() {
         return mod.getTypes();
+    }
+
+    public ZonesFabric getMod() {
+        return mod;
     }
 }

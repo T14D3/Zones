@@ -4,14 +4,17 @@ import de.t14d3.zones.fabric.commands.RootCommand;
 import de.t14d3.zones.fabric.listeners.PlayerListener;
 import de.t14d3.zones.utils.Messages;
 import de.t14d3.zones.utils.Types;
+import me.lucko.fabric.api.permissions.v0.PermissionCheckEvent;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.util.TriState;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ZonesFabric implements DedicatedServerModInitializer {
     private ZonesPlatform platform;
@@ -34,7 +37,7 @@ public class ZonesFabric implements DedicatedServerModInitializer {
         this.dataFolder = new File(FabricLoader.getInstance().getConfigDir().toFile(), "Zones");
         this.platform = new FabricPlatform(this);
 
-        this.types = new FabricTypes();
+        this.types = new FabricTypes(this);
 
         this.zones = new Zones(platform);
         this.regionManager = zones.getRegionManager();
@@ -51,6 +54,22 @@ public class ZonesFabric implements DedicatedServerModInitializer {
         this.server = server;
         this.playerManager = server.getPlayerManager();
         new PlayerListener(this);
+
+        if (FabricLoader.getInstance().isModLoaded("luckperms"))
+            return; // Skip registering our own scuffed permission system if luckperms is loaded
+        PermissionCheckEvent.EVENT.register((source, permission) -> {
+            if (!permission.startsWith("zones.")) {
+                return TriState.DEFAULT;
+            }
+            AtomicReference<TriState> result = new AtomicReference<>(TriState.DEFAULT);
+            permissionManager.getPermissions().stream().filter(p -> p.getName().equals(permission)).findFirst()
+                    .ifPresent(p -> {
+                        if (source.hasPermissionLevel(p.getLevel())) {
+                            result.set(TriState.TRUE);
+                        }
+                    });
+            return result.get();
+        });
     }
 
     private void onWorldsLoaded(MinecraftServer server) {

@@ -16,14 +16,10 @@ import de.t14d3.zones.visuals.FindBossbar;
 import de.t14d3.zones.visuals.ParticleHandler;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPIBukkitConfig;
+import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.Properties;
 
 public final class ZonesBukkit extends JavaPlugin {
 
@@ -82,18 +78,7 @@ public final class ZonesBukkit extends JavaPlugin {
 
         this.saveDefaultConfig();
 
-        // Load messages from messages.yml
-        File messagesFile = new File(getDataFolder(), "messages.properties");
-        if (!messagesFile.exists()) {
-            saveResource("messages.properties", false); // Copy default messages.yml from jar
-        }
-        Properties messagesConfig = new Properties();
-        try {
-            messagesConfig.load(new FileInputStream(messagesFile));
-        } catch (IOException e) {
-            zones.getLogger().error("Failed to load messages.properties");
-        }
-
+        ((BukkitPlatform) platform).audiences = BukkitAudiences.create(this);
 
         // Register listeners
         this.getServer().getPluginManager().registerEvents(new PlayerEventListener(this), this);

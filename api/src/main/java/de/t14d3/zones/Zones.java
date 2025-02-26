@@ -49,18 +49,19 @@ public class Zones {
         this.flags = new Flags();
 
         Properties messagesConfig = new Properties();
+        File messagesFile = new File(platform.getDataFolder(), "messages.properties");
+        if (!messagesFile.exists()) {
+            try {
+                Files.copy(getClass().getResourceAsStream("/messages.properties"), messagesFile.toPath());
+            } catch (Exception e1) {
+                getLogger().error("Failed to copy default messages.properties: {}", e1.getMessage());
+            }
+        }
         try {
-            messagesConfig.load(new FileInputStream(platform.getDataFolder().getPath() + "/messages.properties"));
+            messagesConfig.load(new FileInputStream(messagesFile));
         } catch (Exception e) {
             getLogger().error("Failed to load messages.properties: {}", e.getMessage());
-            File messagesFile = new File(platform.getDataFolder(), "messages.properties");
-            if (!messagesFile.exists()) {
-                try {
-                    Files.copy(getClass().getResourceAsStream("/messages.properties"), messagesFile.toPath());
-                } catch (Exception e1) {
-                    getLogger().error("Failed to copy default messages.properties: {}", e1.getMessage());
-                }
-            }
+
         }
         this.messages = new Messages(messagesConfig, this);
 

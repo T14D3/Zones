@@ -1,5 +1,6 @@
 plugins {
     id("java")
+    id("xyz.jpenilla.run-paper") version "2.3.1"
 }
 
 group = "de.t14d3"
@@ -42,6 +43,16 @@ tasks.processResources {
     filesMatching("plugin.yml") {
         expand(props)
     }
+}
+runPaper.disablePluginJarDetection()
+tasks.runServer {
+    minecraftVersion("1.21.4")
+    pluginJars(rootProject.tasks.named("shadowJar").get().outputs.files)
+    javaLauncher = javaToolchains.launcherFor {
+        vendor.set(JvmVendorSpec.JETBRAINS)
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
+    jvmArgs("-XX:+AllowEnhancedClassRedefinition")
 }
 
 tasks.test {
