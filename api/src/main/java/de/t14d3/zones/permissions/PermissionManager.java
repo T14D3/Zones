@@ -1,12 +1,19 @@
 package de.t14d3.zones.permissions;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.stream.JsonReader;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.Zones;
 import de.t14d3.zones.objects.*;
 import de.t14d3.zones.utils.DebugLoggerManager;
 import de.t14d3.zones.utils.PlayerRepository;
 
+import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -15,11 +22,13 @@ public class PermissionManager {
     private final DebugLoggerManager debugLogger;
     private Zones zones;
     public static final String UNIVERSAL = "+universal";
+    public List<Permission> permissionMap;
 
     public PermissionManager(Zones zones) {
         this.zones = zones;
         this.debugLogger = zones.getDebugLogger();
         this.cacheUtils = CacheUtils.getInstance();
+        this.permissionMap = getPermissions();
     }
 
     public boolean checkAction(BlockLocation location, World world, UUID playerUUID, Flag action, String type, Object... extra) {
@@ -61,6 +70,8 @@ public class PermissionManager {
             int priority = Integer.MIN_VALUE;
 
             for (Region region : regions) {
+                debugLogger.log("Checking region " + region.getKey()
+                        .toString() + " for " + action.name() + " with type " + type, DebugLoggerManager.CHECK);
 
                 // Only check regions with a higher priority than the current value
                 if (region.getPriority() > priority) {
@@ -183,6 +194,46 @@ public class PermissionManager {
             result = Result.FALSE;
         }
         return result;
+    }
+
+    public List<Permission> getPermissions() {
+        List<Permission> permissions = new ArrayList<>();
+        Gson gson = new Gson();
+        JsonObject obj = gson.fromJson(
+                new JsonReader(new InputStreamReader(zones.getClass().getResourceAsStream("/permissions.json"))),
+                JsonObject.class);
+        for (Map.Entry<String, JsonElement> entry : obj.getAsJsonObject("permissions").entrySet()) {
+            String key = entry.getKey();
+            JsonObject permission = entry.getValue().getAsJsonObject();
+            String description = permission.get("description").getAsString();
+            int level = permission.get("level").getAsInt();
+            permissions.add(new Permission(key, description, level));
+        }
+        return permissions;
+    }
+
+    public static class Permission {
+        private final String value;
+        private final String description;
+        private final int level;
+
+        public Permission(String value, String description, int level) {
+            this.value = value;
+            this.description = description;
+            this.level = level;
+        }
+
+        public String getName() {
+            return this.value;
+        }
+
+        public String getDescription() {
+            return this.description;
+        }
+
+        public int getLevel() {
+            return this.level;
+        }
     }
 
 }

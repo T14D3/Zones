@@ -1,34 +1,51 @@
 package de.t14d3.zones.fabric.commands;
 
-import de.t14d3.zones.RegionManager;
-import de.t14d3.zones.ZonesFabric;
+import com.mojang.brigadier.context.CommandContext;
+import de.t14d3.zones.*;
+import de.t14d3.zones.objects.Player;
 import de.t14d3.zones.utils.Messages;
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.minecraft.server.command.CommandManager;
+import me.lucko.fabric.api.permissions.v0.Permissions;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.Text;
+
+import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
 
 public class DeleteCommand {
     private final ZonesFabric mod;
     private RegionManager regionManager;
     private Messages messages;
+    private FabricPlatform platform;
+    private final MiniMessage mm = MiniMessage.miniMessage();
 
     public DeleteCommand(ZonesFabric mod) {
         this.mod = mod;
         this.regionManager = mod.getRegionManager();
         this.messages = mod.getMessages();
+        this.platform = (FabricPlatform) mod.getZones().getPlatform();
     }
 
-    public void register() {
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-            dispatcher.register(CommandManager.literal("delete")
-                    .requires(source -> source.hasPermissionLevel(2)) // Adjust permission level as needed
-                    .executes(context -> {
-                        ServerCommandSource source = context.getSource();
-                        source.sendMessage(Text.of("Hello, World!"));
-                        // Implement command logic here
-                        return 1;
-                    }));
-        });
+    int execute(CommandContext<ServerCommandSource> context) {
+        if (context.getSource().getPlayer() != null) {
+            Player player = platform.getPlayer(context.getSource().getPlayer().getUuid());
+            Region region = regionManager.regions()
+                    .get(RegionKey.fromString(context.getArgument("key", String.class)).getValue());
+            if (region == null) {
+                context.getSource().sendMessage(messages.getCmp("commands.invalid-region"));
+                return 1;
+            }
+            if (!Permissions.check(context.getSource(), "zones.delete.other")) {
+                if (context.getSource().getPlayer() != null && !region.isAdmin(
+                        context.getSource().getPlayer().getUuid())) {
+                    context.getSource().sendMessage(messages.getCmp("commands.invalid-region"));
+                    return 1;
+                }
+            }
+            regionManager.deleteRegion(region.getKey());
+            context.getSource().sendMessage(
+                    mm.deserialize(messages.get("commands.delete.success"),
+                            parsed("region", region.getKey().toString())));
+            return 1;
+        }
+        return 0;
     }
 }

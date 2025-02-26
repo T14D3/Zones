@@ -8,19 +8,30 @@ import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 
 public class ConfigManager {
     private final Zones plugin;
     private ConfigurationNode configData;
     private final YamlConfigurationLoader loader;
-    private File configFile = new File("plugins/Zones/config.yml");
-
-    public ConfigManager(Zones plugin) {
-        this(plugin, new File("plugins/Zones/config.yml"));
-    }
+    private File dataFolder;
 
     public ConfigManager(Zones plugin, File configFile) {
         this.plugin = plugin;
+        if (!configFile.exists()) {
+            this.dataFolder = configFile.getParentFile();
+            if (!dataFolder.exists()) {
+                dataFolder.mkdir();
+                File config = new File(dataFolder, "config.yml");
+                if (!config.exists()) {
+                    try {
+                        Files.copy(getClass().getResourceAsStream("/config.yml"), config.toPath());
+                    } catch (IOException e) {
+                    }
+                }
+            }
+        }
+
         this.loader = YamlConfigurationLoader.builder()
                 .path(configFile.toPath())
                 .build();
@@ -28,6 +39,7 @@ public class ConfigManager {
     }
 
     private void loadConfig() {
+
         try {
             configData = loader.load();
         } catch (IOException e) {

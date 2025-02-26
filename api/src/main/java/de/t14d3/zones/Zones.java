@@ -9,7 +9,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
+import java.nio.file.Files;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -35,9 +36,14 @@ public class Zones {
     public Zones(ZonesPlatform platform) {
         instance = this;
         this.platform = platform;
-        this.debugLogger = new DebugLoggerManager(this, true);
 
-        this.configManager = new ConfigManager(this);
+        this.configManager = new ConfigManager(this, new File(platform.getDataFolder(), "config.yml"));
+
+        boolean debug = configManager.getBoolean("debug", false) || Objects.equals(System.getenv("ZONES_DEBUG"),
+                "true");
+
+        this.debugLogger = new DebugLoggerManager(this, debug);
+
         new ConfigUpdater(this);
         this.cacheUtils = new CacheUtils(this);
         this.flags = new Flags();
@@ -45,8 +51,16 @@ public class Zones {
         Properties messagesConfig = new Properties();
         try {
             messagesConfig.load(new FileInputStream(platform.getDataFolder().getPath() + "/messages.properties"));
-        } catch (IOException e) {
+        } catch (Exception e) {
             getLogger().error("Failed to load messages.properties: {}", e.getMessage());
+            File messagesFile = new File(platform.getDataFolder(), "messages.properties");
+            if (!messagesFile.exists()) {
+                try {
+                    Files.copy(getClass().getResourceAsStream("/messages.properties"), messagesFile.toPath());
+                } catch (Exception e1) {
+                    getLogger().error("Failed to copy default messages.properties: {}", e1.getMessage());
+                }
+            }
         }
         this.messages = new Messages(messagesConfig, this);
 

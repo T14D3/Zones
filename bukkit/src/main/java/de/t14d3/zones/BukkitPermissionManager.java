@@ -9,9 +9,11 @@ import org.bukkit.Location;
 import java.util.UUID;
 
 public class BukkitPermissionManager extends PermissionManager {
+    private final Zones zones;
 
     public BukkitPermissionManager(Zones zones) {
         super(zones);
+        this.zones = zones;
     }
 
     public boolean checkAction(Location loc, String who, Flag action, String type, Object... extra) {

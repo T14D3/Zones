@@ -4,6 +4,7 @@ import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.Zones;
 import de.t14d3.zones.objects.BlockLocation;
+import de.t14d3.zones.objects.World;
 import de.t14d3.zones.utils.ConfigManager;
 import org.spongepowered.configurate.ConfigurationNode;
 
@@ -57,6 +58,12 @@ public class YamlDataSource extends AbstractDataSource {
     @Override
     public Region loadRegion(String key) {
         ConfigurationNode regionNode = regionsConfig.getConfig().node("regions", key);
+        World world = plugin.getPlatform().getWorld(regionNode.node("world").getString());
+        if (world == null) {
+            plugin.getLogger().warn("World {} for region {} not found, falling back to default world.",
+                    regionNode.node("world").getString(), key);
+            world = plugin.getPlatform().getWorlds().get(0);
+        }
         return new Region(
                 regionNode.node("name").getString(),
                 new BlockLocation(regionNode.node("min", "x").getInt(),
@@ -65,7 +72,7 @@ public class YamlDataSource extends AbstractDataSource {
                 new BlockLocation(regionNode.node("max", "x").getInt(),
                         regionNode.node("max", "y").getInt(),
                         regionNode.node("max", "z").getInt()),
-                Zones.getInstance().getPlatform().getWorld(regionNode.node("world").getString()),
+                world,
                 loadMembers(regionNode.node("members")),
                 RegionKey.fromString(key),
                 regionNode.node("parent").isNull() ? null : RegionKey.fromString(regionNode.node("parent").getString()),

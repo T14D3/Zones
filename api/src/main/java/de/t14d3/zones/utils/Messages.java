@@ -5,7 +5,6 @@ import de.t14d3.zones.Zones;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.Bukkit;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -69,7 +68,8 @@ public class Messages {
                 String playerName = null;
                 // TODO: Make this platform agnostic
                 try {
-                    playerName = Bukkit.getOfflinePlayer(UUID.fromString(member.getKey())).getName();
+                    playerName = Zones.getInstance().getPlatform().getPlayer(UUID.fromString(member.getKey()))
+                            .getName();
                 } catch (IllegalArgumentException ignored) {
                 }
                 if (playerName == null) {

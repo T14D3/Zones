@@ -5,9 +5,11 @@ public class Box {
     private final BlockLocation max;
     private final World world;
 
-    public Box(BlockLocation min, BlockLocation max, World world) {
-        this.min = min;
-        this.max = max;
+    public Box(BlockLocation pos1, BlockLocation pos2, World world) {
+        this.min = new BlockLocation(Math.min(pos1.getX(), pos2.getX()), Math.min(pos1.getY(), pos2.getY()),
+                Math.min(pos1.getZ(), pos2.getZ()));
+        this.max = new BlockLocation(Math.max(pos1.getX(), pos2.getX()), Math.max(pos1.getY(), pos2.getY()),
+                Math.max(pos1.getZ(), pos2.getZ()));
         this.world = world;
     }
 

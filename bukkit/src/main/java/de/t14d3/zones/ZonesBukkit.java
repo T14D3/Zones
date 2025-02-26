@@ -23,7 +23,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Objects;
 import java.util.Properties;
 
 public final class ZonesBukkit extends JavaPlugin {
@@ -47,9 +46,14 @@ public final class ZonesBukkit extends JavaPlugin {
 
     @Override
     public void onLoad() {
-        // TODO: Move to custom config handler
-        this.debug = getConfig().getBoolean("debug", false)
-                || Objects.equals(System.getenv("ZONES_DEBUG"), "true");
+
+
+        this.platform = new BukkitPlatform(this);
+        instance = this;
+
+        this.types = new BukkitTypes();
+        this.zones = new Zones(platform);
+        this.debug = zones.debug;
         // Configure CommandAPI
         CommandAPI.onLoad(new CommandAPIBukkitConfig(this)
                 .verboseOutput(debug)
@@ -57,12 +61,6 @@ public final class ZonesBukkit extends JavaPlugin {
                 .silentLogs(!debug)
                 .usePluginNamespace()
         );
-
-        this.platform = new BukkitPlatform(this);
-        instance = this;
-
-        this.types = new BukkitTypes();
-        this.zones = new Zones(platform);
 
         this.regionManager = zones.getRegionManager();
         this.messages = zones.getMessages();
@@ -112,6 +110,14 @@ public final class ZonesBukkit extends JavaPlugin {
             getServer().getPluginManager().addPermission(
                     new Permission("zones.mode." + mode.getName().toLowerCase() + ".sub", PermissionDefault.OP));
         }
+
+        permissionManager.getPermissions().forEach(permission -> {
+            this.getServer().getPluginManager().addPermission(
+                    new Permission(permission.getName(), permission.getDescription(),
+                            permission.getLevel() > 2 ? PermissionDefault.OP : PermissionDefault.TRUE)
+            );
+        });
+
 
         // Register saving task
         if (getSavingMode() == Utils.SavingModes.PERIODIC) {

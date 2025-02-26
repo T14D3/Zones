@@ -18,7 +18,7 @@ public class ConfigUpdater {
     }
 
     private void update() {
-        ConfigManager configManager = new ConfigManager(plugin);
+        ConfigManager configManager = new ConfigManager(plugin, new File(plugin.getDataFolder(), "config.yml"));
         ConfigurationNode defaultConfig = loadDefaultConfig();
         ConfigurationNode currentConfig = configManager.getConfig();
 

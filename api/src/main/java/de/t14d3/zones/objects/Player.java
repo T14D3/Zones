@@ -54,4 +54,9 @@ public class Player implements Audience {
     public void sendMessage(@NotNull Component component) {
         Zones.getInstance().getPlatform().getAudience(this).sendMessage(component);
     }
+
+    @Override
+    public void sendActionBar(@NotNull Component component) {
+        Zones.getInstance().getPlatform().getAudience(this).sendActionBar(component);
+    }
 }

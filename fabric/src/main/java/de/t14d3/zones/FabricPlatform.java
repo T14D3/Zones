@@ -7,6 +7,7 @@ import de.t14d3.zones.utils.PlayerRepository;
 import de.t14d3.zones.utils.Types;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.kyori.adventure.audience.Audience;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.io.File;
@@ -17,18 +18,22 @@ import java.util.UUID;
 public class FabricPlatform implements ZonesPlatform {
     private final ZonesFabric mod;
     private FabricPermissionManager permissionManager;
+    private List<World> worlds;
 
     public FabricPlatform(ZonesFabric mod) {
         this.mod = mod;
     }
 
-    @Override
-    public List<World> getWorlds() {
-        List<World> worlds = new ArrayList<>();
-        mod.getServer().getWorlds().forEach(world -> worlds.add(World.of(
+    public void loadWorlds(MinecraftServer server) {
+        worlds = new ArrayList<>();
+        server.getWorlds().forEach(world -> worlds.add(World.of(
                 world.getRegistryKey().getValue().toString(),
                 UUID.nameUUIDFromBytes(world.getRegistryKey().getValue().toString().getBytes())
         )));
+    }
+
+    @Override
+    public List<World> getWorlds() {
         return worlds;
     }
 

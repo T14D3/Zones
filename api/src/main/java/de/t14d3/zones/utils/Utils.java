@@ -13,6 +13,8 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.util.*;
 
+// TODO: Either make this work platform-independent, or move to bukkit platform implementation and create fabric equivalent
+
 /**
  * Utility methods for the plugin.
  * <p>

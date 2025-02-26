@@ -1,8 +1,6 @@
 package de.t14d3.zones;
 
-import de.t14d3.zones.fabric.commands.CancelCommand;
-import de.t14d3.zones.fabric.commands.CreateCommand;
-import de.t14d3.zones.fabric.commands.DeleteCommand;
+import de.t14d3.zones.fabric.commands.RootCommand;
 import de.t14d3.zones.fabric.listeners.PlayerListener;
 import de.t14d3.zones.utils.Messages;
 import de.t14d3.zones.utils.Types;
@@ -26,18 +24,17 @@ public class ZonesFabric implements DedicatedServerModInitializer {
 
     private RegionManager regionManager;
     private Messages messages;
-
-    private CancelCommand cancelCommand;
-    private CreateCommand createCommand;
-    private DeleteCommand deleteCommand;
+    private RootCommand rootCommand;
 
     @Override
     public void onInitializeServer() {
         ServerLifecycleEvents.SERVER_STARTING.register(this::onEnable);
+        ServerLifecycleEvents.SERVER_STARTED.register(this::onWorldsLoaded);
+        ServerLifecycleEvents.SERVER_STOPPING.register(this::onDisable);
+        this.dataFolder = new File(FabricLoader.getInstance().getConfigDir().toFile(), "Zones");
         this.platform = new FabricPlatform(this);
 
         this.types = new FabricTypes();
-        this.dataFolder = FabricLoader.getInstance().getConfigDir().toFile();
 
         this.zones = new Zones(platform);
         this.regionManager = zones.getRegionManager();
@@ -45,12 +42,7 @@ public class ZonesFabric implements DedicatedServerModInitializer {
 
         this.permissionManager = new FabricPermissionManager(zones);
 
-        this.cancelCommand = new CancelCommand(this);
-        this.createCommand = new CreateCommand(this);
-        this.deleteCommand = new DeleteCommand(this);
-        this.cancelCommand.register();
-        this.createCommand.register();
-        this.deleteCommand.register();
+        this.rootCommand = new RootCommand(this);
 
         Zones.getInstance().getLogger().info("Zones Fabric mod initialized!");
     }
@@ -59,6 +51,17 @@ public class ZonesFabric implements DedicatedServerModInitializer {
         this.server = server;
         this.playerManager = server.getPlayerManager();
         new PlayerListener(this);
+    }
+
+    private void onWorldsLoaded(MinecraftServer server) {
+        ((FabricPlatform) zones.getPlatform()).loadWorlds(server);
+
+        regionManager.loadRegions();
+        zones.getLogger().info("Mod enabled, loaded {} regions.", zones.getRegionManager().regions().size());
+    }
+
+    private void onDisable(MinecraftServer server) {
+        regionManager.saveRegions();
     }
 
     public File getDataFolder() {
