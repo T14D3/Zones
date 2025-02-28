@@ -1,10 +1,10 @@
 package de.t14d3.zones.fabric.commands;
 
 import com.mojang.brigadier.context.CommandContext;
-import de.t14d3.zones.FabricPlatform;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionManager;
-import de.t14d3.zones.ZonesFabric;
+import de.t14d3.zones.fabric.FabricPlatform;
+import de.t14d3.zones.fabric.ZonesFabric;
 import de.t14d3.zones.objects.Player;
 import de.t14d3.zones.utils.Messages;
 import me.lucko.fabric.api.permissions.v0.Permissions;
@@ -12,7 +12,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.commands.CommandSourceStack;
 
 import java.util.List;
 
@@ -30,13 +30,13 @@ public class ListCommand {
         this.platform = mod.getPlatform();
     }
 
-    int execute(CommandContext<ServerCommandSource> context, int page) {
+    int execute(CommandContext<CommandSourceStack> context, int page) {
         boolean perm = Permissions.check(context.getSource(), "zones.info.other");
         if (page < 1) {
             page = 1;
         }
         Player player = context.getSource().getPlayer() != null ? platform.getPlayer(
-                context.getSource().getPlayer().getUuid()) : null;
+                context.getSource().getPlayer().getUUID()) : null;
         List<Region> regions = regionManager.regions().values().parallelStream()
                 .filter(region -> perm || (player != null && region.isMember(player.getUniqueId())))
                 .toList();

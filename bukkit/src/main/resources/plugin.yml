@@ -1,6 +1,6 @@
 name: Zones
 version: '${version}'
-main: de.t14d3.zones.ZonesBukkit
+main: de.t14d3.zones.bukkit.ZonesBukkit
 api-version: '1.21'
 softdepend: [ WorldEdit, FastAsyncWorldEdit, PlaceholderAPI, WorldGuard ]
 libraries:

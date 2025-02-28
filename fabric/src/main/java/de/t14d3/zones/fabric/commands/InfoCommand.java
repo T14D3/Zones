@@ -4,13 +4,13 @@ import com.mojang.brigadier.context.CommandContext;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.RegionManager;
-import de.t14d3.zones.ZonesFabric;
+import de.t14d3.zones.fabric.ZonesFabric;
 import de.t14d3.zones.objects.BlockLocation;
 import de.t14d3.zones.objects.Player;
 import de.t14d3.zones.objects.World;
 import de.t14d3.zones.utils.Messages;
 import me.lucko.fabric.api.permissions.v0.Permissions;
-import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.commands.CommandSourceStack;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +26,7 @@ public class InfoCommand {
         this.messages = mod.getMessages();
     }
 
-    int execute(CommandContext<ServerCommandSource> context) {
+    int execute(CommandContext<CommandSourceStack> context) {
         List<Region> regions = new ArrayList<>();
         Player player = null;
         try {
@@ -34,13 +34,13 @@ public class InfoCommand {
                     .get(RegionKey.fromString(context.getArgument("key", String.class)).getValue()));
         } catch (Exception ignored) {
             if (context.getSource().getPlayer() != null) {
-                player = mod.getPlatform().getPlayer(context.getSource().getPlayer().getUuid());
+                player = mod.getPlatform().getPlayer(context.getSource().getPlayer().getUUID());
 
                 BlockLocation location = new BlockLocation(context.getSource().getPlayer().getBlockX(),
                         context.getSource().getPlayer().getBlockY(),
                         context.getSource().getPlayer().getBlockZ());
                 World world = (mod.getPlatform()).getWorld(
-                        context.getSource().getPlayer().getWorld());
+                        context.getSource().getPlayer().getCommandSenderWorld());
                 regions = regionManager.getRegionsAt(location, world);
             } else {
                 // Sender is not player and no region key provided

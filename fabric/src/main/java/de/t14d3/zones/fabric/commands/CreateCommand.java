@@ -1,16 +1,16 @@
 package de.t14d3.zones.fabric.commands;
 
 import com.mojang.brigadier.context.CommandContext;
-import de.t14d3.zones.FabricPlatform;
 import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.RegionManager;
-import de.t14d3.zones.ZonesFabric;
+import de.t14d3.zones.fabric.FabricPlatform;
+import de.t14d3.zones.fabric.ZonesFabric;
 import de.t14d3.zones.objects.Box;
 import de.t14d3.zones.objects.Player;
 import de.t14d3.zones.utils.Messages;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.commands.CommandSourceStack;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,11 +29,11 @@ public class CreateCommand {
         this.platform = mod.getPlatform();
     }
 
-    int execute(CommandContext<ServerCommandSource> context) {
+    int execute(CommandContext<CommandSourceStack> context) {
         if (context.getSource().getPlayer() != null) {
-            Player player = platform.getPlayer(context.getSource().getPlayer().getUuid());
+            Player player = platform.getPlayer(context.getSource().getPlayer().getUUID());
             if (player.getSelection() == null) {
-                player.setSelection(new Box(platform.getWorld(context.getSource().getWorld())));
+                player.setSelection(new Box(platform.getWorld(context.getSource().getLevel())));
                 player.setSelectionCreating(true);
                 player.sendMessage(messages.getCmp("commands.create.click-corners"));
                 return 1;

@@ -16,7 +16,7 @@ import java.util.concurrent.CompletableFuture;
 public class YamlDataSource extends AbstractDataSource {
     private final File regionsFile;
     private final Zones plugin;
-    private ConfigManager regionsConfig;
+    private final ConfigManager regionsConfig;
 
     public YamlDataSource(File dataFolder, Zones plugin) {
         super(plugin);

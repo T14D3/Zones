@@ -6,7 +6,7 @@ import com.mojang.brigadier.context.CommandContext;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.RegionManager;
-import de.t14d3.zones.ZonesFabric;
+import de.t14d3.zones.fabric.ZonesFabric;
 import de.t14d3.zones.objects.Flag;
 import de.t14d3.zones.objects.Player;
 import de.t14d3.zones.objects.PlayerRepository;
@@ -17,8 +17,8 @@ import net.kyori.adventure.platform.modcommon.impl.NonWrappingComponentSerialize
 import net.kyori.adventure.platform.modcommon.impl.WrappedComponent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
 
 import java.util.*;
 
@@ -36,12 +36,12 @@ public class SetCommand {
         this.messages = mod.getMessages();
     }
 
-    public LiteralArgumentBuilder<ServerCommandSource> command() {
-        return CommandManager.literal("set")
+    public LiteralArgumentBuilder<CommandSourceStack> command() {
+        return Commands.literal("set")
                 .requires(source -> Permissions.check(source, "zones.set"))
-                .then(CommandManager.argument("key", StringArgumentType.string())
+                .then(Commands.argument("key", StringArgumentType.string())
                         .suggests(RootCommand::regionKeySuggestion)
-                        .then(CommandManager.argument("target", StringArgumentType.string())
+                        .then(Commands.argument("target", StringArgumentType.string())
                                 .suggests((context, builder) -> {
                                     Region region = regionManager.regions()
                                             .get(RegionKey.fromString(context.getArgument("key", String.class))
@@ -50,7 +50,7 @@ public class SetCommand {
                                         return builder.buildFuture();
                                     } else if (!Permissions.check(context.getSource(), "zones.set.other")) {
                                         if (context.getSource().getPlayer() == null || !region.isOwner(
-                                                context.getSource().getPlayer().getUuid())) {
+                                                context.getSource().getPlayer().getUUID())) {
                                             return builder.buildFuture();
                                         }
                                     }
@@ -77,7 +77,7 @@ public class SetCommand {
                                     }
                                     return builder.buildFuture();
                                 })
-                                .then(CommandManager.argument("flag", StringArgumentType.string())
+                                .then(Commands.argument("flag", StringArgumentType.string())
                                         .suggests((context, builder) -> {
                                             for (Flag flag : Flags.getFlags()) {
                                                 builder.suggest(flag.name(), new WrappedComponent(
@@ -89,7 +89,7 @@ public class SetCommand {
                                             }
                                             return builder.buildFuture();
                                         })
-                                        .then(CommandManager.argument("values", StringArgumentType.string())
+                                        .then(Commands.argument("values", StringArgumentType.string())
                                                 .suggests((context, builder) -> {
                                                     Flag flag = Flags.getFlag(
                                                             context.getArgument("flag", String.class));
@@ -104,12 +104,12 @@ public class SetCommand {
     }
 
 
-    int execute(CommandContext<ServerCommandSource> context) {
+    int execute(CommandContext<CommandSourceStack> context) {
         RegionKey regionKey = RegionKey.fromString(context.getArgument("key", String.class));
         Region region = regionManager.regions().get(regionKey.getValue());
         if (Permissions.check(context.getSource(), "zones.set.other") ||
                 (context.getSource().getPlayer() != null && region.isOwner(
-                        context.getSource().getPlayer().getUuid()))) {
+                        context.getSource().getPlayer().getUUID()))) {
             StringBuilder builder = new StringBuilder();
             String[] values = context.getArgument("values", String.class).split(" ");
             for (String value : values) {

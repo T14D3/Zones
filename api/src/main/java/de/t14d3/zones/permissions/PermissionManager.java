@@ -19,9 +19,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class PermissionManager {
     private final CacheUtils cacheUtils;
     private final DebugLoggerManager debugLogger;
-    private Zones zones;
+    private final Zones zones;
     public static final String UNIVERSAL = "+universal";
-    private List<Permission> permissionMap;
+    private final List<Permission> permissionMap;
 
     public PermissionManager(Zones zones) {
         this.zones = zones;

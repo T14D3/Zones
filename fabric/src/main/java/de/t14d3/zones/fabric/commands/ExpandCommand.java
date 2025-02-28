@@ -8,13 +8,13 @@ import com.mojang.brigadier.context.CommandContext;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.RegionManager;
-import de.t14d3.zones.ZonesFabric;
+import de.t14d3.zones.fabric.ZonesFabric;
 import de.t14d3.zones.objects.Direction;
 import de.t14d3.zones.utils.Messages;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
 
 import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
 
@@ -28,7 +28,7 @@ public class ExpandCommand {
         this.messages = mod.getMessages();
     }
 
-    int execute(CommandContext<ServerCommandSource> context) {
+    int execute(CommandContext<CommandSourceStack> context) {
         Region region = regionManager.regions()
                 .get(RegionKey.fromString(context.getArgument("key", String.class)).getValue());
         if (region == null) {
@@ -37,7 +37,7 @@ public class ExpandCommand {
         }
         if (!Permissions.check(context.getSource(), "zones.expand.other") &&
                 (context.getSource().getPlayer() == null || !region.isOwner(
-                        context.getSource().getPlayer().getUuid()))) {
+                        context.getSource().getPlayer().getUUID()))) {
             context.getSource().sendMessage(messages.getCmp("commands.invalid-region"));
             return 1;
         }
@@ -54,7 +54,7 @@ public class ExpandCommand {
             direction = Direction.valueOf(context.getArgument("direction", String.class).toUpperCase());
         } catch (Exception ignored) {
             if (context.getSource().getPlayer() != null) {
-                direction = Direction.fromYaw(context.getSource().getPlayer().getYaw());
+                direction = Direction.fromYaw(context.getSource().getPlayer().getViewYRot(1.0f));
             } else {
                 context.getSource().sendMessage(messages.getCmp("commands.invalid"));
                 return 1;
@@ -72,13 +72,13 @@ public class ExpandCommand {
         return 1;
     }
 
-    LiteralArgumentBuilder<ServerCommandSource> command() {
-        return CommandManager.literal("expand")
+    LiteralArgumentBuilder<CommandSourceStack> command() {
+        return Commands.literal("expand")
                 .requires(source -> Permissions.check(source, "zones.expand"))
-                .then(CommandManager.argument("key", StringArgumentType.string())
+                .then(Commands.argument("key", StringArgumentType.string())
                         .suggests(RootCommand::regionKeySuggestion)
-                        .then(CommandManager.argument("amount", IntegerArgumentType.integer())
-                                .then(CommandManager.argument("direction", StringArgumentType.string())
+                        .then(Commands.argument("amount", IntegerArgumentType.integer())
+                                .then(Commands.argument("direction", StringArgumentType.string())
                                         .suggests((context, builder) -> {
                                             builder.suggest("north");
                                             builder.suggest("east");
@@ -89,7 +89,7 @@ public class ExpandCommand {
                                             return builder.buildFuture();
                                         })
                                         .executes(this::execute)
-                                        .then(CommandManager.argument("overlap", BoolArgumentType.bool())
+                                        .then(Commands.argument("overlap", BoolArgumentType.bool())
                                                 .requires(source -> Permissions.check(source, "zones.expand.overlap"))
                                                 .executes(this::execute)))));
     }

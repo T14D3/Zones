@@ -6,7 +6,7 @@ import de.t14d3.zones.Zones;
 import java.util.List;
 
 public class DataSourceManager {
-    private AbstractDataSource currentDataSource;
+    private final AbstractDataSource currentDataSource;
 
     public DataSourceManager(Zones plugin) {
         DataSourceTypes type = DataSourceTypes.valueOf(

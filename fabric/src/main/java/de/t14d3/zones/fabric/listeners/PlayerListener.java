@@ -1,8 +1,8 @@
 package de.t14d3.zones.fabric.listeners;
 
-import de.t14d3.zones.FabricPlatform;
 import de.t14d3.zones.Region;
-import de.t14d3.zones.ZonesFabric;
+import de.t14d3.zones.fabric.FabricPlatform;
+import de.t14d3.zones.fabric.ZonesFabric;
 import de.t14d3.zones.objects.BlockLocation;
 import de.t14d3.zones.objects.Box;
 import de.t14d3.zones.objects.Flag;
@@ -12,15 +12,15 @@ import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -41,14 +41,14 @@ public class PlayerListener {
         this.platform = mod.getPlatform();
 
         UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
-            de.t14d3.zones.objects.Player zplayer = platform.getPlayer(player.getUuid());
+            de.t14d3.zones.objects.Player zplayer = platform.getPlayer(player.getUUID());
             if (zplayer.getSelection() != null) {
                 BlockLocation loc = new BlockLocation(
                         hitResult.getBlockPos().getX(),
                         hitResult.getBlockPos().getY(),
                         hitResult.getBlockPos().getZ()
                 );
-                if (hand.equals(Hand.MAIN_HAND)) {
+                if (hand.equals(InteractionHand.MAIN_HAND)) {
                     zplayer.setSelection(
                             new Box(zplayer.getSelection().getMin(), loc, zplayer.getSelection().getWorld()));
                     zplayer.setSelectionCreating(true);
@@ -57,42 +57,42 @@ public class PlayerListener {
                             parsed("y", String.valueOf(loc.getY())),
                             parsed("z", String.valueOf(loc.getZ()))
                     ));
-                    return ActionResult.SUCCESS;
+                    return InteractionResult.SUCCESS;
                 }
             }
-            if (player.getMainHandStack().isEmpty()) {
-                return ActionResult.PASS;
+            if (player.getMainHandItem().isEmpty()) {
+                return InteractionResult.PASS;
             }
-            ItemStack itemStack = player.getMainHandStack();
+            ItemStack itemStack = player.getMainHandItem();
             List<Flag> flags = new ArrayList<>();
             flags.add(Flags.PLACE);
-            Block block = Block.getBlockFromItem(itemStack.getItem());
+            Block block = Block.byItem(itemStack.getItem());
             if (block != Blocks.AIR) {
-                if (block.getDefaultState().hasBlockEntity()) {
+                if (block.defaultBlockState().hasBlockEntity()) {
                     flags.add(Flags.CONTAINER);
                 }
-                if (block.getDefaultState().emitsRedstonePower()) {
+                if (block.defaultBlockState().isSignalSource()) {
                     flags.add(Flags.REDSTONE);
                 }
             }
 
-            ActionResult result = ActionResult.PASS;
+            InteractionResult result = InteractionResult.PASS;
             for (Flag flag : flags) {
                 if (!mod.getPermissionManager()
-                        .checkAction(getOffset(hitResult), world, player, itemStack.getRegistryEntry().getIdAsString(),
+                        .checkAction(getOffset(hitResult), world, player, itemStack.getItem().getDescriptionId(),
                                 flag)) {
-                    result = ActionResult.FAIL;
+                    result = InteractionResult.FAIL;
                     break;
                 }
             }
-            if (result == ActionResult.FAIL) {
-                sendActionBar(player, getOffset(hitResult), flags, itemStack.getRegistryEntry().getIdAsString());
+            if (result == InteractionResult.FAIL) {
+                sendActionBar(player, getOffset(hitResult), flags, itemStack.getItem().getDescriptionId());
             }
             return result;
         });
 
         AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
-            de.t14d3.zones.objects.Player zplayer = platform.getPlayer(player.getUuid());
+            de.t14d3.zones.objects.Player zplayer = platform.getPlayer(player.getUUID());
             if (zplayer.getSelection() != null) {
                 BlockLocation loc = new BlockLocation(
                         pos.getX(),
@@ -107,7 +107,7 @@ public class PlayerListener {
                         parsed("z", String.valueOf(loc.getZ()))
                 ));
             }
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         });
 
         PlayerBlockBreakEvents.BEFORE.register((world, player, pos, state, blockEntity) -> {
@@ -117,18 +117,18 @@ public class PlayerListener {
             if (state.hasBlockEntity()) {
                 flags.add(Flags.CONTAINER);
             }
-            if (state.emitsRedstonePower()) {
+            if (state.isSignalSource()) {
                 flags.add(Flags.REDSTONE);
             }
             for (Flag flag : flags) {
                 if (!mod.getPermissionManager()
-                        .checkAction(pos, world, player, state.getBlock().getRegistryEntry().getIdAsString(), flag)) {
+                        .checkAction(pos, world, player, state.getBlock().getDescriptionId(), flag)) {
                     result.set(false);
                     break;
                 }
             }
             if (!result.get()) {
-                sendActionBar(player, pos, flags, state.getBlock().getRegistryEntry().getIdAsString());
+                sendActionBar(player, pos, flags, state.getBlock().getDescriptionId());
             }
 
             return result.get();
@@ -136,25 +136,25 @@ public class PlayerListener {
 
         UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
             if (entity == null) {
-                return ActionResult.PASS;
+                return InteractionResult.PASS;
             }
             List<Flag> flags = new ArrayList<>();
             flags.add(Flags.INTERACT);
             flags.add(Flags.ENTITY);
             for (Flag flag : flags) {
                 if (!mod.getPermissionManager()
-                        .checkAction(entity.getBlockPos(), world, player, entity.getType().getTranslationKey(), flag)) {
-                    return ActionResult.FAIL;
+                        .checkAction(entity.getOnPos(), world, player, entity.getType().getDescriptionId(), flag)) {
+                    return InteractionResult.FAIL;
                 }
             }
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         });
     }
 
     @NotNull
     private static BlockPos getOffset(BlockHitResult hitResult) {
         BlockPos pos = hitResult.getBlockPos();
-        Direction side = hitResult.getSide();
+        Direction side = hitResult.getDirection();
         if (side == Direction.DOWN) {
             return new BlockPos(pos.getX(), pos.getY() - 1, pos.getZ());
         } else if (side == Direction.UP) {
@@ -172,9 +172,9 @@ public class PlayerListener {
         return null;
     }
 
-    private void sendActionBar(PlayerEntity player, BlockPos pos, List<Flag> requiredPermissions, String type) {
+    private void sendActionBar(Player player, BlockPos pos, List<Flag> requiredPermissions, String type) {
         List<Region> regions = mod.getRegionManager().getRegionsAt(BlockLocation.of(pos.getX(), pos.getY(), pos.getZ()),
-                platform.getWorld(player.getWorld()));
+                platform.getWorld(player.getCommandSenderWorld()));
         String regionNames = regions.stream().map(Region::getName).collect(Collectors.joining(", "));
         StringBuilder permissionsString = new StringBuilder();
         for (Flag action : requiredPermissions) {
@@ -183,7 +183,7 @@ public class PlayerListener {
         if (!requiredPermissions.isEmpty()) {
             permissionsString.setLength(permissionsString.length() - 2); // Remove trailing ", "
         }
-        de.t14d3.zones.objects.Player zplayer = platform.getPlayer(player.getUuid());
+        de.t14d3.zones.objects.Player zplayer = platform.getPlayer(player.getUUID());
         zplayer.sendActionBar(mm.deserialize(mod.getMessages().get("region.no-interact-permission"),
                 parsed("region", regionNames),
                 parsed("actions", permissionsString.toString()),

@@ -3,9 +3,6 @@ plugins {
     id("fabric-loom")
 }
 
-group = "de.t14d3"
-version = "0.2.1"
-
 repositories {
     mavenCentral()
     maven {
@@ -18,23 +15,35 @@ repositories {
     }
 }
 
+loom {
+    splitEnvironmentSourceSets()
+    mods {
+        create("zones") {
+            sourceSet(sourceSets.main.get())
+        }
+    }
+}
+
 dependencies {
     implementation(project(":api"))
 
-    minecraft("com.mojang:minecraft:${project.property("minecraft_version")}")
-    mappings("net.fabricmc:yarn:${project.property("yarn_mappings")}:v2")
+    minecraft("com.mojang:minecraft:${rootProject.property("minecraft_version")}")
+    mappings(loom.officialMojangMappings())
 
-    modImplementation("net.fabricmc:fabric-loader:${project.property("loader_version")}")
-    modImplementation("net.fabricmc.fabric-api:fabric-api:${project.property("fabric_version")}")
+    modImplementation(compileOnly("net.fabricmc:fabric-loader:${rootProject.property("loader_version")}")!!)
+
+    val fabricVersion = rootProject.property("fabric_version") as String
+    modImplementation(fabricApi.module("fabric-lifecycle-events-v1", fabricVersion))
+    modImplementation(fabricApi.module("fabric-command-api-v2", fabricVersion))
+    modImplementation(fabricApi.module("fabric-events-interaction-v0", fabricVersion))
 
     modImplementation(include("me.lucko:fabric-permissions-api:0.3.1")!!)
     modImplementation(include("net.kyori:adventure-platform-fabric:6.2.0")!!)
-    implementation("net.kyori:adventure-api:4.19.0")
     implementation("net.kyori:adventure-text-minimessage:4.19.0")
 }
 
 tasks.processResources {
-    val props = mapOf("version" to version)
+    val props = mapOf("version" to rootProject.version)
     inputs.properties(props)
     filteringCharset = "UTF-8"
     filesMatching("fabric.mod.json") {

@@ -1,12 +1,11 @@
 package de.t14d3.zones.fabric.commands;
 
 import com.mojang.brigadier.context.CommandContext;
-import de.t14d3.zones.ZonesFabric;
+import de.t14d3.zones.fabric.ZonesFabric;
 import de.t14d3.zones.objects.Player;
 import de.t14d3.zones.objects.PlayerRepository;
 import de.t14d3.zones.utils.Messages;
-import net.minecraft.command.ControlFlowAware;
-import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.commands.CommandSourceStack;
 
 public class CancelCommand {
     private final Messages messages;
@@ -15,13 +14,13 @@ public class CancelCommand {
         this.messages = mod.getMessages();
     }
 
-    int execute(CommandContext<ServerCommandSource> context) {
+    int execute(CommandContext<CommandSourceStack> context) {
         if (context.getSource().getPlayer() != null) {
-            Player player = PlayerRepository.get(context.getSource().getPlayer().getUuid());
+            Player player = PlayerRepository.get(context.getSource().getPlayer().getUUID());
             player.setSelection(null);
             player.setSelectionCreating(false);
             player.sendMessage(messages.getCmp("commands.cancel.success"));
         }
-        return ControlFlowAware.Command.SINGLE_SUCCESS;
+        return 1;
     }
 }

@@ -13,7 +13,7 @@
   "mixins": [],
   "entrypoints": {
     "server": [
-      "de.t14d3.zones.ZonesFabric"
+      "de.t14d3.zones.fabric.ZonesFabric"
     ]
   }
 }
