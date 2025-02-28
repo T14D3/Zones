@@ -13,9 +13,13 @@ public class Player implements Audience {
     private Box selection;
     private boolean selectionIsCreating = false;
 
-    public Player(UUID uuid, String name) {
+    protected Player(UUID uuid, String name) {
         this.uuid = uuid;
         this.name = name;
+    }
+
+    public static Player of(UUID uuid, String name) {
+        return PlayerRepository.getOrAdd(name, uuid);
     }
 
     public UUID getUUID() {
@@ -58,5 +62,13 @@ public class Player implements Audience {
     @Override
     public void sendActionBar(@NotNull Component component) {
         Zones.getInstance().getPlatform().getAudience(this).sendActionBar(component);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Player player = (Player) o;
+        return uuid.equals(player.uuid);
     }
 }

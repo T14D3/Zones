@@ -1,9 +1,9 @@
 package de.t14d3.zones;
 
 import de.t14d3.zones.objects.Player;
+import de.t14d3.zones.objects.PlayerRepository;
 import de.t14d3.zones.objects.World;
 import de.t14d3.zones.permissions.PermissionManager;
-import de.t14d3.zones.utils.PlayerRepository;
 import de.t14d3.zones.utils.Types;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.platform.bukkit.BukkitAudiences;

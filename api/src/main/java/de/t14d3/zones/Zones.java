@@ -1,5 +1,6 @@
 package de.t14d3.zones;
 
+import de.t14d3.zones.objects.PlayerRepository;
 import de.t14d3.zones.permissions.CacheUtils;
 import de.t14d3.zones.permissions.PermissionManager;
 import de.t14d3.zones.permissions.flags.Flags;

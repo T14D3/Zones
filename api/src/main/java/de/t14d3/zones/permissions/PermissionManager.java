@@ -8,7 +8,6 @@ import de.t14d3.zones.Region;
 import de.t14d3.zones.Zones;
 import de.t14d3.zones.objects.*;
 import de.t14d3.zones.utils.DebugLoggerManager;
-import de.t14d3.zones.utils.PlayerRepository;
 
 import java.io.InputStreamReader;
 import java.util.ArrayList;

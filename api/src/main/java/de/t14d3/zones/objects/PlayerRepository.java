@@ -1,7 +1,6 @@
-package de.t14d3.zones.utils;
+package de.t14d3.zones.objects;
 
 import de.t14d3.zones.Zones;
-import de.t14d3.zones.objects.Player;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -16,21 +15,18 @@ public class PlayerRepository {
     }
 
     public static Player getOrAdd(String name, UUID uuid) {
-        Player player = PlayerRepository.get(name, uuid);
-        if (player == null) {
-            player = new Player(uuid, name);
-            PlayerRepository.add(player);
-        }
-        return player;
-    }
-
-    public static Player get(String name, UUID uuid) {
-        for (Player player : knownPlayers) {
-            if (player.getName().equals(name) && player.getUUID().equals(uuid)) {
-                return player;
+        Player player = null;
+        for (Player p : knownPlayers) {
+            if (p.getUUID().equals(uuid)) {
+                player = p;
+                break;
             }
         }
-        return null;
+        if (player == null) {
+            player = new Player(uuid, name);
+            knownPlayers.add(player);
+        }
+        return player;
     }
 
     public static Player get(UUID uuid) {

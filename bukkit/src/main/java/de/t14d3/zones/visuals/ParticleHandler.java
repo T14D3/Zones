@@ -3,7 +3,7 @@ package de.t14d3.zones.visuals;
 import com.destroystokyo.paper.ParticleBuilder;
 import de.t14d3.zones.ZonesBukkit;
 import de.t14d3.zones.objects.Box;
-import de.t14d3.zones.utils.PlayerRepository;
+import de.t14d3.zones.objects.PlayerRepository;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Particle;

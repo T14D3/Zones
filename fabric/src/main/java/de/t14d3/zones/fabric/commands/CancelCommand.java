@@ -3,8 +3,8 @@ package de.t14d3.zones.fabric.commands;
 import com.mojang.brigadier.context.CommandContext;
 import de.t14d3.zones.ZonesFabric;
 import de.t14d3.zones.objects.Player;
+import de.t14d3.zones.objects.PlayerRepository;
 import de.t14d3.zones.utils.Messages;
-import de.t14d3.zones.utils.PlayerRepository;
 import net.minecraft.command.ControlFlowAware;
 import net.minecraft.server.command.ServerCommandSource;
 
