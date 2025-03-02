@@ -12,6 +12,11 @@ import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.util.TriState;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.core.Registry;
+import net.minecraft.core.particles.ParticleType;
+import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import org.jetbrains.annotations.NotNull;
 
@@ -81,6 +86,14 @@ public class ZonesFabric implements DedicatedServerModInitializer {
 
         regionManager.loadRegions();
         zones.getLogger().info("Mod enabled, loaded {} regions.", zones.getRegionManager().regions().size());
+
+        String primaryType = zones.getConfig().getString("selection-particles.primary", "WAX_OFF").toLowerCase();
+        String secondaryType = zones.getConfig().getString("selection-particles.secondary", "WAX_ON").toLowerCase();
+        Registry<ParticleType<?>> registry = server.registryAccess().lookupOrThrow(Registries.PARTICLE_TYPE);
+        ((FabricPlatform) platform).primary = (SimpleParticleType) registry.get(
+                ResourceLocation.withDefaultNamespace(primaryType)).get().value();
+        ((FabricPlatform) platform).secondary = (SimpleParticleType) registry.get(
+                ResourceLocation.withDefaultNamespace(secondaryType)).get().value();
     }
 
     private void onDisable(MinecraftServer server) {

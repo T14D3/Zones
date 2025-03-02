@@ -5,6 +5,8 @@ import de.t14d3.zones.permissions.CacheUtils;
 import de.t14d3.zones.permissions.PermissionManager;
 import de.t14d3.zones.permissions.flags.Flags;
 import de.t14d3.zones.utils.*;
+import de.t14d3.zones.visuals.FindBossbar;
+import de.t14d3.zones.visuals.ParticleHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,12 +32,17 @@ public class Zones {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final ConfigManager configManager;
     private final ThreadPoolExecutor executor;
+    private final FindBossbar findBossbar;
+    private final ParticleHandler particleHandler;
 
     public boolean debug = false;
 
     public Zones(ZonesPlatform platform) {
         instance = this;
         this.platform = platform;
+
+        Types types = platform.getTypes();
+        types.populateTypes();
 
         this.configManager = new ConfigManager(this, new File(platform.getDataFolder(), "config.yml"));
 
@@ -79,8 +86,9 @@ public class Zones {
                 new SynchronousQueue<>()
         );
 
-        Types types = platform.getTypes();
-        types.populateTypes();
+        this.findBossbar = new FindBossbar(this);
+        this.particleHandler = new ParticleHandler(this);
+        particleHandler.particleScheduler();
     }
 
     public static Zones getInstance() {
@@ -128,5 +136,9 @@ public class Zones {
 
     public Utils.SavingModes getSavingMode() {
         return null;
+    }
+
+    public FindBossbar getFindBossbar() {
+        return findBossbar;
     }
 }

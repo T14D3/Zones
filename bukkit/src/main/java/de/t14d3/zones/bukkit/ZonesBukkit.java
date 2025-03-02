@@ -6,9 +6,6 @@ import de.t14d3.zones.Zones;
 import de.t14d3.zones.ZonesPlatform;
 import de.t14d3.zones.bukkit.commands.RootCommand;
 import de.t14d3.zones.bukkit.listeners.*;
-import de.t14d3.zones.bukkit.visuals.BeaconUtils;
-import de.t14d3.zones.bukkit.visuals.FindBossbar;
-import de.t14d3.zones.bukkit.visuals.ParticleHandler;
 import de.t14d3.zones.integrations.FAWEIntegration;
 import de.t14d3.zones.integrations.PlaceholderAPI;
 import de.t14d3.zones.integrations.WorldEditSession;
@@ -27,12 +24,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class ZonesBukkit extends JavaPlugin {
 
     private static ZonesBukkit instance;
-    private BeaconUtils beaconUtils;
-    private ParticleHandler particleHandler;
     public boolean debug = false;
     private ZonesPlatform platform;
     private Zones zones;
-    private FindBossbar findBossbar;
     private BukkitPermissionManager permissionManager;
     private RegionManager regionManager;
     private Messages messages;
@@ -71,12 +65,6 @@ public final class ZonesBukkit extends JavaPlugin {
     @Override
     public void onEnable() {
         CommandAPI.onEnable();
-
-        // Initialize utilities
-        this.beaconUtils = new BeaconUtils(this);
-        this.particleHandler = new ParticleHandler(this);
-        particleHandler.particleScheduler();
-
         this.regionManager.loadRegions();
 
         this.saveDefaultConfig();
@@ -102,9 +90,11 @@ public final class ZonesBukkit extends JavaPlugin {
         permissionManager.getPermissions().forEach(permission -> {
             this.getServer().getPluginManager().addPermission(
                     new Permission(permission.getName(), permission.getDescription(),
-                            permission.getLevel() > 2 ? PermissionDefault.OP : PermissionDefault.TRUE)
+                            permission.getLevel() >= 2 ? PermissionDefault.OP : PermissionDefault.TRUE)
             );
         });
+
+        Utils.populatePlayers();
 
 
         // Register saving task
@@ -114,8 +104,6 @@ public final class ZonesBukkit extends JavaPlugin {
                 getLogger().info("Zones have been saved.");
             }, 20L, getConfig().getInt("zone-saving.period", 60) * 20L);
         }
-        // Find bossbar
-        this.findBossbar = new FindBossbar(this);
 
 
         // PlaceholderAPI integration
@@ -160,20 +148,8 @@ public final class ZonesBukkit extends JavaPlugin {
         return permissionManager;
     }
 
-    public BeaconUtils getBeaconUtils() {
-        return beaconUtils;
-    }
-
-    public ParticleHandler getParticleHandler() {
-        return particleHandler;
-    }
-
     public Utils.SavingModes getSavingMode() {
         return Utils.SavingModes.fromString(this.getConfig().getString("zone-saving.mode", "MODIFIED"));
-    }
-
-    public FindBossbar getFindBossbar() {
-        return findBossbar;
     }
 
     public DebugLoggerManager getDebugLogger() {

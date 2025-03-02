@@ -23,16 +23,19 @@ public class BlockLocation {
         return z;
     }
 
-    public void setX(int x) {
+    public BlockLocation setX(int x) {
         this.x = x;
+        return this;
     }
 
-    public void setY(int y) {
+    public BlockLocation setY(int y) {
         this.y = y;
+        return this;
     }
 
-    public void setZ(int z) {
+    public BlockLocation setZ(int z) {
         this.z = z;
+        return this;
     }
 
     public org.bukkit.Location toLocation(org.bukkit.World world) {
@@ -71,5 +74,10 @@ public class BlockLocation {
         if (o == null || getClass() != o.getClass()) return false;
         BlockLocation that = (BlockLocation) o;
         return x == that.x && y == that.y && z == that.z;
+    }
+
+    public double distance(BlockLocation end) {
+        return Math.sqrt(Math.pow(end.getX() - this.getX(), 2) + Math.pow(end.getY() - this.getY(), 2) + Math.pow(
+                end.getZ() - this.getZ(), 2));
     }
 }

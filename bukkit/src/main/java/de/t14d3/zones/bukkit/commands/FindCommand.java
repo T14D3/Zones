@@ -1,10 +1,8 @@
 package de.t14d3.zones.bukkit.commands;
 
 import de.t14d3.zones.bukkit.ZonesBukkit;
+import de.t14d3.zones.objects.Player;
 import dev.jorel.commandapi.CommandAPICommand;
-import net.kyori.adventure.bossbar.BossBar;
-import net.kyori.adventure.text.Component;
-import org.bukkit.entity.Player;
 
 public class FindCommand {
     private ZonesBukkit plugin;
@@ -16,17 +14,18 @@ public class FindCommand {
     public CommandAPICommand find = new CommandAPICommand("find")
             .withPermission("zones.find")
             .executes((sender, args) -> {
-                if (sender instanceof Player player) {
-                    if (plugin.getFindBossbar().players.containsKey(player)) {
-                        player.hideBossBar(plugin.getFindBossbar().players.get(player));
-                        plugin.getFindBossbar().players.remove(player);
+                if (sender instanceof org.bukkit.entity.Player nativePlayer) {
+                    Player player = plugin.getPlatform().getPlayer(nativePlayer.getUniqueId());
+                    if (plugin.getZones().getFindBossbar().players.containsKey(player)) {
+                        plugin.getPlatform().getAudience(player)
+                                .hideBossBar(plugin.getZones().getFindBossbar().players.get(player));
+                        plugin.getZones().getFindBossbar().players.remove(player);
                     } else {
-                        BossBar bossbar = BossBar.bossBar(Component.text("Finding Regions..."), 1.0f,
-                                BossBar.Color.GREEN,
-                                BossBar.Overlay.PROGRESS);
-                        plugin.getFindBossbar().players.put(player, bossbar);
-                        player.showBossBar(bossbar);
+                        plugin.getZones().getFindBossbar().players.put(player,
+                                null); // null to let the bossbar handler do the creation
                     }
+                } else {
+                    sender.sendMessage(plugin.getMessages().getCmp("commands.only-player"));
                 }
             });
 }

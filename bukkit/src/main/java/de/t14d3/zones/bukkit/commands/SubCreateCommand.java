@@ -23,13 +23,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import static de.t14d3.zones.bukkit.visuals.BeaconUtils.resetBeacon;
 
 public class SubCreateCommand {
     private final MiniMessage mm = MiniMessage.miniMessage();
     private RegionManager regionManager;
     private Messages messages;
-    private final ZonesBukkit plugin;
+    private ZonesBukkit plugin;
 
     public SubCreateCommand(ZonesBukkit plugin) {
         this.plugin = plugin;
@@ -113,8 +112,8 @@ public class SubCreateCommand {
 
                     regionManager.createSubRegion(parentRegion.getName() + "_sub", selection.getMin(),
                             selection.getMax(), selection.getWorld(), player.getUniqueId(), perms, parentRegion);
-                    resetBeacon(player, selection.getMin(), selection.getWorld());
-                    resetBeacon(player, selection.getMax(), selection.getWorld());
+                    plugin.getPlatform().removeBeacon(zplayer, selection.getWorld(), selection.getMin());
+                    plugin.getPlatform().removeBeacon(zplayer, selection.getWorld(), selection.getMax());
                     player.sendMessage(mm.deserialize(messages.get("commands.subcreate.success")));
                     zplayer.setSelection(null);
                     zplayer.setSelectionCreating(false);

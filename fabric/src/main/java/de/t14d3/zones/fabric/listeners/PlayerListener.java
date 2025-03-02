@@ -11,6 +11,7 @@ import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -35,30 +36,34 @@ public class PlayerListener {
     private final FabricPlatform platform;
     private final MiniMessage mm = MiniMessage.miniMessage();
 
-    @SuppressWarnings("deprecation")
     public PlayerListener(ZonesFabric mod) {
         this.mod = mod;
         this.platform = mod.getPlatform();
 
         UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
             de.t14d3.zones.objects.Player zplayer = platform.getPlayer(player.getUUID());
-            if (zplayer.getSelection() != null) {
-                BlockLocation loc = new BlockLocation(
-                        hitResult.getBlockPos().getX(),
-                        hitResult.getBlockPos().getY(),
-                        hitResult.getBlockPos().getZ()
-                );
+            if (zplayer.getSelection() != null && zplayer.isSelectionCreating()) {
                 if (hand.equals(InteractionHand.MAIN_HAND)) {
+                    BlockLocation min = zplayer.getSelection().getMin();
+                    BlockLocation loc = new BlockLocation(
+                            hitResult.getBlockPos().getX(),
+                            hitResult.getBlockPos().getY(),
+                            hitResult.getBlockPos().getZ()
+                    );
+                    platform.removeBeacon(zplayer, zplayer.getSelection().getWorld(), min);
+                    min = loc;
+                    platform.showBeacon(zplayer, min, zplayer.getSelection().getWorld(), NamedTextColor.GREEN);
                     zplayer.setSelection(
-                            new Box(zplayer.getSelection().getMin(), loc, zplayer.getSelection().getWorld()));
+                            new Box(min, zplayer.getSelection().getMax(), zplayer.getSelection().getWorld(), false));
                     zplayer.setSelectionCreating(true);
                     zplayer.sendMessage(mm.deserialize(mod.getMessages().get("create.primary"),
                             parsed("x", String.valueOf(loc.getX())),
                             parsed("y", String.valueOf(loc.getY())),
                             parsed("z", String.valueOf(loc.getZ()))
                     ));
-                    return InteractionResult.SUCCESS;
+                    return InteractionResult.FAIL;
                 }
+                return InteractionResult.PASS;
             }
             if (player.getMainHandItem().isEmpty()) {
                 return InteractionResult.PASS;
@@ -93,19 +98,25 @@ public class PlayerListener {
 
         AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
             de.t14d3.zones.objects.Player zplayer = platform.getPlayer(player.getUUID());
-            if (zplayer.getSelection() != null) {
+            if (zplayer.getSelection() != null && zplayer.isSelectionCreating()) {
+                BlockLocation max = zplayer.getSelection().getMax();
                 BlockLocation loc = new BlockLocation(
                         pos.getX(),
                         pos.getY(),
                         pos.getZ()
                 );
-                zplayer.setSelection(new Box(loc, zplayer.getSelection().getMax(), zplayer.getSelection().getWorld()));
+                platform.removeBeacon(zplayer, zplayer.getSelection().getWorld(), max);
+                max = loc;
+                platform.showBeacon(zplayer, max, zplayer.getSelection().getWorld(), NamedTextColor.RED);
+                zplayer.setSelection(
+                        new Box(zplayer.getSelection().getMin(), max, zplayer.getSelection().getWorld(), false));
                 zplayer.setSelectionCreating(true);
                 zplayer.sendMessage(mm.deserialize(mod.getMessages().get("create.secondary"),
                         parsed("x", String.valueOf(loc.getX())),
                         parsed("y", String.valueOf(loc.getY())),
                         parsed("z", String.valueOf(loc.getZ()))
                 ));
+                return InteractionResult.FAIL;
             }
             return InteractionResult.PASS;
         });

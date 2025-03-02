@@ -74,7 +74,7 @@ public class ConfigManager {
             //noinspection unchecked
             return (T) configData.node((Object[]) pathParts).get(type);
         } catch (SerializationException e) {
-            throw new RuntimeException(e);
+            return null;
         }
     }
 
@@ -85,7 +85,7 @@ public class ConfigManager {
      * @see #getInt(String, int)
      */
     public int getInt(String path) {
-        return configData.node(path).getInt();
+        return configData.node((Object[]) splitPath(path)).getInt();
     }
 
     /**
@@ -95,7 +95,7 @@ public class ConfigManager {
      * @return The value at the given path.
      */
     public int getInt(String path, int def) {
-        return configData.node(path).getInt(def);
+        return configData.node((Object[]) splitPath(path)).getInt(def);
     }
 
     /**
@@ -105,7 +105,7 @@ public class ConfigManager {
      * @see #getString(String, String)
      */
     public String getString(String path) {
-        return configData.node(path).getString();
+        return configData.node((Object[]) splitPath(path)).getString();
     }
 
     /**
@@ -115,7 +115,7 @@ public class ConfigManager {
      * @return The value at the given path.
      */
     public String getString(String path, String def) {
-        return configData.node(path).getString(def);
+        return configData.node((Object[]) splitPath(path)).getString(def);
     }
 
     public void set(String path, Object value) {
@@ -134,10 +134,22 @@ public class ConfigManager {
      * @return The value at the given path.
      */
     public boolean getBoolean(String path, boolean def) {
-        return configData.node(path).getBoolean(def);
+        return configData.node((Object[]) splitPath(path)).getBoolean(def);
+    }
+
+    public float getFloat(String path, float def) {
+        return configData.node((Object[]) splitPath(path)).getFloat(def);
+    }
+
+    public double getDouble(String path, double def) {
+        return configData.node((Object[]) splitPath(path)).getDouble(def);
     }
 
     public ConfigurationNode getConfig() {
         return configData;
+    }
+
+    static String[] splitPath(String path) {
+        return path.split("\\.");
     }
 }

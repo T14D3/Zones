@@ -9,14 +9,18 @@ import net.minecraft.commands.CommandSourceStack;
 
 public class CancelCommand {
     private final Messages messages;
+    private final ZonesFabric mod;
 
     public CancelCommand(ZonesFabric mod) {
+        this.mod = mod;
         this.messages = mod.getMessages();
     }
 
     int execute(CommandContext<CommandSourceStack> context) {
         if (context.getSource().getPlayer() != null) {
             Player player = PlayerRepository.get(context.getSource().getPlayer().getUUID());
+            mod.getPlatform().removeBeacon(player, player.getSelection().getWorld(), player.getSelection().getMin());
+            mod.getPlatform().removeBeacon(player, player.getSelection().getWorld(), player.getSelection().getMax());
             player.setSelection(null);
             player.setSelectionCreating(false);
             player.sendMessage(messages.getCmp("commands.cancel.success"));

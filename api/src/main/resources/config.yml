@@ -6,6 +6,35 @@ selection-particles:
   primary: WAX_OFF
   secondary: WAX_ON
   range: 15 # Default: 15
+
+visuals:
+  bossbar:
+    # Color of the region finder bossbar
+    # Valid values are:
+    #   - GREEN
+    #   - BLUE
+    #   - RED
+    #   - PINK
+    #   - PURPLE
+    #   - WHITE
+    #   - YELLOW
+    # Defaults to GREEN
+    color: GREEN
+    # Style of the region finder bossbar
+    # Valid values are:
+    #   - PROGRESS
+    #   - NOTCHED_6
+    #   - NOTCHED_10
+    #   - NOTCHED_12
+    #   - NOTCHED_20
+    # Defaults to PROGRESS
+    style: PROGRESS
+    # Progress of the region finder bossbar
+    # Valid values are between 0 and 1
+    # Defaults to 1.0
+    progress: 1.0
+    text-color: WHITE
+
 zone-saving:
   # Valid values are SHUTDOWN, MODIFIED, PERIODIC
   # Defaults to MODIFIED

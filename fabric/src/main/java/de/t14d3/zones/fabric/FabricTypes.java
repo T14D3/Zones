@@ -12,23 +12,30 @@ public class FabricTypes extends Types {
         this.mod = mod;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void populateTypes() {
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
             server.registryAccess().lookupOrThrow(Registries.BLOCK).forEach(block -> {
-                blockTypes.add(block.getDescriptionId().replace("minecraft:", ""));
-                allTypes.add(block.getDescriptionId().replace("minecraft:", ""));
+                final String id = block.getDescriptionId().replace("block.minecraft.", "");
+                blockTypes.add(id);
+                blockTypes.add("!" + id);
+                allTypes.add(id);
+                allTypes.add("!" + id);
                 if (block.defaultBlockState().hasBlockEntity()) {
-                    containerTypes.add(block.getDescriptionId().replace("minecraft:", ""));
+                    containerTypes.add(id);
+                    containerTypes.add("!" + id);
                 }
                 if (block.defaultBlockState().isSignalSource()) {
-                    redstoneTypes.add(block.getDescriptionId().replace("minecraft:", ""));
+                    redstoneTypes.add(id);
+                    redstoneTypes.add("!" + id);
                 }
             });
             server.registryAccess().lookupOrThrow(Registries.ENTITY_TYPE).forEach(entity -> {
-                entityTypes.add(entity.getDescriptionId().replace("minecraft:", ""));
-                allTypes.add(entity.getDescriptionId().replace("minecraft:", ""));
+                final String id = entity.getDescriptionId().replace("entity.minecraft.", "");
+                entityTypes.add(id);
+                entityTypes.add("!" + id);
+                allTypes.add(id);
+                allTypes.add("!" + id);
             });
         });
     }

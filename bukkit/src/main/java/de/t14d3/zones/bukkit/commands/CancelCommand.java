@@ -1,22 +1,19 @@
 package de.t14d3.zones.bukkit.commands;
 
 import de.t14d3.zones.RegionManager;
-import de.t14d3.zones.bukkit.BukkitPlatform;
 import de.t14d3.zones.bukkit.ZonesBukkit;
 import de.t14d3.zones.objects.PlayerRepository;
 import de.t14d3.zones.utils.Messages;
 import dev.jorel.commandapi.CommandAPICommand;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.World;
 import org.bukkit.entity.Player;
 
-import static de.t14d3.zones.bukkit.visuals.BeaconUtils.resetBeacon;
 
 public class CancelCommand {
     private final MiniMessage mm = MiniMessage.miniMessage();
     private final RegionManager regionManager;
     private Messages messages;
-    private final ZonesBukkit plugin;
+    private ZonesBukkit plugin;
 
     public CancelCommand(ZonesBukkit plugin) {
         this.plugin = plugin;
@@ -30,9 +27,11 @@ public class CancelCommand {
                 if (sender instanceof Player player) {
                     de.t14d3.zones.objects.Player zplayer = PlayerRepository.get(player.getUniqueId());
                     if (zplayer.getSelection() != null) {
-                        World world = BukkitPlatform.getWorld(zplayer.getSelection().getWorld());
-                        resetBeacon(player, zplayer.getSelection().getMin().toLocation(world));
-                        resetBeacon(player, zplayer.getSelection().getMax().toLocation(world));
+                        plugin.getPlatform().removeBeacon(zplayer, zplayer.getSelection().getWorld(),
+                                zplayer.getSelection().getMin());
+                        plugin.getPlatform().removeBeacon(zplayer, zplayer.getSelection().getWorld(),
+                                zplayer.getSelection().getMax());
+
                         zplayer.setSelection(null);
                         player.sendMessage(mm.deserialize(messages.get("commands.cancel.success")));
                     } else {

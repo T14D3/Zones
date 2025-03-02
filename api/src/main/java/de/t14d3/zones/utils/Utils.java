@@ -63,7 +63,7 @@ public class Utils {
         return player.getPersistentDataContainer();
     }
 
-    public void populatePlayers() {
+    public static void populatePlayers() {
         offlinePlayers.addAll(Arrays.asList(Bukkit.getOfflinePlayers()));
         for (OfflinePlayer player : offlinePlayers) {
             playerNames.put(player.getUniqueId(), player.getName());

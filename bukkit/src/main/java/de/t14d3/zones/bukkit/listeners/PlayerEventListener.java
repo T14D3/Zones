@@ -3,15 +3,15 @@ package de.t14d3.zones.bukkit.listeners;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.bukkit.BukkitPermissionManager;
+import de.t14d3.zones.bukkit.BukkitPlatform;
 import de.t14d3.zones.bukkit.ZonesBukkit;
-import de.t14d3.zones.bukkit.visuals.BeaconUtils;
 import de.t14d3.zones.objects.*;
 import de.t14d3.zones.permissions.flags.Flags;
 import de.t14d3.zones.utils.Messages;
 import de.t14d3.zones.utils.Utils;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
-import org.bukkit.DyeColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static de.t14d3.zones.bukkit.visuals.BeaconUtils.resetBeacon;
 import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
 
 public class PlayerEventListener implements Listener {
@@ -42,17 +41,17 @@ public class PlayerEventListener implements Listener {
     private final RegionManager regionManager;
     private final BukkitPermissionManager permissionManager;
     private final ZonesBukkit plugin;
-    private final BeaconUtils beaconUtils;
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
     private final Messages messages;
+    private final BukkitPlatform platform;
     private final String ACTIONBAR_MESSAGE;
 
     public PlayerEventListener(ZonesBukkit plugin) {
         this.plugin = plugin;
         this.regionManager = plugin.getRegionManager();
         this.permissionManager = plugin.getPermissionManager();
-        this.beaconUtils = plugin.getBeaconUtils();
         this.messages = plugin.getMessages();
+        this.platform = (BukkitPlatform) plugin.getPlatform();
         this.ACTIONBAR_MESSAGE = messages.get("region.no-interact-permission");
     }
 
@@ -77,18 +76,18 @@ public class PlayerEventListener implements Listener {
             Location max = zonesPlayer.getSelection().getMax().toLocation(player.getWorld());
 
             if (event.getAction() == Action.LEFT_CLICK_BLOCK) {
-                resetBeacon(player, min);
+                platform.removeBeacon(player, min);
                 min = location;
-                beaconUtils.createBeacon(player, min, DyeColor.GREEN);
+                platform.showBeacon(player, min, NamedTextColor.GREEN);
                 player.sendMessage(miniMessage.deserialize(messages.get("create.primary")
                         , parsed("x", String.valueOf(location.getBlockX()))
                         , parsed("y", String.valueOf(location.getBlockY()))
                         , parsed("z", String.valueOf(location.getBlockZ()))
                 ));
             } else if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
-                resetBeacon(player, max);
+                platform.removeBeacon(player, max);
                 max = location;
-                beaconUtils.createBeacon(player, max, DyeColor.RED);
+                platform.showBeacon(player, max, NamedTextColor.RED);
                 player.sendMessage(miniMessage.deserialize(messages.get("create.secondary")
                         , parsed("x", String.valueOf(location.getBlockX()))
                         , parsed("y", String.valueOf(location.getBlockY()))
@@ -98,11 +97,11 @@ public class PlayerEventListener implements Listener {
             if (min != null && max != null) {
                 Utils.Modes mode = Utils.Modes.getPlayerMode(player);
                 if (mode == Utils.Modes.CUBOID_3D) {
-                    zonesPlayer.setSelection(new Box(min, max, player.getWorld()));
+                    zonesPlayer.setSelection(new Box(min, max, player.getWorld(), false));
                 } else {
                     min.setY(-63);
                     max.setY(319);
-                    zonesPlayer.setSelection(new Box(min, max, player.getWorld()));
+                    zonesPlayer.setSelection(new Box(min, max, player.getWorld(), false));
                 }
 
             }

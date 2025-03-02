@@ -89,7 +89,7 @@ public class SetCommand {
                                             }
                                             return builder.buildFuture();
                                         })
-                                        .then(Commands.argument("values", StringArgumentType.string())
+                                        .then(Commands.argument("values", StringArgumentType.greedyString())
                                                 .suggests((context, builder) -> {
                                                     Flag flag = Flags.getFlag(
                                                             context.getArgument("flag", String.class));

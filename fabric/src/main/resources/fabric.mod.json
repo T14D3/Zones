@@ -7,9 +7,6 @@
   "authors": [
     "t14d3"
   ],
-  "depends": {
-    "fabric-api": "*"
-  },
   "mixins": [],
   "entrypoints": {
     "server": [

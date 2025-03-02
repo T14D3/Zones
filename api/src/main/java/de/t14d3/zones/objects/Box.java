@@ -5,20 +5,31 @@ public class Box {
     private final BlockLocation max;
     private final World world;
 
+    @SuppressWarnings("ConstantConditions")
     public Box(BlockLocation pos1, BlockLocation pos2, World world) {
-        this.min = new BlockLocation(Math.min(pos1.getX(), pos2.getX()), Math.min(pos1.getY(), pos2.getY()),
-                Math.min(pos1.getZ(), pos2.getZ()));
-        this.max = new BlockLocation(Math.max(pos1.getX(), pos2.getX()), Math.max(pos1.getY(), pos2.getY()),
-                Math.max(pos1.getZ(), pos2.getZ()));
+        this(pos1, pos2, world, true);
+    }
+
+    public Box(BlockLocation pos1, BlockLocation pos2, World world, boolean normalize) {
+        if (normalize) {
+            this.min = new BlockLocation(Math.min(pos1.getX(), pos2.getX()), Math.min(pos1.getY(), pos2.getY()),
+                    Math.min(pos1.getZ(), pos2.getZ()));
+            this.max = new BlockLocation(Math.max(pos1.getX(), pos2.getX()), Math.max(pos1.getY(), pos2.getY()),
+                    Math.max(pos1.getZ(), pos2.getZ()));
+        } else {
+            this.min = pos1;
+            this.max = pos2;
+        }
         this.world = world;
     }
+
 
     public Box(int x1, int y1, int z1, int x2, int y2, int z2, World world) {
         this(new BlockLocation(x1, y1, z1), new BlockLocation(x2, y2, z2), world);
     }
 
-    public Box(org.bukkit.Location min, org.bukkit.Location max, org.bukkit.World world) {
-        this(BlockLocation.of(min), BlockLocation.of(max), World.of(world));
+    public Box(org.bukkit.Location min, org.bukkit.Location max, org.bukkit.World world, boolean normalize) {
+        this(BlockLocation.of(min), BlockLocation.of(max), World.of(world), normalize);
     }
 
     public Box(World world) {

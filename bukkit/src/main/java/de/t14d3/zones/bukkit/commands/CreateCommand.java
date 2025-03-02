@@ -16,14 +16,13 @@ import org.bukkit.entity.Player;
 import java.util.HashMap;
 import java.util.Map;
 
-import static de.t14d3.zones.bukkit.visuals.BeaconUtils.resetBeacon;
 import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
 
 public class CreateCommand {
     private final MiniMessage mm = MiniMessage.miniMessage();
     private RegionManager regionManager;
     private Messages messages;
-    private final ZonesBukkit plugin;
+    private ZonesBukkit plugin;
 
     public CreateCommand(ZonesBukkit plugin) {
         this.plugin = plugin;
@@ -59,8 +58,8 @@ public class CreateCommand {
                                 selection.getMax(), selection.getWorld(), members, key, null, 0);
                         Utils.Modes mode = Utils.Modes.getPlayerMode(player);
 
-                        resetBeacon(player, selection.getMin(), selection.getWorld());
-                        resetBeacon(player, selection.getMax(), selection.getWorld());
+                        plugin.getPlatform().removeBeacon(zplayer, selection.getWorld(), selection.getMin());
+                        plugin.getPlatform().removeBeacon(zplayer, selection.getWorld(), selection.getMax());
                         sender.sendMessage(
                                 mm.deserialize(messages.get("commands.create.success"),
                                         parsed("region", key.toString())));

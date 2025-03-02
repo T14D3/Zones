@@ -2,6 +2,7 @@ package de.t14d3.zones.objects;
 
 import de.t14d3.zones.Zones;
 import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 
@@ -64,11 +65,33 @@ public class Player implements Audience {
         Zones.getInstance().getPlatform().getAudience(this).sendActionBar(component);
     }
 
+    public BossBar showBossbar(@NotNull Component component, float percent, BossBar.Color barColor, BossBar.Overlay type) {
+        BossBar bar = BossBar.bossBar(component, percent, barColor, type);
+        Zones.getInstance().getPlatform().getAudience(this).showBossBar(bar);
+        return bar;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Player player = (Player) o;
         return uuid.equals(player.uuid);
+    }
+
+    public World getWorld() {
+        return Zones.getInstance().getPlatform().getWorld(this);
+    }
+
+    public BlockLocation getLocation() {
+        return Zones.getInstance().getPlatform().getLocation(this);
+    }
+
+    public String getMetadata(String key) {
+        return Zones.getInstance().getPlatform().getMetadata(this, key);
+    }
+
+    public void setMetadata(String key, String value) {
+        Zones.getInstance().getPlatform().setMetadata(this, key, value);
     }
 }

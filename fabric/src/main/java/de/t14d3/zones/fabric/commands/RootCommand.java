@@ -31,6 +31,9 @@ public class RootCommand {
     private final InfoCommand infoCommand;
     private final RenameCommand renameCommand;
     private final ExpandCommand expandCommand;
+    private final ModeCommand modeCommand;
+    private final FindCommand findCommand;
+    private final SelectCommand selectCommand;
 
     public RootCommand(ZonesFabric mod) {
         RegionManager regionManager = mod.getRegionManager();
@@ -42,6 +45,9 @@ public class RootCommand {
         this.infoCommand = new InfoCommand(mod);
         this.renameCommand = new RenameCommand(mod);
         this.expandCommand = new ExpandCommand(mod);
+        this.modeCommand = new ModeCommand(mod);
+        this.findCommand = new FindCommand(mod);
+        this.selectCommand = new SelectCommand(mod);
         register();
     }
 
@@ -108,6 +114,23 @@ public class RootCommand {
                                                 .executes(renameCommand::execute))))
                         .then(expandCommand.command()
                                 .requires(source -> Permissions.check(source, "zones.expand")))
+                        .then(Commands.literal("mode")
+                                .requires(source -> Permissions.check(source, "zones.mode"))
+                                .then(Commands.argument("mode", StringArgumentType.string())
+                                        .suggests((context, builder) -> {
+                                            builder.suggest("2D");
+                                            builder.suggest("3D");
+                                            return builder.buildFuture();
+                                        })
+                                        .executes(modeCommand::execute)))
+                        .then(Commands.literal("find")
+                                .requires(source -> Permissions.check(source, "zones.find"))
+                                .executes(findCommand::execute))
+                        .then(Commands.literal("select")
+                                .requires(source -> Permissions.check(source, "zones.select"))
+                                .then(Commands.argument("key", StringArgumentType.string())
+                                        .suggests(RootCommand::regionKeySuggestion)
+                                        .executes(selectCommand::execute)))
         ));
     }
 }
