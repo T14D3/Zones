@@ -7,10 +7,7 @@ import de.t14d3.zones.objects.BlockLocation;
 import de.t14d3.zones.objects.Box;
 import de.t14d3.zones.objects.Flag;
 import de.t14d3.zones.permissions.flags.Flags;
-import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
-import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
-import net.fabricmc.fabric.api.event.player.UseBlockCallback;
-import net.fabricmc.fabric.api.event.player.UseEntityCallback;
+import net.fabricmc.fabric.api.event.player.*;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.minecraft.core.BlockPos;
@@ -71,14 +68,15 @@ public class PlayerListener {
             ItemStack itemStack = player.getMainHandItem();
             List<Flag> flags = new ArrayList<>();
             flags.add(Flags.PLACE);
-            Block block = Block.byItem(itemStack.getItem());
-            if (block != Blocks.AIR) {
-                if (block.defaultBlockState().hasBlockEntity()) {
-                    flags.add(Flags.CONTAINER);
-                }
-                if (block.defaultBlockState().isSignalSource()) {
-                    flags.add(Flags.REDSTONE);
-                }
+            Block block = Block.byItem(itemStack.getItem()) != Blocks.AIR
+                    ? Block.byItem(itemStack.getItem())
+                    : world.getBlockState(getOffset(hitResult)).getBlock();
+
+            if (block.defaultBlockState().hasBlockEntity()) {
+                flags.add(Flags.CONTAINER);
+            }
+            if (block.defaultBlockState().isSignalSource()) {
+                flags.add(Flags.REDSTONE);
             }
 
             InteractionResult result = InteractionResult.PASS;
@@ -151,6 +149,22 @@ public class PlayerListener {
             }
             List<Flag> flags = new ArrayList<>();
             flags.add(Flags.INTERACT);
+            flags.add(Flags.ENTITY);
+            for (Flag flag : flags) {
+                if (!mod.getPermissionManager()
+                        .checkAction(entity.getOnPos(), world, player, entity.getType().getDescriptionId(), flag)) {
+                    return InteractionResult.FAIL;
+                }
+            }
+            return InteractionResult.PASS;
+        });
+
+        AttackEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
+            if (entity == null) {
+                return InteractionResult.PASS;
+            }
+            List<Flag> flags = new ArrayList<>();
+            flags.add(Flags.DAMAGE);
             flags.add(Flags.ENTITY);
             for (Flag flag : flags) {
                 if (!mod.getPermissionManager()
