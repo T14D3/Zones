@@ -16,7 +16,6 @@ import de.t14d3.zones.utils.Types;
 import de.t14d3.zones.utils.Utils;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPIBukkitConfig;
-import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -68,8 +67,6 @@ public final class ZonesBukkit extends JavaPlugin {
         this.regionManager.loadRegions();
 
         this.saveDefaultConfig();
-
-        ((BukkitPlatform) platform).audiences = BukkitAudiences.create(this);
 
         // Register listeners
         this.getServer().getPluginManager().registerEvents(new PlayerEventListener(this), this);
@@ -133,8 +130,6 @@ public final class ZonesBukkit extends JavaPlugin {
         regionManager.regions().clear();
         CommandAPI.onDisable();
         regionManager.getDataSourceManager().close();
-        // Close audiences
-        ((BukkitPlatform) getPlatform()).getAudiences().close();
 
         getLogger().info("Zones plugin is disabling and regions are saved.");
     }
