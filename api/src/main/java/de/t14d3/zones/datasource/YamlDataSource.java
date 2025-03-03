@@ -15,12 +15,12 @@ import java.util.concurrent.CompletableFuture;
 
 public class YamlDataSource extends AbstractDataSource {
     private final File regionsFile;
-    private final Zones plugin;
+    private final Zones zones;
     private final ConfigManager regionsConfig;
 
-    public YamlDataSource(File dataFolder, Zones plugin) {
-        super(plugin);
-        this.plugin = plugin;
+    public YamlDataSource(File dataFolder, Zones zones) {
+        super(zones);
+        this.zones = zones;
         this.regionsFile = new File(dataFolder, "regions.yml");
         if (!regionsFile.exists()) {
             // Initialize the file if it doesn't exist
@@ -30,7 +30,7 @@ public class YamlDataSource extends AbstractDataSource {
                 e.printStackTrace();
             }
         }
-        this.regionsConfig = new ConfigManager(plugin, regionsFile); // Updated to use default config path
+        this.regionsConfig = new ConfigManager(zones, regionsFile); // Updated to use default config path
     }
 
     @Override
@@ -39,7 +39,7 @@ public class YamlDataSource extends AbstractDataSource {
         ConfigurationNode regionsNode = regionsConfig.getConfig().node("regions");
         for (Object key : regionsNode.childrenMap().keySet()) {
             Region region = loadRegion((String) key);
-            plugin.getRegionManager().addRegion(region);
+            zones.getRegionManager().addRegion(region);
             regions.add(region);
         }
         return regions;
@@ -58,11 +58,11 @@ public class YamlDataSource extends AbstractDataSource {
     @Override
     public Region loadRegion(String key) {
         ConfigurationNode regionNode = regionsConfig.getConfig().node("regions", key);
-        World world = plugin.getPlatform().getWorld(regionNode.node("world").getString());
+        World world = zones.getPlatform().getWorld(regionNode.node("world").getString());
         if (world == null) {
-            plugin.getLogger().warn("World {} for region {} not found, falling back to default world.",
+            zones.getLogger().warn("World {} for region {} not found, falling back to default world.",
                     regionNode.node("world").getString(), key);
-            world = plugin.getPlatform().getWorlds().get(0);
+            world = zones.getPlatform().getWorlds().get(0);
         }
         return new Region(
                 regionNode.node("name").getString(),
@@ -118,7 +118,7 @@ public class YamlDataSource extends AbstractDataSource {
                 }
             }
         } catch (Exception e) {
-            plugin.getLogger().error("Failed to save region {}: {}", key, e.getMessage());
+            zones.getLogger().error("Failed to save region {}: {}", key, e.getMessage());
         }
     }
 }

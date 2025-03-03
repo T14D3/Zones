@@ -34,6 +34,10 @@ public class RootCommand {
     private final ModeCommand modeCommand;
     private final FindCommand findCommand;
     private final SelectCommand selectCommand;
+    private final SubCreateCommand subCreateCommand;
+    private final SaveCommand saveCommand;
+    private final LoadCommand loadCommand;
+    private final MigrateCommand migrateCommand;
 
     public RootCommand(ZonesFabric mod) {
         RegionManager regionManager = mod.getRegionManager();
@@ -48,6 +52,10 @@ public class RootCommand {
         this.modeCommand = new ModeCommand(mod);
         this.findCommand = new FindCommand(mod);
         this.selectCommand = new SelectCommand(mod);
+        this.subCreateCommand = new SubCreateCommand(mod);
+        this.saveCommand = new SaveCommand(mod);
+        this.loadCommand = new LoadCommand(mod);
+        this.migrateCommand = new MigrateCommand(mod);
         register();
     }
 
@@ -131,6 +139,31 @@ public class RootCommand {
                                 .then(Commands.argument("key", StringArgumentType.string())
                                         .suggests(RootCommand::regionKeySuggestion)
                                         .executes(selectCommand::execute)))
+                        .then(Commands.literal("subcreate")
+                                .requires(source -> Permissions.check(source, "zones.subcreate"))
+                                .then(Commands.argument("key", StringArgumentType.string())
+                                        .suggests(RootCommand::regionKeySuggestion)
+                                        .executes(subCreateCommand::execute)))
+                        .then(Commands.literal("save")
+                                .requires(source -> Permissions.check(source, "zones.save"))
+                                .executes(saveCommand::execute))
+                        .then(Commands.literal("load")
+                                .requires(source -> Permissions.check(source, "zones.load"))
+                                .executes(loadCommand::execute))
+                        .then(Commands.literal("migrate")
+                                .requires(source -> Permissions.check(source, "zones.migrate"))
+                                .then(Commands.argument("type", StringArgumentType.string())
+                                        .suggests((context, builder) -> {
+                                            builder.suggest("yaml");
+                                            builder.suggest("sqlite");
+                                            builder.suggest("mysql");
+                                            builder.suggest("h2");
+                                            builder.suggest("postgresql");
+                                            builder.suggest("custom");
+                                            return builder.buildFuture();
+                                        })
+                                        .executes(migrateCommand::execute))
+                        )
         ));
     }
 }

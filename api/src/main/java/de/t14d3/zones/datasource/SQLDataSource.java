@@ -15,31 +15,31 @@ import java.util.Map;
 
 public class SQLDataSource extends AbstractDataSource {
     private Connection connection;
-    private final Zones plugin;
+    private final Zones zones;
     private final Gson gson = new Gson();
     private final String tableName;
     private final DataSourceManager.DataSourceTypes dbType;
 
-    public SQLDataSource(Zones plugin, DataSourceManager.DataSourceTypes type) {
-        super(plugin);
-        this.plugin = plugin;
+    public SQLDataSource(Zones zones, DataSourceManager.DataSourceTypes type) {
+        super(zones);
+        this.zones = zones;
         this.dbType = type;
-        this.tableName = plugin.getConfig().getString("storage.table", "regions");
+        this.tableName = zones.getConfig().getString("storage.table", "regions");
         switch (type) {
             case MYSQL -> {
                 try {
-                    String host = plugin.getConfig().getString("storage.mysql.host", "localhost:3306");
-                    String database = plugin.getConfig().getString("storage.mysql.database", "zones");
-                    String user = plugin.getConfig().getString("storage.mysql.user", "root");
-                    String password = plugin.getConfig().getString("storage.mysql.password", "CHANGEME");
-                    String options = plugin.getConfig()
+                    String host = zones.getConfig().getString("storage.mysql.host", "localhost:3306");
+                    String database = zones.getConfig().getString("storage.mysql.database", "zones");
+                    String user = zones.getConfig().getString("storage.mysql.user", "root");
+                    String password = zones.getConfig().getString("storage.mysql.password", "CHANGEME");
+                    String options = zones.getConfig()
                             .getString("storage.mysql.options", "?serverTimezone=UTC&autoReconnect=true");
                     Class.forName("com.mysql.cj.jdbc.Driver");
                     String url = "jdbc:mysql://" + host + "/" + database + options;
                     this.connection = DriverManager.getConnection(url, user, password);
                 } catch (Exception e) {
-                    plugin.getLogger().error("Failed to initialize MySQL database! Error: {}", e.getMessage());
-                    if (plugin.debug) {
+                    zones.getLogger().error("Failed to initialize MySQL database! Error: {}", e.getMessage());
+                    if (zones.debug) {
                         e.printStackTrace();
                     }
                 }
@@ -49,8 +49,8 @@ public class SQLDataSource extends AbstractDataSource {
                     Class.forName("org.sqlite.JDBC");
                     this.connection = DriverManager.getConnection("jdbc:sqlite:./plugins/Zones/regions.sqlite.db");
                 } catch (Exception e) {
-                    plugin.getLogger().error("Failed to initialize SQLite database! Error: {}", e.getMessage());
-                    if (plugin.debug) {
+                    zones.getLogger().error("Failed to initialize SQLite database! Error: {}", e.getMessage());
+                    if (zones.debug) {
                         e.printStackTrace();
                     }
                 }
@@ -60,39 +60,39 @@ public class SQLDataSource extends AbstractDataSource {
                     Class.forName("org.h2.Driver");
                     this.connection = DriverManager.getConnection("jdbc:h2:file:./plugins/Zones/regions.h2");
                 } catch (Exception e) {
-                    plugin.getLogger().error("Failed to initialize H2 database! Error: {}", e.getMessage());
-                    if (plugin.debug) {
+                    zones.getLogger().error("Failed to initialize H2 database! Error: {}", e.getMessage());
+                    if (zones.debug) {
                         e.printStackTrace();
                     }
                 }
             }
             case POSTGRESQL -> {
                 try {
-                    String host = plugin.getConfig().getString("storage.postgresql.host", "localhost:5432");
-                    String database = plugin.getConfig().getString("storage.postgresql.database", "zones");
-                    String user = plugin.getConfig().getString("storage.postgresql.user", "root");
-                    String password = plugin.getConfig().getString("storage.postgresql.password", "CHANGEME");
-                    String options = plugin.getConfig()
+                    String host = zones.getConfig().getString("storage.postgresql.host", "localhost:5432");
+                    String database = zones.getConfig().getString("storage.postgresql.database", "zones");
+                    String user = zones.getConfig().getString("storage.postgresql.user", "root");
+                    String password = zones.getConfig().getString("storage.postgresql.password", "CHANGEME");
+                    String options = zones.getConfig()
                             .getString("storage.postgresql.options", "?serverTimezone=UTC&autoReconnect=true");
                     Class.forName("org.postgresql.Driver");
                     String url = "jdbc:postgresql://" + host + "/" + database + options;
                     this.connection = DriverManager.getConnection(url, user, password);
                 } catch (Exception e) {
-                    plugin.getLogger().error("Failed to initialize PostgreSQL database! Error: {}", e.getMessage());
-                    if (plugin.debug) {
+                    zones.getLogger().error("Failed to initialize PostgreSQL database! Error: {}", e.getMessage());
+                    if (zones.debug) {
                         e.printStackTrace();
                     }
                 }
             }
             case CUSTOM -> {
                 try {
-                    String url = plugin.getConfig().getString("storage.custom.url");
-                    String driver = plugin.getConfig().getString("storage.custom.driver");
+                    String url = zones.getConfig().getString("storage.custom.url");
+                    String driver = zones.getConfig().getString("storage.custom.driver");
                     Class.forName(driver);
                     this.connection = DriverManager.getConnection(url);
                 } catch (Exception e) {
-                    plugin.getLogger().error("Failed to initialize custom database! Error: {}", e.getMessage());
-                    if (plugin.debug) {
+                    zones.getLogger().error("Failed to initialize custom database! Error: {}", e.getMessage());
+                    if (zones.debug) {
                         e.printStackTrace();
                     }
                 }
@@ -116,8 +116,8 @@ public class SQLDataSource extends AbstractDataSource {
                             ")";
             connection.prepareStatement(createTableSQL).execute();
         } catch (SQLException e) {
-            plugin.getLogger().error("Failed to create table! Error: {}", e.getMessage());
-            if (plugin.debug) {
+            zones.getLogger().error("Failed to create table! Error: {}", e.getMessage());
+            if (zones.debug) {
                 e.printStackTrace();
             }
         }
@@ -128,8 +128,8 @@ public class SQLDataSource extends AbstractDataSource {
         try {
             this.connection.close();
         } catch (SQLException e) {
-            plugin.getLogger().error("Error closing the database connection: {}", e.getMessage());
-            if (plugin.debug) {
+            zones.getLogger().error("Error closing the database connection: {}", e.getMessage());
+            if (zones.debug) {
                 e.printStackTrace();
             }
         }
@@ -170,12 +170,12 @@ public class SQLDataSource extends AbstractDataSource {
 
             while (rs.next()) {
                 Region region = parseRegion(rs);
-                plugin.getRegionManager().addRegion(region);
+                zones.getRegionManager().addRegion(region);
                 regions.add(region);
             }
         } catch (SQLException e) {
-            plugin.getLogger().error("Failed to load regions! Error: {}", e.getMessage());
-            if (plugin.debug) {
+            zones.getLogger().error("Failed to load regions! Error: {}", e.getMessage());
+            if (zones.debug) {
                 e.printStackTrace();
             }
         }
@@ -231,8 +231,8 @@ public class SQLDataSource extends AbstractDataSource {
             }
             stmt.executeBatch();
         } catch (SQLException e) {
-            plugin.getLogger().error("Failed to save regions! Error: {}", e.getMessage());
-            if (plugin.debug) {
+            zones.getLogger().error("Failed to save regions! Error: {}", e.getMessage());
+            if (zones.debug) {
                 e.printStackTrace();
             }
         }
@@ -248,8 +248,8 @@ public class SQLDataSource extends AbstractDataSource {
                 return parseRegion(rs);
             }
         } catch (SQLException e) {
-            plugin.getLogger().error("Failed to load region {}! Error: {}", key, e.getMessage());
-            if (plugin.debug) {
+            zones.getLogger().error("Failed to load region {}! Error: {}", key, e.getMessage());
+            if (zones.debug) {
                 e.printStackTrace();
             }
         }
@@ -276,9 +276,9 @@ public class SQLDataSource extends AbstractDataSource {
             stmt.setInt(12, region.getPriority());
             stmt.executeUpdate();
         } catch (SQLException e) {
-            plugin.getLogger()
+            zones.getLogger()
                     .error("Failed to save region {}! Error: {}", region.getKey().toString(), e.getMessage());
-            if (plugin.debug) {
+            if (zones.debug) {
                 e.printStackTrace();
             }
         }
