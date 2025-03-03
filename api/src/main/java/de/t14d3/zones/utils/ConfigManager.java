@@ -10,11 +10,11 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.file.Files;
 
+@SuppressWarnings("unchecked")
 public class ConfigManager {
     private final Zones zones;
     private ConfigurationNode configData;
     private final YamlConfigurationLoader loader;
-    private File dataFolder;
     private Utils.SavingModes savingMode;
 
     /**
@@ -26,7 +26,7 @@ public class ConfigManager {
     public ConfigManager(Zones zones, File configFile) {
         this.zones = zones;
         if (!configFile.exists()) {
-            this.dataFolder = configFile.getParentFile();
+            File dataFolder = configFile.getParentFile();
             if (!dataFolder.exists()) {
                 dataFolder.mkdir();
                 File config = new File(dataFolder, "config.yml");
@@ -34,6 +34,7 @@ public class ConfigManager {
                     try {
                         Files.copy(getClass().getResourceAsStream("/config.yml"), config.toPath());
                     } catch (IOException e) {
+                        zones.getLogger().error("Failed to copy default config.yml: {}", e.getMessage());
                     }
                 }
             }
@@ -52,6 +53,7 @@ public class ConfigManager {
             zones.getLogger().error("Failed to load config.yml: {}", e.getMessage());
         }
         savingMode = Utils.SavingModes.fromString(configData.node("zone-saving", "mode").getString("MODIFIED"));
+
     }
 
     public void saveConfig() {
@@ -71,7 +73,6 @@ public class ConfigManager {
     public <T> T get(String path, Type type) {
         String[] pathParts = path.split("\\.");
         try {
-            //noinspection unchecked
             return (T) configData.node((Object[]) pathParts).get(type);
         } catch (SerializationException e) {
             return null;
@@ -151,5 +152,9 @@ public class ConfigManager {
 
     static String[] splitPath(String path) {
         return path.split("\\.");
+    }
+
+    public Utils.SavingModes getSavingMode() {
+        return savingMode;
     }
 }

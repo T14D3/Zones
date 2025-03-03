@@ -135,7 +135,7 @@ public class Zones {
     }
 
     public Utils.SavingModes getSavingMode() {
-        return null;
+        return configManager.getSavingMode();
     }
 
     public FindBossbar getFindBossbar() {

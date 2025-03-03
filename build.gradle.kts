@@ -77,6 +77,9 @@ tasks {
         relocate("org.spongepowered.configurate", "de.t14d3.zones.dependencies.configurate")
         relocate("org.yaml.snakeyaml", "de.t14d3.zones.dependencies.snakeyaml")
 
+        relocate("net.kyori.adventure", "de.t14d3.zones.dependencies.adventure")
+        relocate("me.lucko.fabric.api.permissions", "de.t14d3.zones.dependencies.fabricpermissions")
+
         dependencies {
             exclude(dependency("org.checkerframework:checker-qual"))
             exclude(dependency("io.leangen.geantyref:geantyref"))
@@ -84,6 +87,17 @@ tasks {
         manifest {
             attributes["paperweight-mappings-namespace"] = "mojang"
         }
+
+        // Very hacky, but works for now
+        exclude("*mixins.json")
+        exclude("*refmap.json")
+        exclude("*.accesswidener")
+        exclude("fabric-installer*")
+        exclude("LICENSE*")
+
+        exclude("/assets/")
+        exclude("/net/")
+        exclude("/ui/")
     }
     build {
         dependsOn(shadowJar)
