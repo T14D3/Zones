@@ -1,0 +1,112 @@
+{
+  "permissions": {
+    "zones.info": {
+      "description": "Allow players to view region information",
+      "level": 0
+    },
+    "zones.delete": {
+      "description": "Allow players to delete regions",
+      "level": 0
+    },
+    "zones.create": {
+      "description": "Allow players to create regions",
+      "level": 0
+    },
+    "zones.subcreate": {
+      "description": "Allow players to create sub-regions",
+      "level": 0
+    },
+    "zones.cancel": {
+      "description": "Allow players to cancel the current operation",
+      "level": 0
+    },
+    "zones.list": {
+      "description": "Allow players to list all regions",
+      "level": 0
+    },
+    "zones.set": {
+      "description": "Allow players to set permissions for regions",
+      "level": 0
+    },
+    "zones.expand": {
+      "description": "Allow players to expand regions",
+      "level": 0
+    },
+    "zones.select": {
+      "description": "Allow players to select regions",
+      "level": 0
+    },
+    "zones.rename": {
+      "description": "Allow players to rename regions",
+      "level": 0
+    },
+    "zones.mode": {
+      "description": "Allow players to change their selection mode",
+      "level": 0
+    },
+    "zones.find": {
+      "description": "Allow players to find regions",
+      "level": 0
+    },
+    "zones.save": {
+      "description": "Allow players to save all regions to file",
+      "level": 2
+    },
+    "zones.load": {
+      "description": "Allow players to load all regions from file",
+      "level": 2
+    },
+    "zones.import": {
+      "description": "Allow players to use the import function",
+      "level": 2
+    },
+    "zones.migrate": {
+      "description": "Allows migrating between different storage types",
+      "level": 2
+    },
+    "zones.info.other": {
+      "description": "Allow players to view other player's regions",
+      "level": 2
+    },
+    "zones.select.other": {
+      "description": "Allow players to select other player's regions",
+      "level": 2
+    },
+    "zones.delete.other": {
+      "description": "Allow players to delete other player's regions",
+      "level": 2
+    },
+    "zones.subcreate.other": {
+      "description": "Allow players to create sub-regions for other player's regions",
+      "level": 2
+    },
+    "zones.expand.other": {
+      "description": "Allow players to expand regions over other regions",
+      "level": 2
+    },
+    "zones.expand.overlap": {
+      "description": "Allow players to expand regions over other regions",
+      "level": 2
+    },
+    "zones.set.other": {
+      "description": "Allow players to set permissions for other player's regions",
+      "level": 2
+    },
+    "zones.create.overlap": {
+      "description": "Allow players to create regions that overlap existing regions",
+      "level": 2
+    },
+    "zones.rename.other": {
+      "description": "Allow players to rename other player's regions",
+      "level": 2
+    },
+    "zones.bypass.unclaimed": {
+      "description": "Allow players to interact with unclaimed regions",
+      "level": 2
+    },
+    "zones.bypass.claimed": {
+      "description": "Allow players to interact with other players' regions",
+      "level": 2
+    }
+  }
+}

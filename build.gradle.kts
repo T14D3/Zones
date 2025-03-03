@@ -1,10 +1,8 @@
-import xyz.jpenilla.runtask.task.AbstractRun
-
 plugins {
-    id("java")
     id("maven-publish")
     id("com.gradleup.shadow") version "9.0.0-beta8"
-    id("xyz.jpenilla.run-paper") version "2.3.1"
+    id("java-library")
+    id("fabric-loom") version "1.10-SNAPSHOT" apply false
 }
 
 group = "de.t14d3"
@@ -13,40 +11,42 @@ version = "0.2.1"
 repositories {
     mavenCentral()
     maven {
-        name = "papermc-repo"
-        url = uri("https://repo.papermc.io/repository/maven-public/")
-    }
-    maven {
         name = "sonatype"
         url = uri("https://oss.sonatype.org/content/groups/public/")
     }
     maven {
-        name = "ExtendedClip"
-        url = uri("https://repo.extendedclip.com/releases/")
+        name = "papermc-repo"
+        url = uri("https://repo.papermc.io/repository/maven-public/")
     }
-    maven {
-        name = "EngineHub"
-        url = uri("https://maven.enginehub.org/repo/")
+
+}
+
+allprojects {
+    plugins.apply("java")
+    repositories {
+        mavenCentral()
+        maven {
+            name = "papermc-repo"
+            url = uri("https://repo.papermc.io/repository/maven-public/")
+        }
+        maven {
+            name = "sonatype"
+            url = uri("https://oss.sonatype.org/content/groups/public/")
+        }
     }
-    maven {
-        name = "CodeMC"
-        url = uri("https://repo.codemc.io/repository/maven-public/")
+    dependencies {
+        compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
+        compileOnly("org.jetbrains:annotations:23.0.0")
+
+        compileOnly("net.kyori:adventure-api:4.19.0")
+        compileOnly("net.kyori:adventure-text-minimessage:4.19.0")
     }
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
-    compileOnly("me.clip:placeholderapi:2.11.6")
-    compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.3.10")
-    compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.13")
-    implementation(platform("com.intellectualsites.bom:bom-newest:1.52"))
-    compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Core")
-    compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit")
-    implementation("dev.jorel:commandapi-bukkit-shade-mojang-mapped:9.7.0")
-    compileOnly("org.slf4j:slf4j-api:2.1.0-alpha1")
-
-    implementation("com.h2database:h2:2.2.220")
-    implementation("org.postgresql:postgresql:42.7.5")
+    implementation(project(":api"))
+    implementation(project(":bukkit"))
+    implementation(project(":fabric"))
 }
 
 val targetJavaVersion = 21
@@ -66,42 +66,41 @@ tasks.withType<JavaCompile>().configureEach {
         options.release.set(targetJavaVersion)
     }
 }
-tasks.withType<AbstractRun>().configureEach {
-    javaLauncher = javaToolchains.launcherFor {
-        vendor.set(JvmVendorSpec.JETBRAINS)
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-    jvmArgs("-XX:+AllowEnhancedClassRedefinition")
-}
 
-tasks.processResources {
-    val props = mapOf("version" to version)
-    inputs.properties(props)
-    filteringCharset = "UTF-8"
-    filesMatching("plugin.yml") {
-        expand(props)
-    }
-    filesMatching("paper-plugin.yml") {
-        expand(props)
-    }
-}
+
 
 tasks {
     shadowJar {
         archiveClassifier.set("")
-        relocate("dev.jorel.commandapi", "de.t14d3.zones.commandapi")
-        relocate("org.h2", "de.t14d3.zones.db.h2")
-        relocate("org.postgresql", "de.t14d3.zones.db.postgresql")
+        relocate("dev.jorel.commandapi", "de.t14d3.zones.dependencies.commandapi")
+
+        relocate("org.spongepowered.configurate", "de.t14d3.zones.dependencies.configurate")
+        relocate("org.yaml.snakeyaml", "de.t14d3.zones.dependencies.snakeyaml")
+
+        relocate("net.kyori.adventure", "de.t14d3.zones.dependencies.adventure")
+        relocate("me.lucko.fabric.api.permissions", "de.t14d3.zones.dependencies.fabricpermissions")
 
         dependencies {
             exclude(dependency("org.checkerframework:checker-qual"))
+            exclude(dependency("io.leangen.geantyref:geantyref"))
         }
+        manifest {
+            attributes["paperweight-mappings-namespace"] = "mojang"
+        }
+
+        // Very hacky, but works for now
+        exclude("*mixins.json")
+        exclude("*refmap.json")
+        exclude("*.accesswidener")
+        exclude("fabric-installer*")
+        exclude("LICENSE*")
+
+        exclude("/assets/")
+        exclude("/net/")
+        exclude("/ui/")
     }
     build {
         dependsOn(shadowJar)
-    }
-    runServer {
-        minecraftVersion("1.21.4")
     }
 }
 
