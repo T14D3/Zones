@@ -10,7 +10,6 @@ import de.t14d3.zones.permissions.PermissionManager;
 import de.t14d3.zones.utils.Types;
 import de.t14d3.zones.visuals.BeaconUtils;
 import net.kyori.adventure.audience.Audience;
-import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -30,7 +29,6 @@ public class BukkitPlatform implements ZonesPlatform {
     private final ZonesBukkit plugin;
     private final Particle primary;
     private final Particle secondary;
-    public BukkitAudiences audiences;
 
     public BukkitPlatform(ZonesBukkit plugin) {
         this.plugin = plugin;
@@ -96,15 +94,11 @@ public class BukkitPlatform implements ZonesPlatform {
 
     @Override
     public Audience getAudience(Player player) {
-        return audiences.player(player.getUUID());
+        return plugin.getServer().getPlayer(player.getUUID());
     }
 
     public ZonesBukkit getPlugin() {
         return plugin;
-    }
-
-    public BukkitAudiences getAudiences() {
-        return audiences;
     }
 
     @Override

@@ -7,7 +7,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("org.slf4j:slf4j-api:2.1.0-alpha1")
+    compileOnly("org.apache.logging.log4j:log4j-core:2.24.3")
     compileOnly("it.unimi.dsi:fastutil:8.5.8")
 
     compileOnly("com.h2database:h2:2.3.232")

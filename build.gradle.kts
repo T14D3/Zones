@@ -77,7 +77,7 @@ tasks {
         relocate("org.spongepowered.configurate", "de.t14d3.zones.dependencies.configurate")
         relocate("org.yaml.snakeyaml", "de.t14d3.zones.dependencies.snakeyaml")
 
-        relocate("net.kyori.adventure", "de.t14d3.zones.dependencies.adventure")
+
         relocate("me.lucko.fabric.api.permissions", "de.t14d3.zones.dependencies.fabricpermissions")
 
         dependencies {

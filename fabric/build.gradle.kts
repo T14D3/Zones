@@ -1,6 +1,7 @@
 plugins {
     id("java")
     id("fabric-loom")
+    id("com.gradleup.shadow") version "9.0.0-beta8"
 }
 
 repositories {
@@ -53,4 +54,17 @@ tasks.processResources {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks {
+    shadowJar {
+        exclude("*mixins.json")
+        exclude("*refmap.json")
+        exclude("*.accesswidener")
+        exclude("fabric-installer*")
+        exclude("LICENSE*")
+        exclude("/assets/")
+        exclude("/net/")
+        exclude("/ui/")
+    }
 }
