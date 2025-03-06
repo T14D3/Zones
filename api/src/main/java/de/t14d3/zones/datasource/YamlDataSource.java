@@ -4,13 +4,17 @@ import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.Zones;
 import de.t14d3.zones.objects.BlockLocation;
+import de.t14d3.zones.objects.RegionFlagEntry;
 import de.t14d3.zones.objects.World;
 import de.t14d3.zones.utils.ConfigManager;
 import org.spongepowered.configurate.ConfigurationNode;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class YamlDataSource extends AbstractDataSource {
@@ -80,15 +84,23 @@ public class YamlDataSource extends AbstractDataSource {
         );
     }
 
-    private static Map<String, Map<String, String>> loadMembers(ConfigurationNode section) {
-        Map<String, Map<String, String>> members = new HashMap<>();
+    private static Map<String, List<RegionFlagEntry>> loadMembers(ConfigurationNode section) {
+        Map<String, List<RegionFlagEntry>> members = new HashMap<>();
         if (section.isNull()) return members;
         for (Object whoObj : section.childrenMap().keySet()) {
             String who = (String) whoObj;
-            Map<String, String> permissions = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+            List<RegionFlagEntry> permissions = new ArrayList<>();
             for (Object permObj : section.node(who).childrenMap().keySet()) {
                 String perm = (String) permObj;
-                permissions.put(perm.toLowerCase(), section.node(who, perm).getString().toLowerCase());
+                List<RegionFlagEntry.FlagValue> values = new ArrayList<>();
+                for (String value : section.node(who, perm).getString().split(" ")) {
+                    values.add(new RegionFlagEntry.FlagValue(value.toLowerCase().replaceFirst("!", ""),
+                            value.startsWith("!")));
+                }
+                permissions.add(new RegionFlagEntry(
+                        perm.toLowerCase().replaceFirst("!", ""),
+                        values)
+                );
             }
             members.put(who, permissions);
         }
@@ -111,10 +123,20 @@ public class YamlDataSource extends AbstractDataSource {
             if (region.getParent() != null) {
                 regionNode.node("parent").set(region.getParent().toString());
             }
-            for (Map.Entry<String, Map<String, String>> entry : region.getMembers().entrySet()) {
+            for (Map.Entry<String, List<RegionFlagEntry>> entry : region.getMembers().entrySet()) {
                 String who = entry.getKey();
-                for (Map.Entry<String, String> perm : entry.getValue().entrySet()) {
-                    regionNode.node("members", who, perm.getKey()).set(perm.getValue());
+                for (RegionFlagEntry flag : entry.getValue()) {
+                    StringBuilder perm = new StringBuilder();
+                    for (RegionFlagEntry.FlagValue value : flag.getValues()) {
+                        String val;
+                        if (value.isInverted()) {
+                            val = " !" + value.getValue();
+                        } else {
+                            val = " " + value.getValue();
+                        }
+                        perm.append(val);
+                    }
+                    regionNode.node("members", who, flag.getFlag().name()).set(perm.toString());
                 }
             }
         } catch (Exception e) {

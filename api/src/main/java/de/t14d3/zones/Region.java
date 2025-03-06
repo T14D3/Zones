@@ -1,9 +1,8 @@
 package de.t14d3.zones;
 
-import de.t14d3.zones.objects.BlockLocation;
-import de.t14d3.zones.objects.Box;
-import de.t14d3.zones.objects.World;
+import de.t14d3.zones.objects.*;
 import de.t14d3.zones.permissions.PermissionManager;
+import de.t14d3.zones.permissions.flags.Flags;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,7 +19,7 @@ public class Region {
     private BlockLocation min;
     private BlockLocation max;
     private World world;
-    private Map<String, Map<String, String>> members;
+    private Map<String, List<RegionFlagEntry>> members;
     private RegionKey key;
     private RegionKey parent;
     private int priority;
@@ -40,7 +39,7 @@ public class Region {
      * @see #Region(String, BlockLocation, BlockLocation, World, Map, RegionKey, int)
      */
     public Region(@NotNull String name, @NotNull BlockLocation min, @NotNull BlockLocation max, @NotNull World world,
-                  Map<String, Map<String, String>> members, @NotNull RegionKey key, @Nullable RegionKey parent,
+                  Map<String, List<RegionFlagEntry>> members, @NotNull RegionKey key, @Nullable RegionKey parent,
                   int priority) {
         this.name = name;
         this.min = min;
@@ -66,7 +65,7 @@ public class Region {
      * @param priority The priority of the region.
      * @see #Region(String, BlockLocation, BlockLocation, World, Map, RegionKey, int)
      */
-    Region(String name, BlockLocation min, BlockLocation max, World world, Map<String, Map<String, String>> members,
+    public Region(String name, BlockLocation min, BlockLocation max, World world, Map<String, List<RegionFlagEntry>> members,
            RegionKey key, int priority) {
         this(name, min, max, world, members, key, null, priority);
     }
@@ -111,7 +110,7 @@ public class Region {
      *
      * @return {@code Map<UUID player, Map<String permission, String value> permissions>}
      */
-    public Map<String, Map<String, String>> getMembers() {
+    public Map<String, List<RegionFlagEntry>> getMembers() {
         return members;
     }
 
@@ -123,11 +122,11 @@ public class Region {
      */
     public List<String> getGroupNames() {
         List<String> groupNames = new ArrayList<>();
-        for (Map.Entry<String, Map<String, String>> entry : members.entrySet()) {
-            if (entry.getKey().startsWith("+group-")) {
-                groupNames.add(entry.getKey());
+        members.keySet().forEach(key -> {
+            if (key.startsWith("+group-")) {
+                groupNames.add(key);
             }
-        }
+        });
         return groupNames;
     }
 
@@ -140,27 +139,14 @@ public class Region {
      */
     public List<String> getGroupMembers(String group) {
         List<String> groupMembers = new ArrayList<>();
-        for (Map.Entry<String, Map<String, String>> entry : members.entrySet()) {
-            if (entry.getValue().containsKey("group") && entry.getValue().get("group").contains(group.substring(7))) {
-                groupMembers.add(entry.getKey());
-            }
-        }
+        members.forEach((subject, flags) -> {
+            flags.forEach(flag -> {
+                if (flag.getFlag() == Flags.GROUP && flag.getValue(group.substring(7)).equals(Result.TRUE)) {
+                    groupMembers.add(subject);
+                }
+            });
+        });
         return groupMembers;
-    }
-
-    void setMembers(Map<String, Map<String, String>> members, RegionManager regionManager) {
-        this.members = members;
-        regionManager.saveRegion(key, this); // Ensure changes are saved
-    }
-
-    void addMember(UUID uuid, Map<String, String> permissions, RegionManager regionManager) {
-        this.members.put(uuid.toString(), permissions);
-        regionManager.saveRegion(key, this); // Ensure changes are saved
-    }
-
-    void removeMember(UUID uuid, RegionManager regionManager) {
-        this.members.remove(uuid.toString());
-        regionManager.saveRegion(key, this); // Ensure changes are saved
     }
 
     public boolean isMember(UUID uuid) {
@@ -168,14 +154,17 @@ public class Region {
     }
 
     public boolean isAdmin(UUID uuid) {
-        if (this.members.containsKey(uuid.toString()) && this.members.get(uuid.toString()).containsKey("role")) {
-            return this.members.get(uuid.toString()).get("role").equals("admin") || this.members.get(uuid.toString())
-                    .get("role").equals("owner");
+        if (members.containsKey(uuid.toString())) {
+            for (RegionFlagEntry entry : members.get(uuid.toString())) {
+                if (entry.getFlag().name().equalsIgnoreCase("role")) {
+                    return entry.getValue("admin").equals(Result.TRUE) || entry.getValue("owner").equals(Result.TRUE);
+                }
+            }
         }
         return false; // Default to false
     }
 
-    public Map<String, String> getMemberPermissions(String who) {
+    public List<RegionFlagEntry> getMemberPermissions(String who) {
         return this.members.get(who);
     }
 
@@ -232,23 +221,49 @@ public class Region {
         return new Box(min, max, world);
     }
 
-    void addMemberPermission(UUID uuid, String permission, String value, RegionManager regionManager) {
-        this.members.computeIfAbsent(uuid.toString(), k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER))
-                .put(permission, value);
-        regionManager.saveRegion(key, this); // Ensure changes are saved
+    public void addMemberPermission(UUID uuid, String permission, String value, RegionManager regionManager) {
+        addMemberPermission(uuid.toString(), permission, value, regionManager);
     }
 
-    void addMemberPermission(String who, String permission, String value, RegionManager regionManager) {
-        this.members.computeIfAbsent(who, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER))
-                .put(permission, value);
-        regionManager.saveRegion(key, this); // Ensure changes are saved
+    public void addMemberPermission(String who, String permission, String value, RegionManager regionManager) {
+        List<RegionFlagEntry> entries = this.members.computeIfAbsent(who, k -> new ArrayList<>());
+        for (RegionFlagEntry entry : entries) {
+            if (entry.getFlagValue().equalsIgnoreCase(permission)) {
+                entry.setValue(value.replaceFirst("!", ""), value.startsWith("!"));
+                regionManager.saveRegion(key, this);
+                return;
+            }
+        }
+        entries.add(new RegionFlagEntry(permission));
+        regionManager.saveRegion(key, this);
+    }
+
+    public void addMemberPermissions(String who, List<RegionFlagEntry> entries, RegionManager regionManager) {
+        this.members.put(who, entries);
+        regionManager.saveRegion(key, this);
+    }
+
+    public void removeMemberPermission(String who, String permission, String value, RegionManager regionManager) {
+        List<RegionFlagEntry> entries = this.members.get(who);
+        if (entries != null) {
+            for (RegionFlagEntry entry : entries) {
+                if (entry.getFlagValue().equalsIgnoreCase(permission)) {
+                    entry.removeValue(value);
+                    regionManager.saveRegion(key, this);
+                    return;
+                }
+            }
+        }
     }
 
     public @Nullable UUID getOwner() {
-        for (Map.Entry<String, Map<String, String>> entry : members.entrySet()) {
-            Map<String, String> map = entry.getValue();
-            if (map.containsKey("role") && map.get("role").equalsIgnoreCase("owner")) {
-                return UUID.fromString(entry.getKey());
+        for (Map.Entry<String, List<RegionFlagEntry>> e : members.entrySet()) {
+            for (RegionFlagEntry entry : e.getValue()) {
+                if (entry.getFlagValue().equalsIgnoreCase("role")) {
+                    if (entry.getValue("owner").equals(Result.TRUE)) {
+                        return UUID.fromString(e.getKey());
+                    }
+                }
             }
         }
         return null;

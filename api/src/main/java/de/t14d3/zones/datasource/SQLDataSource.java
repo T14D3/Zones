@@ -6,6 +6,7 @@ import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.Zones;
 import de.t14d3.zones.objects.BlockLocation;
+import de.t14d3.zones.objects.RegionFlagEntry;
 import de.t14d3.zones.objects.World;
 
 import java.sql.*;
@@ -197,8 +198,8 @@ public class SQLDataSource extends AbstractDataSource {
         );
         World world = Zones.getInstance().getPlatform().getWorld(rs.getString("world"));
         String membersJson = rs.getString("members");
-        Map<String, Map<String, String>> members = gson.fromJson(membersJson,
-                new TypeToken<Map<String, Map<String, String>>>() {
+        Map<String, List<RegionFlagEntry>> members = gson.fromJson(membersJson,
+                new TypeToken<Map<String, List<RegionFlagEntry>>>() {
                 }.getType());
         int parentKey = rs.getInt("parent");
         RegionKey parent = parentKey != 0 ? RegionKey.fromInt(parentKey) : null;

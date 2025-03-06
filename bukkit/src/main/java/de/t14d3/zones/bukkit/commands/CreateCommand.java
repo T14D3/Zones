@@ -5,6 +5,7 @@ import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.bukkit.ZonesBukkit;
 import de.t14d3.zones.objects.Box;
 import de.t14d3.zones.objects.PlayerRepository;
+import de.t14d3.zones.objects.RegionFlagEntry;
 import de.t14d3.zones.objects.World;
 import de.t14d3.zones.utils.Messages;
 import de.t14d3.zones.utils.Utils;
@@ -13,7 +14,9 @@ import dev.jorel.commandapi.arguments.StringArgument;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
@@ -49,10 +52,10 @@ public class CreateCommand {
                             sender.sendMessage(mm.deserialize(messages.get("commands.create.overlap")));
                             return;
                         }
-                        Map<String, String> ownerPerms = new HashMap<>();
-                        ownerPerms.put("role", "owner");
-                        Map<String, Map<String, String>> members = new HashMap<>();
-                        members.put(player.getUniqueId().toString(), ownerPerms);
+                        Map<String, List<RegionFlagEntry>> members = new HashMap<>();
+                        List<RegionFlagEntry> ownerPermissions = new ArrayList<>();
+                        ownerPermissions.add(new RegionFlagEntry("role", "owner", false));
+                        members.put(player.getUniqueId().toString(), ownerPermissions);
                         RegionKey key = RegionKey.generate();
                         regionManager.createNewRegion(key.toString(), selection.getMin(),
                                 selection.getMax(), selection.getWorld(), members, key, null, 0);

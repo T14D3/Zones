@@ -9,9 +9,12 @@ import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.bukkit.ZonesBukkit;
 import de.t14d3.zones.objects.BlockLocation;
+import de.t14d3.zones.objects.RegionFlagEntry;
 import org.bukkit.World;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class WorldGuardImporter {
@@ -39,20 +42,29 @@ public class WorldGuardImporter {
                     BlockLocation min = BlockLocation.of(BukkitAdapter.adapt(world, region.getMinimumPoint()));
                     BlockLocation max = BlockLocation.of(BukkitAdapter.adapt(world, region.getMaximumPoint()));
 
-                    Map<String, Map<String, String>> members = new HashMap<>();
-                    members.put("+group-members",
-                            Map.of("break", "true", "place", "true", "container", "true", "redstone", "true",
-                                    "interact", "true", "entity", "true", "damage", "true"));
+                    Map<String, List<RegionFlagEntry>> members = new HashMap<>();
+                    region.getMembers().getUniqueIds().forEach(uuid -> {
+                        members.put(uuid.toString(), List.of(new RegionFlagEntry("group", "member", false)));
+                    });
 
-                    region.getMembers().getUniqueIds()
-                            .forEach(uuid -> members.put(uuid.toString(), Map.of("group", "member")));
-                    region.getOwners().getUniqueIds()
-                            .forEach(uuid -> members.put(uuid.toString(), Map.of("role", "owner")));
+                    region.getOwners().getUniqueIds().forEach(uuid -> {
+                        members.put(uuid.toString(), List.of(new RegionFlagEntry("role", "owner", false)));
+                    });
+
+                    List<RegionFlagEntry> memberPermissions = new ArrayList<>();
+                    memberPermissions.add(new RegionFlagEntry("break", "true", false));
+                    memberPermissions.add(new RegionFlagEntry("place", "true", false));
+                    memberPermissions.add(new RegionFlagEntry("container", "true", false));
+                    memberPermissions.add(new RegionFlagEntry("redstone", "true", false));
+                    memberPermissions.add(new RegionFlagEntry("interact", "true", false));
+                    memberPermissions.add(new RegionFlagEntry("entity", "true", false));
+                    memberPermissions.add(new RegionFlagEntry("damage", "true", false));
+                    members.put("+group-members", memberPermissions);
+
 
                     Region newRegion = plugin.getRegionManager()
                             .createNewRegion(key, name, min, max, de.t14d3.zones.objects.World.of(world), members,
                                     region.getPriority());
-                    plugin.getRegionManager().addRegion(newRegion);
                     count[0]++;
                 }
 

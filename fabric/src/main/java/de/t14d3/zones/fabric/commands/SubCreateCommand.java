@@ -8,12 +8,12 @@ import de.t14d3.zones.fabric.ZonesFabric;
 import de.t14d3.zones.objects.BlockLocation;
 import de.t14d3.zones.objects.Box;
 import de.t14d3.zones.objects.PlayerRepository;
+import de.t14d3.zones.objects.RegionFlagEntry;
 import de.t14d3.zones.utils.Messages;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.minecraft.commands.CommandSourceStack;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 public class SubCreateCommand {
     private final ZonesFabric mod;
@@ -75,11 +75,9 @@ public class SubCreateCommand {
                 return 1;
             }
 
-            Map<String, String> perms = new HashMap<>();
-            perms.put("role", "owner");
-
             mod.getRegionManager().createSubRegion(parentRegion.getName() + "_sub", selection.getMin(),
-                    selection.getMax(), selection.getWorld(), zplayer.getUniqueId(), perms, parentRegion);
+                    selection.getMax(), selection.getWorld(), zplayer.getUniqueId(),
+                    List.of(new RegionFlagEntry("role", "owner", false)), parentRegion);
             mod.getPlatform().removeBeacon(zplayer, selection.getWorld(), selection.getMin());
             mod.getPlatform().removeBeacon(zplayer, selection.getWorld(), selection.getMax());
             zplayer.sendMessage(mm.deserialize(messages.get("commands.subcreate.success")));

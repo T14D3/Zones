@@ -4,10 +4,7 @@ import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.bukkit.ZonesBukkit;
-import de.t14d3.zones.objects.BlockLocation;
-import de.t14d3.zones.objects.Box;
-import de.t14d3.zones.objects.PlayerRepository;
-import de.t14d3.zones.objects.World;
+import de.t14d3.zones.objects.*;
 import de.t14d3.zones.utils.Messages;
 import dev.jorel.commandapi.BukkitTooltip;
 import dev.jorel.commandapi.CommandAPICommand;
@@ -18,9 +15,7 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 
@@ -107,8 +102,8 @@ public class SubCreateCommand {
                         return; // Failure
                     }
 
-                    Map<String, String> perms = new HashMap<>();
-                    perms.put("role", "owner");
+                    List<RegionFlagEntry> perms = new ArrayList<>();
+                    perms.add(new RegionFlagEntry("role", "owner", false));
 
                     regionManager.createSubRegion(parentRegion.getName() + "_sub", selection.getMin(),
                             selection.getMax(), selection.getWorld(), player.getUniqueId(), perms, parentRegion);

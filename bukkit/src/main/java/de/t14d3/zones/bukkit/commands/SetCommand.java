@@ -128,11 +128,7 @@ public class SetCommand {
                 Region region = regionManager.regions().get(regionKey.getValue());
                 if (sender.hasPermission("zones.set.other") || (sender instanceof Player player && region.isOwner(
                         player.getUniqueId()))) {
-                    StringBuilder builder = new StringBuilder();
                     List<String> values = (List<String>) args.get("values");
-                    for (String value : values) {
-                        builder.append(value).append(",");
-                    }
                     String display = args.getRaw("target");
                     String target;
                     if (display.startsWith("+")) {
@@ -145,13 +141,13 @@ public class SetCommand {
                             return;
                         }
                     }
-                    regionManager.addMemberPermission(target, (String) args.get("flag"),
-                            builder.toString(), regionKey);
+                    regionManager.addMemberPermissions(target, (String) args.get("flag"),
+                            values, regionKey);
                     sender.sendMessage(mm.deserialize(messages.get("commands.set.success"),
                             parsed("region", regionKey.toString()),
                             parsed("target", display),
                             parsed("permission", (String) args.get("flag")),
-                            parsed("value", builder.toString())));
+                            parsed("value", values.toString())));
                 } else {
                     sender.sendMessage(mm.deserialize(messages.get("commands.invalid-region")));
                 }

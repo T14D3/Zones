@@ -30,7 +30,7 @@ public class RegionManager {
     }
 
     public DataSourceManager getDataSourceManager() {
-        return dataSourceManager; // Add getter for DataSourceManager
+        return dataSourceManager;
     }
 
     public void saveRegions() {
@@ -96,7 +96,6 @@ public class RegionManager {
         CacheUtils.getInstance().invalidateInteractionCaches();
     }
 
-
     /**
      * Creates a new region with the specified key, name, minimum and maximum locations, members and their permissions.
      *
@@ -107,8 +106,7 @@ public class RegionManager {
      * @param members The members of the new region.
      * @return The newly created region.
      */
-
-    public Region createNewRegion(String name, BlockLocation min, BlockLocation max, World world, Map<String, Map<String, String>> members, RegionKey key, RegionKey parent, int priority) {
+    public Region createNewRegion(String name, BlockLocation min, BlockLocation max, World world, Map<String, List<RegionFlagEntry>> members, RegionKey key, RegionKey parent, int priority) {
         Region newRegion = new Region(name, min, max, world, members, key, 0);
 
         CacheUtils.getInstance().invalidateInteractionCaches();
@@ -116,19 +114,12 @@ public class RegionManager {
         loadedRegions.put(key.getValue(), newRegion);
         worldRegions.computeIfAbsent(newRegion.getWorld().getUID(), k -> new Int2ObjectOpenHashMap<>())
                 .put(newRegion.getKey().getValue(), newRegion);
-        indexRegion(newRegion); // Add the new region to the spatial index
+        indexRegion(newRegion);
         return newRegion;
     }
 
-    public Region createNewRegion(String name, BlockLocation min, BlockLocation max, World world) {
-        RegionKey key = RegionKey.generate();
-        RegionKey parent = RegionKey.generate();
-        Map<String, Map<String, String>> members = new HashMap<>();
-        return createNewRegion(name, min, max, world, members, key, parent, 0);
-    }
-
-    public Region createNewRegion(RegionKey key, String name, BlockLocation min, BlockLocation max, World of, Map<String, Map<String, String>> members, int priority) {
-        return createNewRegion(name, min, max, of, members, key, null, priority);
+    public Region createNewRegion(RegionKey key, String name, BlockLocation min, BlockLocation max, World world, Map<String, List<RegionFlagEntry>> members, int priority) {
+        return createNewRegion(name, min, max, world, members, key, null, priority);
     }
 
     /**
@@ -142,22 +133,19 @@ public class RegionManager {
      * @param ownerPermissions The permissions that the player will have for the new region.
      * @param parentRegion     The parent region of the new region.
      */
-    public Region createSubRegion(String name, BlockLocation min, BlockLocation max, World world, UUID playerUUID, Map<String, String> ownerPermissions, Region parentRegion) {
+    public Region createSubRegion(String name, BlockLocation min, BlockLocation max, World world, UUID playerUUID, List<RegionFlagEntry> ownerPermissions, Region parentRegion) {
         RegionKey regionKey = RegionKey.generate();
 
-        Map<String, Map<String, String>> members = new HashMap<>();
+        Map<String, List<RegionFlagEntry>> members = new HashMap<>();
+        members.put(playerUUID.toString(), ownerPermissions);
         Region newRegion = new Region(name, min, max, world, members, regionKey, parentRegion.getKey(), 0);
-
-        ownerPermissions.forEach((permission, value) -> {
-            newRegion.addMemberPermission(playerUUID, permission, value, this);
-        });
 
         CacheUtils.getInstance().invalidateInteractionCaches();
         saveRegion(regionKey, newRegion);
         loadedRegions.put(regionKey.getValue(), newRegion);
         worldRegions.computeIfAbsent(newRegion.getWorld().getUID(), k -> new Int2ObjectOpenHashMap<>())
                 .put(newRegion.getKey().getValue(), newRegion);
-        indexRegion(newRegion); // Add the new region to the spatial index
+        indexRegion(newRegion);
         return newRegion;
     }
 
@@ -181,6 +169,15 @@ public class RegionManager {
         CacheUtils.getInstance().invalidateCache(who);
         Region region = regions().get(key.getValue());
         region.addMemberPermission(who, permission, value, this);
+    }
+
+    public void addMemberPermissions(String who, String permission, List<String> values, RegionKey key) {
+        CacheUtils.getInstance().invalidateInteractionCache(who);
+        CacheUtils.getInstance().invalidateCache(who);
+        Region region = regions().get(key.getValue());
+        for (String value : values) {
+            region.addMemberPermission(who, permission, value, this);
+        }
     }
 
     public boolean overlapsExistingRegion(BlockLocation min, BlockLocation max, World world) {
@@ -405,15 +402,6 @@ public class RegionManager {
         region.setMin(newMin);
         region.setMax(newMax);
         triggerSave();
-    }
-
-
-    public Map<String, String> getMemberPermissions(Player player, Region region) {
-        return region.getMemberPermissions(player.getUniqueId().toString());
-    }
-
-    public Map<String, String> getMemberPermissions(UUID uuid, Region region) {
-        return region.getMemberPermissions(uuid.toString());
     }
 
     /**

@@ -2,6 +2,7 @@ package de.t14d3.zones.utils;
 
 import de.t14d3.zones.Region;
 import de.t14d3.zones.Zones;
+import de.t14d3.zones.objects.RegionFlagEntry;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -64,7 +65,7 @@ public class Messages {
 
         if (showMembers) {
             // Iterate over members to format permissions
-            for (Map.Entry<String, Map<String, String>> member : region.getMembers().entrySet()) {
+            for (Map.Entry<String, List<RegionFlagEntry>> member : region.getMembers().entrySet()) {
                 String playerName = null;
                 try {
                     playerName = Zones.getInstance().getPlatform().getPlayer(UUID.fromString(member.getKey()))
@@ -79,18 +80,16 @@ public class Messages {
                 playerComponent = playerComponent.appendNewline();
 
                 // Extract permissions and format them using Adventure Components
-                Map<String, String> permissions = member.getValue();
+                List<RegionFlagEntry> permissions = member.getValue();
                 Component permissionsComponent = Component.empty();
 
-                for (Map.Entry<String, String> permEntry : permissions.entrySet()) {
-                    String permKey = permEntry.getKey();
-                    String permValue = permEntry.getValue();
-
-                    // Split permission values by comma and trim whitespace
-                    String[] permValues = permValue.split(",\\s*");
+                for (RegionFlagEntry permEntry : permissions) {
+                    String permKey = permEntry.getFlagValue();
+                    List<RegionFlagEntry.FlagValue> permValues = permEntry.getValues();
                     List<Component> formattedComponents = new ArrayList<>();
 
-                    for (String value : permValues) {
+                    for (RegionFlagEntry.FlagValue val : permValues) {
+                        String value = val.getValue();
                         Component formattedValue;
                         if ("true".equalsIgnoreCase(value) || "*".equals(value)) {
                             formattedValue = mm.deserialize(messages.get("region.info.members.values.allowed"),

@@ -7,12 +7,14 @@ import de.t14d3.zones.fabric.FabricPlatform;
 import de.t14d3.zones.fabric.ZonesFabric;
 import de.t14d3.zones.objects.Box;
 import de.t14d3.zones.objects.Player;
+import de.t14d3.zones.objects.RegionFlagEntry;
 import de.t14d3.zones.utils.Messages;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.minecraft.commands.CommandSourceStack;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
@@ -45,10 +47,8 @@ public class CreateCommand {
                     player.sendMessage(messages.getCmp("commands.create.overlap"));
                     return 1;
                 }
-                Map<String, String> ownerPerms = new HashMap<>();
-                ownerPerms.put("role", "owner");
-                Map<String, Map<String, String>> members = new HashMap<>();
-                members.put(player.getUniqueId().toString(), ownerPerms);
+                Map<String, List<RegionFlagEntry>> members = new HashMap<>();
+                members.put(player.getUniqueId().toString(), List.of(new RegionFlagEntry("role", "owner", false)));
                 RegionKey key = RegionKey.generate();
                 regionManager.createNewRegion(key.toString(), selection.getMin(),
                         selection.getMax(), selection.getWorld(), members, key, null, 0);
