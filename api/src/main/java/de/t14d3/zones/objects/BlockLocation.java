@@ -52,6 +52,9 @@ public class BlockLocation {
     }
 
     public static BlockLocation of(org.bukkit.Location location) {
+        if (location == null) {
+            return null;
+        }
         return new BlockLocation(location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 
@@ -74,6 +77,15 @@ public class BlockLocation {
         if (o == null || getClass() != o.getClass()) return false;
         BlockLocation that = (BlockLocation) o;
         return x == that.x && y == that.y && z == that.z;
+    }
+
+    @Override
+    public String toString() {
+        return "BlockLocation{" +
+                "x=" + x +
+                ", y=" + y +
+                ", z=" + z +
+                '}';
     }
 
     public double distance(BlockLocation end) {

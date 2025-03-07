@@ -32,7 +32,7 @@ public class SubCreateCommand {
             de.t14d3.zones.objects.Player zplayer = PlayerRepository.get(context.getSource().getPlayer().getUUID());
             if (zplayer.getSelection() == null) {
                 zplayer.setSelection(
-                        new Box(null, null, platform.getWorld(context.getSource().getPlayer().serverLevel())));
+                        new Box(null, null, platform.getWorld(context.getSource().getPlayer().serverLevel()), false));
                 zplayer.setSelectionCreating(true);
                 zplayer.sendMessage(mm.deserialize(messages.get("commands.create.click-corners")));
                 return 1;

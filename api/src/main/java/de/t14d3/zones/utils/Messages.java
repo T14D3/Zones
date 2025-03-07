@@ -15,7 +15,7 @@ import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.pars
 public class Messages {
     private final Zones zones;
     private final Map<String, String> messages = new HashMap<>();
-    private final MiniMessage mm = MiniMessage.miniMessage();
+    private final static MiniMessage mm = MiniMessage.miniMessage();
 
     public Messages(Properties messagesConfig, Zones zones) {
         this.zones = zones;
@@ -48,7 +48,6 @@ public class Messages {
 
     public static Component regionInfo(Region region, boolean showMembers) {
         Messages messages = Zones.getInstance().getMessages();
-        var mm = MiniMessage.miniMessage();
         Component comp = Component.empty();
         comp = comp.append(
                 mm.deserialize("<light_purple>Name: </light_purple>" + messages.get("region.info.name") + " ",
@@ -91,12 +90,12 @@ public class Messages {
                     for (RegionFlagEntry.FlagValue val : permValues) {
                         String value = val.getValue();
                         Component formattedValue;
-                        if ("true".equalsIgnoreCase(value) || "*".equals(value)) {
+                        if (("true".equalsIgnoreCase(value) || "*".equals(value)) && !val.isInverted()) {
                             formattedValue = mm.deserialize(messages.get("region.info.members.values.allowed"),
                                     parsed("value", value));
-                        } else if ("false".equalsIgnoreCase(value) || value.startsWith("!")) {
+                        } else if ("false".equalsIgnoreCase(value) || val.isInverted()) {
                             formattedValue = mm.deserialize(messages.get("region.info.members.values.denied"),
-                                    parsed("value", value));
+                                    parsed("value", "!" + value));
                         } else {
                             formattedValue = mm.deserialize(messages.get("region.info.members.values.allowed"),
                                     parsed("value", value));

@@ -41,7 +41,8 @@ public class Region {
     public Region(@NotNull String name, @NotNull BlockLocation min, @NotNull BlockLocation max, @NotNull World world,
                   Map<String, List<RegionFlagEntry>> members, @NotNull RegionKey key, @Nullable RegionKey parent,
                   int priority) {
-        this.name = name;
+        // noinspection ConstantConditions
+        this.name = name == null ? key.toString() : name;
         this.min = min;
         this.max = max;
         this.world = world;
@@ -229,11 +230,13 @@ public class Region {
         List<RegionFlagEntry> entries = this.members.computeIfAbsent(who, k -> new ArrayList<>());
         for (RegionFlagEntry entry : entries) {
             if (entry.getFlagValue().equalsIgnoreCase(permission)) {
-                entry.setValue(value.replaceFirst("!", ""), value.startsWith("!"));
+                boolean inverted = value.startsWith("!");
+                entry.setValue(value.replaceFirst("!", ""), inverted);
                 regionManager.saveRegion(key, this);
                 return;
             }
         }
+        Zones.getInstance().getDebugLogger().log("Entry does not exist, adding", permission);
         entries.add(new RegionFlagEntry(permission));
         regionManager.saveRegion(key, this);
     }

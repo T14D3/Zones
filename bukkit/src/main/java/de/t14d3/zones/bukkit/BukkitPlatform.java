@@ -136,6 +136,7 @@ public class BukkitPlatform implements ZonesPlatform {
     @Override
     public void spawnParticle(int type, BlockLocation particleLocation, Player player) {
         org.bukkit.entity.Player bukkitPlayer = plugin.getServer().getPlayer(player.getUUID());
+        if (bukkitPlayer == null) return;
         org.bukkit.Location bukkitLocation = particleLocation.toLocation(Bukkit.getWorld(player.getWorld().getUID()));
         ParticleBuilder particleBuilder = new ParticleBuilder(type == 1 ? primary : secondary);
         particleBuilder.location(bukkitLocation);
@@ -148,31 +149,39 @@ public class BukkitPlatform implements ZonesPlatform {
 
     @Override
     public void showBeacon(de.t14d3.zones.objects.Player player, de.t14d3.zones.objects.BlockLocation location, de.t14d3.zones.objects.World world, NamedTextColor color) {
+        if (location == null) return;
         showBeacon(((BukkitPlatform) plugin.getPlatform()).getNativePlayer(player),
                 location.toLocation(plugin.getServer().getWorld(world.getUID())), color);
     }
 
     public void showBeacon(org.bukkit.entity.Player player, Location location, NamedTextColor color) {
-        for (BeaconUtils.BlockChange change : BeaconUtils.createList(BlockLocation.of(location), color)) {
-            plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            for (BeaconUtils.BlockChange change : BeaconUtils.createList(BlockLocation.of(location), color)) {
                 BlockData data = Bukkit.createBlockData(Material.valueOf(change.getBlockData()));
-                player.sendBlockChange(location, data);
-            });
-        }
+                Location loc = new Location(player.getWorld(), change.getX(), change.getY(), change.getZ());
+                if (!loc.getBlock().getType().isOccluding()) {
+                    continue;
+                }
+                player.sendBlockChange(loc, data);
+            }
+        });
     }
 
     @Override
     public void removeBeacon(de.t14d3.zones.objects.Player player, de.t14d3.zones.objects.World world, de.t14d3.zones.objects.BlockLocation location) {
+        if (location == null) return;
         removeBeacon(((BukkitPlatform) plugin.getPlatform()).getNativePlayer(player),
                 location.toLocation(plugin.getServer().getWorld(world.getUID())));
     }
 
     public void removeBeacon(org.bukkit.entity.Player player, Location location) {
-        for (BeaconUtils.BlockChange change : BeaconUtils.resetList(BlockLocation.of(location))) {
-            plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
-                BlockData data = location.getBlock().getBlockData();
-                player.sendBlockChange(location, data);
-            });
-        }
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            for (BeaconUtils.BlockChange change : BeaconUtils.resetList(BlockLocation.of(location))) {
+                Location loc = new Location(player.getWorld(), change.getX(), change.getY(), change.getZ());
+                BlockData data = loc.getBlock().getBlockData();
+                plugin.getDebugLogger().log(loc, data);
+                player.sendBlockChange(loc, data);
+            }
+        });
     }
 }

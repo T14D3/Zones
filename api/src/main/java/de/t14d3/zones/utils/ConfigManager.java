@@ -3,6 +3,7 @@ package de.t14d3.zones.utils;
 import de.t14d3.zones.Zones;
 import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.serialize.SerializationException;
+import org.spongepowered.configurate.yaml.NodeStyle;
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
 import java.io.File;
@@ -42,6 +43,7 @@ public class ConfigManager {
 
         this.loader = YamlConfigurationLoader.builder()
                 .path(configFile.toPath())
+                .nodeStyle(NodeStyle.BLOCK)
                 .build();
         loadConfig();
     }

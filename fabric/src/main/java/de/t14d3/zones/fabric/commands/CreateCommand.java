@@ -35,7 +35,7 @@ public class CreateCommand {
         if (context.getSource().getPlayer() != null) {
             Player player = platform.getPlayer(context.getSource().getPlayer().getUUID());
             if (player.getSelection() == null) {
-                player.setSelection(new Box(platform.getWorld(context.getSource().getLevel())));
+                player.setSelection(new Box(null, null, platform.getWorld(context.getSource().getLevel()), false));
                 player.setSelectionCreating(true);
                 player.sendMessage(messages.getCmp("commands.create.click-corners"));
                 return 1;

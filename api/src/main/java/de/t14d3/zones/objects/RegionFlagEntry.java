@@ -26,14 +26,8 @@ public class RegionFlagEntry {
     }
 
     public void setValue(String value, boolean inverted) {
-        values.forEach(val -> {
-            if (val.value.equalsIgnoreCase(value)) {
-                if (val.inverted != inverted) {
-                    values.remove(val);
-                    values.add(new FlagValue(value, inverted));
-                }
-            }
-        });
+        values.removeIf(val -> val.value.equalsIgnoreCase(value));
+        values.add(new FlagValue(value, inverted));
     }
 
     public void removeValue(String value) {
@@ -83,6 +77,14 @@ public class RegionFlagEntry {
 
         public boolean isInverted() {
             return inverted;
+        }
+
+        @Override
+        public String toString() {
+            return "FlagValue{" +
+                    "value='" + value + '\'' +
+                    ", inverted=" + inverted +
+                    '}';
         }
     }
 }

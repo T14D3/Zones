@@ -13,6 +13,7 @@ import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.StringTooltip;
 import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import dev.jorel.commandapi.arguments.StringArgument;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.entity.Player;
 
@@ -65,6 +66,11 @@ public class SelectCommand {
                 if (sender instanceof Player player) {
                     Region region;
                     de.t14d3.zones.objects.Player zplayer = PlayerRepository.get(player.getUniqueId());
+                    if (zplayer.getSelection() != null) {
+                        zplayer.sendMessage(Component.text(
+                                zplayer.getSelection().getMin().toString() + " + " + zplayer.getSelection().getMax()
+                                        .toString()));
+                    }
                     if (args.get("key") == null) {
                         region = regionManager.getEffectiveRegionAt(BlockLocation.of(player.getLocation()),
                                 World.of(player.getWorld()));

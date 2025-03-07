@@ -8,12 +8,14 @@ import de.t14d3.zones.objects.Player;
 import de.t14d3.zones.objects.PlayerRepository;
 
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 public class ParticleHandler {
     private final Zones zones;
     private final ZonesPlatform platform;
     private final double range;
+    private ScheduledFuture<?> particleScheduler;
 
     public ParticleHandler(Zones zones) {
         this.zones = zones;
@@ -76,6 +78,8 @@ public class ParticleHandler {
             for (Player player : PlayerRepository.getPlayers()) {
                 Box selection = player.getSelection();
                 if (selection == null) {
+                    continue;
+                } else if (selection.getMin() == null || selection.getMax() == null) {
                     continue;
                 }
                 spawnParticleOutline(

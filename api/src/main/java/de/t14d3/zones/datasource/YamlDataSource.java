@@ -93,7 +93,7 @@ public class YamlDataSource extends AbstractDataSource {
             for (Object permObj : section.node(who).childrenMap().keySet()) {
                 String perm = (String) permObj;
                 List<RegionFlagEntry.FlagValue> values = new ArrayList<>();
-                for (String value : section.node(who, perm).getString().split(" ")) {
+                for (String value : section.node(who, perm).getString().trim().split(" ")) {
                     values.add(new RegionFlagEntry.FlagValue(value.toLowerCase().replaceFirst("!", ""),
                             value.startsWith("!")));
                 }
@@ -136,7 +136,7 @@ public class YamlDataSource extends AbstractDataSource {
                         }
                         perm.append(val);
                     }
-                    regionNode.node("members", who, flag.getFlag().name()).set(perm.toString());
+                    regionNode.node("members", who, flag.getFlagValue()).set(perm.toString().trim());
                 }
             }
         } catch (Exception e) {

@@ -72,8 +72,10 @@ public class PlayerEventListener implements Listener {
             }
             event.setCancelled(true);
 
-            Location min = zonesPlayer.getSelection().getMin().toLocation(player.getWorld());
-            Location max = zonesPlayer.getSelection().getMax().toLocation(player.getWorld());
+            Location min = zonesPlayer.getSelection().getMin() == null ? null : zonesPlayer.getSelection().getMin()
+                    .toLocation(player.getWorld());
+            Location max = zonesPlayer.getSelection().getMax() == null ? null : zonesPlayer.getSelection().getMax()
+                    .toLocation(player.getWorld());
 
             if (event.getAction() == Action.LEFT_CLICK_BLOCK) {
                 platform.removeBeacon(player, min);
@@ -94,13 +96,17 @@ public class PlayerEventListener implements Listener {
                         , parsed("z", String.valueOf(location.getBlockZ()))
                 ));
             }
-            if (min != null && max != null) {
+            if (min != null || max != null) {
                 Utils.Modes mode = Utils.Modes.getPlayerMode(player);
                 if (mode == Utils.Modes.CUBOID_3D) {
                     zonesPlayer.setSelection(new Box(min, max, player.getWorld(), false));
                 } else {
-                    min.setY(-63);
-                    max.setY(319);
+                    if (min != null) {
+                        min.setY(-63);
+                    }
+                    if (max != null) {
+                        max.setY(319);
+                    }
                     zonesPlayer.setSelection(new Box(min, max, player.getWorld(), false));
                 }
 
