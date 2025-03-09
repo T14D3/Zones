@@ -22,14 +22,10 @@ public class FindBossbar {
 
     public FindBossbar(Zones zones) {
         this.zones = zones;
-        BossBar.Color color = zones.getConfig().get("visuals.bossbar.color", BossBar.Color.class);
-        this.color = color == null ? BossBar.Color.GREEN : color;
-        BossBar.Overlay overlay = zones.getConfig().get("visuals.bossbar.style", BossBar.Overlay.class);
-        this.overlay = overlay == null ? BossBar.Overlay.PROGRESS : overlay;
-        NamedTextColor textColor = zones.getConfig().get("visuals.bossbar.text-color", NamedTextColor.class);
-        this.textColor = textColor == null ? NamedTextColor.WHITE : textColor;
-        float progress = zones.getConfig().getFloat("visuals.bossbar.progress", 1.0f);
-        this.progress = (progress < 0.0f || progress > 1.0f) ? 1.0f : progress;
+        this.color = BossBar.Color.valueOf(zones.getConfig().getString("visuals.bossbar.color", "GREEN"));
+        this.overlay = BossBar.Overlay.valueOf(zones.getConfig().getString("visuals.bossbar.style", "PROGRESS"));
+        this.textColor = NamedTextColor.NAMES.value(zones.getConfig().getString("visuals.bossbar.text-color", "WHITE"));
+        this.progress = zones.getConfig().getFloat("visuals.bossbar.progress", 1.0f);
 
         Executors.newSingleThreadScheduledExecutor()
                 .scheduleAtFixedRate(new FindBossbarRunnable(), 0, 1, java.util.concurrent.TimeUnit.SECONDS);

@@ -20,7 +20,7 @@ public class ParticleHandler {
     public ParticleHandler(Zones zones) {
         this.zones = zones;
         this.platform = zones.getPlatform();
-        this.range = zones.getConfig().getDouble("selection-particles.range", 15);
+        this.range = zones.getConfig().getInt("selection-particles.range", 15);
     }
 
     void spawnParticleOutline(Player player, BlockLocation min, BlockLocation max) {

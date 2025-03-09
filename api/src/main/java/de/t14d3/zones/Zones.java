@@ -44,14 +44,14 @@ public class Zones {
         Types types = platform.getTypes();
         types.populateTypes();
 
+        new ConfigUpdater(this);
+
         this.configManager = new ConfigManager(this, new File(platform.getDataFolder(), "config.yml"));
 
         boolean debug = configManager.getBoolean("debug", false) || Objects.equals(System.getenv("ZONES_DEBUG"),
                 "true");
 
         this.debugLogger = new DebugLoggerManager(this, debug);
-
-        new ConfigUpdater(this);
         this.cacheUtils = new CacheUtils(this);
         Flags flags = new Flags();
 
@@ -77,11 +77,10 @@ public class Zones {
 
         this.permissionManager = platform.getPermissionManager();
         this.regionManager = new RegionManager(this, permissionManager);
-        var threadConfig = configManager.getConfig().node("advanced", "threadpool");
         this.executor = new ThreadPoolExecutor(
                 0,
-                threadConfig.node("max-size").getInt(Runtime.getRuntime().availableProcessors() * 2),
-                threadConfig.node("keepalive").getLong(60L),
+                configManager.getInt("advanced.thread-pool.max-size", Runtime.getRuntime().availableProcessors() * 2),
+                configManager.getInt("advanced.thread-pool.keepalive", 60),
                 TimeUnit.SECONDS,
                 new SynchronousQueue<>()
         );

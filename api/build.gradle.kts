@@ -4,6 +4,10 @@ plugins {
 
 repositories {
     mavenCentral()
+    maven {
+        name = "JitPack"
+        url = uri("https://jitpack.io")
+    }
 }
 
 dependencies {
@@ -13,5 +17,5 @@ dependencies {
     compileOnly("com.h2database:h2:2.3.232")
     compileOnly("org.postgresql:postgresql:42.7.2")
 
-    implementation("org.spongepowered:configurate-yaml:4.1.2")
+    implementation("com.github.Carleslc.Simple-YAML:Simple-Yaml:1.8.4")
 }

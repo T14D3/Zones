@@ -1,11 +1,4 @@
-config-version: 2 # Don't change if you don't want the plugin to screw up your config
-
-selection-particles:
-  enabled: true
-  # Available particles: https://jd.papermc.io/paper/1.21.4/org/bukkit/Particle.html
-  primary: WAX_OFF
-  secondary: WAX_ON
-  range: 15 # Default: 15
+config-version: 3 # Don't change if you don't want the plugin to screw up your config
 
 visuals:
   bossbar:
@@ -34,6 +27,21 @@ visuals:
     # Defaults to 1.0
     progress: 1.0
     text-color: WHITE
+
+  particles:
+    # Whether to enable particle-based selection visualization
+    enabled: true
+    # Available particles: https://jd.papermc.io/paper/1.21.4/org/bukkit/Particle.html
+    # Defaults to WAX_OFF
+    # Defines the particle type used for the "walls" of the selection
+    primary: WAX_OFF
+    # Defines the particle type used for the corners of the selection
+    # Defaults to WAX_ON
+    secondary: WAX_ON
+    # Maximum distance from the player to spawn particles
+    # Defaults to 15
+    # Don't set this too high, can easily cause players to time out
+    range: 15
 
 zone-saving:
   # Valid values are SHUTDOWN, MODIFIED, PERIODIC

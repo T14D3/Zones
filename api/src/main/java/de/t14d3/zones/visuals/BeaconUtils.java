@@ -1,6 +1,5 @@
 package de.t14d3.zones.visuals;
 
-import de.t14d3.zones.Zones;
 import de.t14d3.zones.objects.BlockLocation;
 import net.kyori.adventure.text.format.NamedTextColor;
 
@@ -8,13 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BeaconUtils {
-
-    private final Zones zones;
-
-    public BeaconUtils(Zones zones) {
-        this.zones = zones;
-    }
-
     public static List<BlockChange> resetList(BlockLocation location) {
         List<BlockChange> changes = new ArrayList<>();
 
