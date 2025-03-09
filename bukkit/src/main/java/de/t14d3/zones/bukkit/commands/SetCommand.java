@@ -5,9 +5,9 @@ import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.bukkit.ZonesBukkit;
 import de.t14d3.zones.objects.Flag;
+import de.t14d3.zones.objects.PlayerRepository;
 import de.t14d3.zones.permissions.flags.Flags;
 import de.t14d3.zones.utils.Messages;
-import de.t14d3.zones.utils.Utils;
 import dev.jorel.commandapi.BukkitTooltip;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.StringTooltip;
@@ -28,7 +28,7 @@ public class SetCommand {
     private final MiniMessage mm = MiniMessage.miniMessage();
     private RegionManager regionManager;
     private Messages messages;
-    private final ZonesBukkit plugin;
+    private ZonesBukkit plugin;
 
     public SetCommand(ZonesBukkit plugin) {
         this.plugin = plugin;
@@ -81,11 +81,14 @@ public class SetCommand {
                                     region.getGroupNames().forEach(group -> {
                                         List<String> groupMembers = new ArrayList<>();
                                         region.getGroupMembers(group).forEach(
-                                                val -> groupMembers.add(Utils.getPlayerName(UUID.fromString(val))));
+                                                val -> groupMembers.add(
+                                                        plugin.getPlatform().getPlayer(UUID.fromString(val))
+                                                                .getName()));
                                         targets.put(group, Component.text(groupMembers.toString()));
                                     });
-                                    Utils.playerNames.forEach(
-                                            (uuid, name) -> targets.put(name, Component.text(uuid.toString())));
+                                    PlayerRepository.getPlayers().forEach(player ->
+                                            targets.put(player.getName(),
+                                                    Component.text(player.getUniqueId().toString())));
                                     targets.put("+universal", (mm.deserialize(messages.get("flags.universal"))));
                                     StringTooltip[] suggestions = new StringTooltip[targets.size()];
                                     int i = 0;

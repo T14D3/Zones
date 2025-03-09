@@ -14,6 +14,10 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.Container;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Powerable;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -58,7 +62,7 @@ public class PlayerEventListener implements Listener {
     @EventHandler
     private void onPlayerInteract(PlayerInteractEvent event) {
         Player player = event.getPlayer();
-        de.t14d3.zones.objects.Player zonesPlayer = PlayerRepository.get(player.getUniqueId());
+        de.t14d3.zones.objects.Player zplayer = PlayerRepository.get(player.getUniqueId());
         if (event.getClickedBlock() == null) {
             return; // No block clicked, exit early
         }
@@ -66,15 +70,15 @@ public class PlayerEventListener implements Listener {
         Location location = event.getClickedBlock().getLocation();
         UUID playerUUID = player.getUniqueId();
 
-        if (zonesPlayer.getSelection() != null && zonesPlayer.isSelectionCreating()) {
+        if (zplayer.getSelection() != null && zplayer.isSelectionCreating()) {
             if (event.getHand() == EquipmentSlot.OFF_HAND) {
                 return;
             }
             event.setCancelled(true);
 
-            Location min = zonesPlayer.getSelection().getMin() == null ? null : zonesPlayer.getSelection().getMin()
+            Location min = zplayer.getSelection().getMin() == null ? null : zplayer.getSelection().getMin()
                     .toLocation(player.getWorld());
-            Location max = zonesPlayer.getSelection().getMax() == null ? null : zonesPlayer.getSelection().getMax()
+            Location max = zplayer.getSelection().getMax() == null ? null : zplayer.getSelection().getMax()
                     .toLocation(player.getWorld());
 
             if (event.getAction() == Action.LEFT_CLICK_BLOCK) {
@@ -97,9 +101,9 @@ public class PlayerEventListener implements Listener {
                 ));
             }
             if (min != null || max != null) {
-                Utils.Modes mode = Utils.Modes.getPlayerMode(player);
-                if (mode == Utils.Modes.CUBOID_3D) {
-                    zonesPlayer.setSelection(new Box(min, max, player.getWorld(), false));
+                Utils.SelectionMode mode = Utils.SelectionMode.getPlayerMode(zplayer);
+                if (mode == Utils.SelectionMode.CUBOID_3D) {
+                    zplayer.setSelection(new Box(min, max, player.getWorld(), false));
                 } else {
                     if (min != null) {
                         min.setY(-63);
@@ -107,7 +111,7 @@ public class PlayerEventListener implements Listener {
                     if (max != null) {
                         max.setY(319);
                     }
-                    zonesPlayer.setSelection(new Box(min, max, player.getWorld(), false));
+                    zplayer.setSelection(new Box(min, max, player.getWorld(), false));
                 }
 
             }
@@ -119,13 +123,13 @@ public class PlayerEventListener implements Listener {
             return;
         }
         // Interactable blocks
-        if ((Utils.isContainer(event.getClickedBlock().getState(false)) || Utils.isPowerable(
+        if ((isContainer(event.getClickedBlock().getState(false)) || isPowerable(
                 event.getClickedBlock().getBlockData())) && event.getAction() == Action.RIGHT_CLICK_BLOCK) {
             requiredPermissions.add(Flags.INTERACT);
-            if (Utils.isContainer(event.getClickedBlock().getState(false))) {
+            if (isContainer(event.getClickedBlock().getState(false))) {
                 requiredPermissions.add(Flags.CONTAINER);
             }
-            if (Utils.isPowerable(event.getClickedBlock().getBlockData())) {
+            if (isPowerable(event.getClickedBlock().getBlockData())) {
                 requiredPermissions.add(Flags.REDSTONE);
             }
             if (event.getClickedBlock().getType() == Material.TNT) {
@@ -151,10 +155,10 @@ public class PlayerEventListener implements Listener {
         Location location = event.getBlockPlaced().getLocation();
         List<Flag> requiredPermissions = new ArrayList<>();
         requiredPermissions.add(Flags.PLACE);
-        if (Utils.isContainer(event.getBlockPlaced().getState(false))) {
+        if (isContainer(event.getBlockPlaced().getState(false))) {
             requiredPermissions.add(Flags.CONTAINER);
         }
-        if (Utils.isPowerable(event.getBlockPlaced().getBlockData())) {
+        if (isPowerable(event.getBlockPlaced().getBlockData())) {
             requiredPermissions.add(Flags.REDSTONE);
         }
         for (Flag action : requiredPermissions) {
@@ -177,10 +181,10 @@ public class PlayerEventListener implements Listener {
         Location location = event.getBlock().getLocation();
         List<Flag> requiredPermissions = new ArrayList<>();
         requiredPermissions.add(Flags.BREAK);
-        if (Utils.isContainer(event.getBlock().getState(false))) {
+        if (isContainer(event.getBlock().getState(false))) {
             requiredPermissions.add(Flags.CONTAINER);
         }
-        if (Utils.isPowerable(event.getBlock().getBlockData())) {
+        if (isPowerable(event.getBlock().getBlockData())) {
             requiredPermissions.add(Flags.REDSTONE);
         }
         for (Flag action : requiredPermissions) {
@@ -425,5 +429,13 @@ public class PlayerEventListener implements Listener {
 
         // Update last sent tick
         player.setMetadata(METADATA_KEY, new FixedMetadataValue(plugin, currentTick));
+    }
+
+    public static boolean isContainer(BlockState state) {
+        return state instanceof Container;
+    }
+
+    public static boolean isPowerable(BlockData data) {
+        return data instanceof Powerable;
     }
 }

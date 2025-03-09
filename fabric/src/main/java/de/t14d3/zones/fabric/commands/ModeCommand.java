@@ -20,11 +20,11 @@ public class ModeCommand {
     int execute(CommandContext<CommandSourceStack> context) {
         if (context.getSource().getPlayer() != null) {
             Player player = mod.getPlatform().getPlayer(context.getSource().getPlayer().getUUID());
-            Utils.Modes mode;
+            Utils.SelectionMode mode;
             try {
-                mode = Utils.Modes.valueOf(context.getArgument("mode", String.class));
+                mode = Utils.SelectionMode.valueOf(context.getArgument("mode", String.class));
             } catch (Exception e) {
-                mode = Utils.Modes.CUBOID_3D;
+                mode = Utils.SelectionMode.CUBOID_3D;
             }
             player.setMetadata("mode", mode.name());
             context.getSource().sendMessage(mm.deserialize(mod.getMessages().get("commands.mode.set"),

@@ -59,7 +59,7 @@ public class CreateCommand {
                         RegionKey key = RegionKey.generate();
                         regionManager.createNewRegion(key.toString(), selection.getMin(),
                                 selection.getMax(), selection.getWorld(), members, key, null, 0);
-                        Utils.Modes mode = Utils.Modes.getPlayerMode(player);
+                        Utils.SelectionMode mode = Utils.SelectionMode.getPlayerMode(zplayer);
 
                         plugin.getPlatform().removeBeacon(zplayer, selection.getWorld(), selection.getMin());
                         plugin.getPlatform().removeBeacon(zplayer, selection.getWorld(), selection.getMax());

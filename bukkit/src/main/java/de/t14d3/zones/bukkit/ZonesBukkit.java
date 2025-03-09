@@ -77,7 +77,7 @@ public final class ZonesBukkit extends JavaPlugin {
         BlockEventListener blockEventListener = new BlockEventListener(zones);
 
         // Register mode permissions
-        for (Utils.Modes mode : Utils.Modes.values()) {
+        for (Utils.SelectionMode mode : Utils.SelectionMode.values()) {
             getServer().getPluginManager().addPermission(
                     new Permission("zones.mode." + mode.getName().toLowerCase() + ".main", PermissionDefault.OP));
             getServer().getPluginManager().addPermission(
@@ -90,8 +90,6 @@ public final class ZonesBukkit extends JavaPlugin {
                             permission.getLevel() >= 2 ? PermissionDefault.OP : PermissionDefault.TRUE)
             );
         });
-
-        Utils.populatePlayers();
 
 
         // Register saving task
