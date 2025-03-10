@@ -3,8 +3,6 @@ plugins {
     id("xyz.jpenilla.run-paper") version "2.3.1"
 }
 
-group = "de.t14d3"
-version = "0.2.1"
 
 repositories {
     mavenCentral()
@@ -37,7 +35,7 @@ dependencies {
 }
 
 tasks.processResources {
-    val props = mapOf("version" to version)
+    val props = mapOf("version" to rootProject.version)
     inputs.properties(props)
     filteringCharset = "UTF-8"
     filesMatching("plugin.yml") {

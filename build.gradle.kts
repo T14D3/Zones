@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "de.t14d3"
-version = "0.2.1"
+version = "0.2.2"
 
 repositories {
     mavenCentral()
@@ -82,11 +82,11 @@ tasks {
         archiveClassifier.set("")
         relocate("dev.jorel.commandapi", "de.t14d3.zones.dependencies.commandapi")
 
-        relocate("org.spongepowered.configurate", "de.t14d3.zones.dependencies.configurate")
+        relocate("org.simpleyaml", "de.t14d3.zones.dependencies.simpleyaml")
         relocate("org.yaml.snakeyaml", "de.t14d3.zones.dependencies.snakeyaml")
 
-
         relocate("me.lucko.fabric.api.permissions", "de.t14d3.zones.dependencies.fabricpermissions")
+
 
         dependencies {
             exclude(dependency("org.checkerframework:checker-qual"))
