@@ -16,9 +16,11 @@ public class Messages {
     private final Zones zones;
     private final Map<String, String> messages = new HashMap<>();
     private final static MiniMessage mm = MiniMessage.miniMessage();
+    public static Messages INSTANCE;
 
     public Messages(Properties messagesConfig, Zones zones) {
         this.zones = zones;
+        INSTANCE = this;
         messagesConfig.keySet().forEach(
                 key ->
                         messages.put(key.toString(), messagesConfig.getProperty(key.toString()))

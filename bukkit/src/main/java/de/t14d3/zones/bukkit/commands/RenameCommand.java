@@ -5,17 +5,9 @@ import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.bukkit.ZonesBukkit;
 import de.t14d3.zones.utils.Messages;
-import dev.jorel.commandapi.BukkitTooltip;
 import dev.jorel.commandapi.CommandAPICommand;
-import dev.jorel.commandapi.StringTooltip;
-import dev.jorel.commandapi.arguments.ArgumentSuggestions;
-import dev.jorel.commandapi.arguments.StringArgument;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.entity.Player;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
 
@@ -33,32 +25,7 @@ public class RenameCommand {
 
     public CommandAPICommand rename = new CommandAPICommand("rename")
             .withPermission("zones.rename")
-            .withArguments(
-                    new StringArgument("key")
-                            .replaceSuggestions(ArgumentSuggestions.stringsWithTooltipsAsync(info -> {
-                                return CompletableFuture.supplyAsync(() -> {
-                                    List<Region> regions = new ArrayList<>();
-                                    if (info.sender().hasPermission("zones.rename.other")) {
-                                        regions.addAll(regionManager.regions().values());
-                                    } else if (info.sender() instanceof Player player) {
-                                        for (Region region : regionManager.regions().values()) {
-                                            if (region.isAdmin(player.getUniqueId())) {
-                                                regions.add(region);
-                                            }
-                                        }
-                                    }
-                                    StringTooltip[] suggestions = new StringTooltip[regions.size()];
-                                    int i = 0;
-                                    for (Region region : regions) {
-                                        suggestions[i++] = StringTooltip.ofMessage(region.getKey().toString(),
-                                                BukkitTooltip.messageFromAdventureComponent(
-                                                        Messages.regionInfo(region, false)));
-                                    }
-                                    return suggestions;
-                                });
-                            })),
-                    new StringArgument("New Name")
-            )
+            .withArguments(CustomArgument.region("key", "zones.rename.other", CustomArgument.MemberType.ADMIN))
             .executes((sender, args) -> {
                 Region region = regionManager.regions().get(RegionKey.fromString(args.getRaw("key")).getValue());
                 if (region == null) {

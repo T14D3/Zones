@@ -40,29 +40,7 @@ public class SetCommand {
     public CommandAPICommand set = new CommandAPICommand("set")
             .withPermission("zones.set")
             .withArguments(
-                    new StringArgument("key")
-                            .replaceSuggestions(ArgumentSuggestions.stringsWithTooltipsAsync(info -> {
-                                return CompletableFuture.supplyAsync(() -> {
-                                    List<Region> regions = new ArrayList<>();
-                                    if (info.sender().hasPermission("zones.set.other")) {
-                                        regions.addAll(regionManager.regions().values());
-                                    } else if (info.sender() instanceof Player player) {
-                                        for (Region region : regionManager.regions().values()) {
-                                            if (region.isMember(player.getUniqueId())) {
-                                                regions.add(region);
-                                            }
-                                        }
-                                    }
-                                    StringTooltip[] suggestions = new StringTooltip[regions.size()];
-                                    int i = 0;
-                                    for (Region region : regions) {
-                                        suggestions[i++] = StringTooltip.ofMessage(region.getKey().toString(),
-                                                BukkitTooltip.messageFromAdventureComponent(
-                                                        Messages.regionInfo(region, false)));
-                                    }
-                                    return suggestions;
-                                });
-                            })),
+                    CustomArgument.region("key", "zones.set.other", CustomArgument.MemberType.OWNER),
                     new StringArgument("target")
                             .replaceSuggestions(ArgumentSuggestions.stringsWithTooltipsAsync(info -> {
                                 return CompletableFuture.supplyAsync(() -> {

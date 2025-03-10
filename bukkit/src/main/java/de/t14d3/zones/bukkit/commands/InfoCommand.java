@@ -7,16 +7,10 @@ import de.t14d3.zones.bukkit.ZonesBukkit;
 import de.t14d3.zones.objects.BlockLocation;
 import de.t14d3.zones.objects.World;
 import de.t14d3.zones.utils.Messages;
-import dev.jorel.commandapi.BukkitTooltip;
 import dev.jorel.commandapi.CommandAPICommand;
-import dev.jorel.commandapi.StringTooltip;
-import dev.jorel.commandapi.arguments.ArgumentSuggestions;
-import dev.jorel.commandapi.arguments.StringArgument;
 import org.bukkit.entity.Player;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 public class InfoCommand {
     private RegionManager regionManager;
@@ -28,29 +22,7 @@ public class InfoCommand {
     }
 
     public CommandAPICommand info = new CommandAPICommand("info")
-            .withOptionalArguments(new StringArgument("key")
-                    .replaceSuggestions(ArgumentSuggestions.stringsWithTooltipsAsync(info -> {
-                        return CompletableFuture.supplyAsync(() -> {
-                            List<Region> regions = new ArrayList<>();
-                            if (info.sender().hasPermission("zones.info.other")) {
-                                regions.addAll(regionManager.regions().values());
-                            } else if (info.sender() instanceof Player player) {
-                                for (Region region : regionManager.regions().values()) {
-                                    if (region.isMember(player.getUniqueId())) {
-                                        regions.add(region);
-                                    }
-                                }
-                            }
-                            StringTooltip[] suggestions = new StringTooltip[regions.size()];
-                            int i = 0;
-                            for (Region region : regions) {
-                                suggestions[i++] = StringTooltip.ofMessage(region.getKey().toString(),
-                                        BukkitTooltip.messageFromAdventureComponent(
-                                                Messages.regionInfo(region, false)));
-                            }
-                            return suggestions;
-                        });
-                    })))
+            .withOptionalArguments(CustomArgument.region("key", "zones.info.other", CustomArgument.MemberType.MEMBER))
             .executes((sender, args) -> {
                 List<Region> regions;
                 Player player = null;

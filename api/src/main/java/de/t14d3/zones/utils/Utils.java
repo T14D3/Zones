@@ -37,7 +37,7 @@ public class Utils {
             SelectionMode mode;
             try {
                 mode = SelectionMode.valueOf(player.getMetadata("mode").toUpperCase());
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException | NullPointerException e) {
                 mode = SelectionMode.CUBOID_2D;
             }
             return mode;

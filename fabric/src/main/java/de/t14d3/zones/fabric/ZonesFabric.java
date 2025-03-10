@@ -87,8 +87,8 @@ public class ZonesFabric implements DedicatedServerModInitializer {
         regionManager.loadRegions();
         zones.getLogger().info("Mod enabled, loaded {} regions.", zones.getRegionManager().regions().size());
 
-        String primaryType = zones.getConfig().getString("selection-particles.primary", "WAX_OFF").toLowerCase();
-        String secondaryType = zones.getConfig().getString("selection-particles.secondary", "WAX_ON").toLowerCase();
+        String primaryType = zones.getConfig().getString("visuals.particles.primary", "WAX_OFF").toLowerCase();
+        String secondaryType = zones.getConfig().getString("visuals.particles.secondary", "WAX_ON").toLowerCase();
         Registry<ParticleType<?>> registry = server.registryAccess().lookupOrThrow(Registries.PARTICLE_TYPE);
         ((FabricPlatform) platform).primary = (SimpleParticleType) registry.get(
                 ResourceLocation.withDefaultNamespace(primaryType)).get().value();

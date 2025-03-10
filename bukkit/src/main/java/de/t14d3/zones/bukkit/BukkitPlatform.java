@@ -32,8 +32,8 @@ public class BukkitPlatform implements ZonesPlatform {
 
     public BukkitPlatform(ZonesBukkit plugin) {
         this.plugin = plugin;
-        this.primary = Particle.valueOf(plugin.getConfig().getString("selection-particles.primary", "WAX_OFF"));
-        this.secondary = Particle.valueOf(plugin.getConfig().getString("selection-particles.secondary", "WAX_ON"));
+        this.primary = Particle.valueOf(plugin.getConfig().getString("visuals.particles.primary", "WAX_OFF"));
+        this.secondary = Particle.valueOf(plugin.getConfig().getString("visuals.particles.secondary", "WAX_ON"));
     }
 
     @Override

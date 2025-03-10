@@ -37,30 +37,7 @@ public class ExpandCommand {
 
     public CommandAPICommand expand = new CommandAPICommand("expand")
             .withPermission("zones.expand")
-            .withArguments(
-                    new StringArgument("key")
-                            .replaceSuggestions(ArgumentSuggestions.stringsWithTooltipsAsync(info -> {
-                                return CompletableFuture.supplyAsync(() -> {
-                                    List<Region> regions = new ArrayList<>();
-                                    if (info.sender().hasPermission("zones.expand.other")) {
-                                        regions.addAll(regionManager.regions().values());
-                                    } else if (info.sender() instanceof Player player) {
-                                        for (Region region : regionManager.regions().values()) {
-                                            if (region.isMember(player.getUniqueId())) {
-                                                regions.add(region);
-                                            }
-                                        }
-                                    }
-                                    StringTooltip[] suggestions = new StringTooltip[regions.size()];
-                                    int i = 0;
-                                    for (Region region : regions) {
-                                        suggestions[i++] = StringTooltip.ofMessage(region.getKey().toString(),
-                                                BukkitTooltip.messageFromAdventureComponent(
-                                                        Messages.regionInfo(region, false)));
-                                    }
-                                    return suggestions;
-                                });
-                            })),
+            .withArguments(CustomArgument.region("key", "zones.expand.other", CustomArgument.MemberType.ADMIN),
                     new IntegerArgument("amount"),
                     new StringArgument("direction")
                             .setOptional(true)

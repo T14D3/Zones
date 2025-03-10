@@ -20,7 +20,8 @@ public class ParticleHandler {
     public ParticleHandler(Zones zones) {
         this.zones = zones;
         this.platform = zones.getPlatform();
-        this.range = zones.getConfig().getInt("selection-particles.range", 15);
+        this.range = zones.getConfig().getInt("visuals.particles.range", 15);
+        particleScheduler();
     }
 
     void spawnParticleOutline(Player player, BlockLocation min, BlockLocation max) {
@@ -71,13 +72,16 @@ public class ParticleHandler {
     }
 
     public void particleScheduler() {
-        if (!zones.getConfig().getBoolean("selection-particles.enabled", false)) {
+        if (!zones.getConfig().getBoolean("visuals.particles.enabled", false)) {
+            zones.getLogger().error("Particle scheduler was called, but particles are disabled!");
             return;
         }
         Runnable runnable = () -> {
             for (Player player : PlayerRepository.getPlayers()) {
+                Zones.getInstance().getDebugLogger().log("Checking player", player);
                 Box selection = player.getSelection();
                 if (selection == null) {
+                    Zones.getInstance().getDebugLogger().log("Checked player", player, "was null");
                     continue;
                 } else if (selection.getMin() == null || selection.getMax() == null) {
                     continue;
