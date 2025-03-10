@@ -179,7 +179,6 @@ public class BukkitPlatform implements ZonesPlatform {
             for (BeaconUtils.BlockChange change : BeaconUtils.resetList(BlockLocation.of(location))) {
                 Location loc = new Location(player.getWorld(), change.getX(), change.getY(), change.getZ());
                 BlockData data = loc.getBlock().getBlockData();
-                plugin.getDebugLogger().log(loc, data);
                 player.sendBlockChange(loc, data);
             }
         });

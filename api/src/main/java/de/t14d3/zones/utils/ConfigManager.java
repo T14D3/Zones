@@ -14,6 +14,11 @@ public class ConfigManager {
     public ConfigManager(Zones zones, File file) {
         this.zones = zones;
         this.configFile = new YamlFile(file);
+        try {
+            configFile.loadWithComments();
+        } catch (IOException e) {
+            zones.getLogger().error("Failed to load config: {}", e.getMessage());
+        }
 
         loadConfig();
     }

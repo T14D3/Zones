@@ -1,6 +1,9 @@
 name: Zones
 version: '${version}'
 main: de.t14d3.zones.bukkit.ZonesBukkit
+author: T14D3
+website: https://github.com/t14d3/zones
+description: Modern region protection plugin/mod
 api-version: '1.21'
 softdepend: [ WorldEdit, FastAsyncWorldEdit, PlaceholderAPI, WorldGuard ]
 libraries:

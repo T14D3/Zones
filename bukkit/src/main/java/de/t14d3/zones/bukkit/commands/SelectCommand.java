@@ -18,7 +18,7 @@ public class SelectCommand {
     private final MiniMessage mm = MiniMessage.miniMessage();
     private RegionManager regionManager;
     private Messages messages;
-    private final ZonesBukkit plugin;
+    private ZonesBukkit plugin;
 
     public SelectCommand(ZonesBukkit plugin) {
         this.plugin = plugin;
@@ -33,6 +33,13 @@ public class SelectCommand {
                 if (sender instanceof Player player) {
                     Region region;
                     de.t14d3.zones.objects.Player zplayer = PlayerRepository.get(player.getUniqueId());
+                    if (zplayer.isSelectionCreating()) {
+                        plugin.getPlatform().removeBeacon(zplayer, zplayer.getSelection().getWorld(),
+                                zplayer.getSelection().getMin());
+                        plugin.getPlatform().removeBeacon(zplayer, zplayer.getSelection().getWorld(),
+                                zplayer.getSelection().getMax());
+                        zplayer.setSelectionCreating(false);
+                    }
                     if (args.get("key") == null) {
                         region = regionManager.getEffectiveRegionAt(BlockLocation.of(player.getLocation()),
                                 World.of(player.getWorld()));

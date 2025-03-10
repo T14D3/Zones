@@ -29,6 +29,13 @@ public class SelectCommand {
         }
         ServerPlayer player = context.getSource().getPlayer();
         de.t14d3.zones.objects.Player zplayer = PlayerRepository.get(player.getUUID());
+        if (zplayer.isSelectionCreating()) {
+            mod.getPlatform().removeBeacon(zplayer, zplayer.getSelection().getWorld(),
+                    zplayer.getSelection().getMin());
+            mod.getPlatform().removeBeacon(zplayer, zplayer.getSelection().getWorld(),
+                    zplayer.getSelection().getMax());
+            zplayer.setSelectionCreating(false);
+        }
         Region region = null;
         try {
             region = regionManager.regions()
