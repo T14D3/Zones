@@ -1,0 +1,100 @@
+prefix: ""
+
+messages:
+  default: "<red>Message <key> not found! Contact a Server Administrator"
+
+commands:
+  cancel:
+    success: "<green>Cancelled selection."
+  invalid: "<red>Invalid subcommand. Use /zone <...>"
+  invalid-player: "<red>Invalid player."
+  invalid-permission: "<red>Invalid permission."
+  no-permission: "<red>You don't have permission to execute this command!"
+  invalid-region: "<red>Invalid region."
+  only-player: "<red>This command can only be executed by a player."
+  create:
+    overlap: "<red>Error: Region overlaps existing region."
+    click-corners: "<yellow>Click two corners to select the region."
+    success: "<green>Region <gold>'<region>'<green> created successfully!"
+  delete:
+    success: "<green>Region <gold>'<region>'<green> deleted successfully!"
+  expand:
+    direction: "<gray>Direction to expand"
+    success: "<green>Region <gold>'<region>'<green> expanded successfully!"
+    fail: "<red>Error: Region <gold>'<region>'<green> could not be expanded."
+    invalid-usage: "<red>Invalid usage. Usage: /zone expand <region> <amount> [overlap]"
+  save: "<green>Saved <count> regions to file"
+  select:
+    selected: "<green>Selected region <gold>'<region>'<green>"
+    deselected: "<green>Deselected region."
+  perm:
+    allow: "<green>Allowed <permission> for <target> to <name> in region <region>"
+    deny: "<red>Denied <permission> for <target> to <name> in region <region>"
+    remove: "<green>Removed <permission> for <target> name <name> in region <region>"
+    global: "<green>Set global <permission> for <target> to <name> in region <region>"
+    clear: "<green>Cleared <permission> for <target> in region <region>"
+    invalid-flag-kind: "<red>Permission <permission> does not support this operation."
+    nothing-to-remove: "<red>Nothing to remove."
+  subcreate:
+    no-parent: "<red>Error: No parent region found."
+    outside-parent: "<red>Error: Selection is outside parent region."
+    success: "<green>Sub-region created successfully!"
+  load: "<green>Loaded <count> regions!"
+  rename:
+    provide-name: "<red>Provide a new name for the region!"
+    success: "<green>Region <gold>'<region>'<green> renamed to <gold>'<name>'<green>!"
+  import:
+    not-loaded: "<red>Error: Plugin <plugin> must be loaded for this command!"
+    no-plugin: "<red>Provide a plugin name to import regions from!"
+    success: "<green>Imported regions!"
+    worldguard-tooltip: "<gray>Imports regions from WorldGuard"
+  mode:
+    set: "<green>Mode set to <mode>"
+
+region:
+  none-found: "<red>No regions found!"
+  no-interact-permission: "<red>You are lacking the permission <aqua><actions> <red>for type <yellow><type> <red>in region(s) <gold><region>"
+  info:
+    name: "<gold><name>"
+    min: "<gray><min>"
+    max: "<gray><max>"
+    key: "<dark_gray>Region key: #<key>"
+    parent: "<gray>Parent region: <parent>"
+    details:
+      name: "<light_purple>Name: </light_purple><gold><name>"
+      parent: "<gray>Parent region: <parent>"
+      bounds: "<green>(</green><gray><min></gray> - <gray><max></gray><green>)</green>"
+      members: "<light_purple>Members: </light_purple>"
+    members:
+      name: "<aqua><name>"
+      permission: "<gold>  <permission><white>:"
+      values:
+        allowed: "<green><name>"
+        denied: "<red><name>"
+
+create:
+  primary: "<green>Set first location to <x> <y> <z>"
+  secondary: "<red>Set second location to <x> <y> <z>"
+
+flags:
+  universal: "<gray>Universal"
+  fallback: "<gray>Fallback description"
+  break: "<gray>Allows breaking blocks"
+  place: "<green>Allows placing blocks"
+  interact: "<gold>Allows interacting"
+  container: "<light_purple>Allows opening containers"
+  redstone: "<dark_red>Allows interacting with redstone"
+  entity: "<aqua>Allows interacting with entities"
+  ignite: "<yellow>Allows igniting tnt"
+  damage: "<red>Allows damaging entities"
+  role: "<gray>Defines a member role"
+  group: "<dark_purple>Add a group to the player"
+  spawn: "<gray>Controls the spawning of entities"
+  explosion: "<gray>Controls the explosion of entities"
+  create: "<gray>Controls the creation of blocks through world events"
+  destroy: "<gray>Controls the removal of blocks through world events"
+  transform: "<gray>Controls the transformation of blocks into other blocks"
+  spread: "<gray>Controls the spread of blocks through world events"
+  relocate: "<gray>Controls the ability for blocks to change their location"
+  physics: "<gray>Controls the physics of blocks"
+  hurt: "<gray>Controls the ability for entities to be hurt"

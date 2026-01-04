@@ -1,18 +1,24 @@
 plugins {
     id("maven-publish")
-    id("com.gradleup.shadow") version "9.0.0-beta8"
-    id("java-library")
-    id("fabric-loom") version "1.10-SNAPSHOT" apply false
+    alias(libs.plugins.shadow)
+    `java-library`
+    alias(libs.plugins.fabric.loom) apply false
 }
+
 
 group = "de.t14d3"
 version = "0.2.2"
 
 repositories {
+    mavenLocal()
     mavenCentral()
     maven {
         name = "sonatype"
         url = uri("https://oss.sonatype.org/content/groups/public/")
+    }
+    maven {
+        name = "t14d3-snapshots"
+        url = uri("https://maven.t14d3.de/snapshots")
     }
     maven {
         name = "papermc-repo"
@@ -28,10 +34,15 @@ repositories {
 allprojects {
     plugins.apply("java")
     repositories {
+        mavenLocal()
         mavenCentral()
         maven {
+            name = "t14d3-snapshots"
+            url = uri("https://maven.t14d3.de/snapshots")
+        }
+        maven {
             name = "papermc-repo"
-            url = uri("https://repo.papermc.io/repository/maven-public/")
+            url = uri("https://repo.papermc.io/repository/maven-public/")       
         }
         maven {
             name = "sonatype"
@@ -43,11 +54,11 @@ allprojects {
         }
     }
     dependencies {
-        compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
-        compileOnly("org.jetbrains:annotations:23.0.0")
+        compileOnly(rootProject.libs.paper.api)
+        compileOnly(rootProject.libs.annotations)
 
-        compileOnly("net.kyori:adventure-api:4.19.0")
-        compileOnly("net.kyori:adventure-text-minimessage:4.19.0")
+        compileOnly(rootProject.libs.adventure.api)
+        compileOnly(rootProject.libs.adventure.minimessage)
     }
 }
 
@@ -80,12 +91,11 @@ tasks.withType<JavaCompile>().configureEach {
 tasks {
     shadowJar {
         archiveClassifier.set("")
+        mergeServiceFiles()
         relocate("dev.jorel.commandapi", "de.t14d3.zones.dependencies.commandapi")
 
         relocate("org.simpleyaml", "de.t14d3.zones.dependencies.simpleyaml")
         relocate("org.yaml.snakeyaml", "de.t14d3.zones.dependencies.snakeyaml")
-
-        relocate("me.lucko.fabric.api.permissions", "de.t14d3.zones.dependencies.fabricpermissions")
 
 
         dependencies {

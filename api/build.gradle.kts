@@ -11,11 +11,13 @@ repositories {
 }
 
 dependencies {
-    compileOnly("org.apache.logging.log4j:log4j-core:2.24.3")
-    compileOnly("it.unimi.dsi:fastutil:8.5.8")
+    compileOnly(rootProject.libs.log4j.core)
+    compileOnly(rootProject.libs.fastutil)
 
-    compileOnly("com.h2database:h2:2.3.232")
-    compileOnly("org.postgresql:postgresql:42.7.2")
+    compileOnly(rootProject.libs.h2)
+    compileOnly(rootProject.libs.postgresql)
 
-    implementation("com.github.Carleslc.Simple-YAML:Simple-Yaml:1.8.4")
+
+    compileOnly(rootProject.libs.rapunzellib.api)
+    compileOnly(rootProject.libs.rapunzellib.events)
 }

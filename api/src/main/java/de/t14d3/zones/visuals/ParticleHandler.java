@@ -1,21 +1,19 @@
 package de.t14d3.zones.visuals;
 
+import de.t14d3.rapunzellib.Rapunzel;
+import de.t14d3.rapunzellib.objects.RBlockPos;
+import de.t14d3.rapunzellib.objects.RPlayer;
 import de.t14d3.zones.Zones;
 import de.t14d3.zones.ZonesPlatform;
-import de.t14d3.zones.objects.BlockLocation;
 import de.t14d3.zones.objects.Box;
-import de.t14d3.zones.objects.Player;
-import de.t14d3.zones.objects.PlayerRepository;
+import de.t14d3.zones.rapunzellib.ZonesExtraKeys;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 public class ParticleHandler {
     private final Zones zones;
     private final ZonesPlatform platform;
     private final double range;
-    private ScheduledFuture<?> particleScheduler;
 
     public ParticleHandler(Zones zones) {
         this.zones = zones;
@@ -23,13 +21,21 @@ public class ParticleHandler {
         this.range = zones.getConfig().getInt("visuals.particles.range", 15);
     }
 
-    void spawnParticleOutline(Player player, BlockLocation min, BlockLocation max) {
-        int x1 = min.getX();
-        int y1 = min.getY();
-        int z1 = min.getZ();
-        int x2 = max.getX() + 1;
-        int y2 = max.getY() + 1;
-        int z2 = max.getZ() + 1;
+    void spawnParticleOutline(RPlayer player, RBlockPos min, RBlockPos max) {
+        // Normalize coordinates so function works regardless of which corner is "min" or "max"
+        int minX = Math.min(min.x(), max.x());
+        int maxX = Math.max(min.x(), max.x());
+        int minY = Math.min(min.y(), max.y());
+        int maxY = Math.max(min.y(), max.y());
+        int minZ = Math.min(min.z(), max.z());
+        int maxZ = Math.max(min.z(), max.z());
+
+        int x1 = minX;
+        int y1 = minY;
+        int z1 = minZ;
+        int x2 = maxX + 1;
+        int y2 = maxY + 1;
+        int z2 = maxZ + 1;
 
         // Generate particles for all 6 faces
         spawnFace(player, 'y', y1, x1, x2, z1, z2, x1, x2, y1, y2, z1, z2); // Floor
@@ -40,54 +46,60 @@ public class ParticleHandler {
         spawnFace(player, 'z', z2, x1, x2, y1, y2, x1, x2, y1, y2, z1, z2); // Back wall
     }
 
-    public void spawnFace(Player player, char axis, int fixedVal,
+    public void spawnFace(RPlayer player, char axis, int fixedVal,
                           int axis1Start, int axis1End, int axis2Start, int axis2End,
                           int x1, int x2, int y1, int y2, int z1, int z2) {
-        BlockLocation loc = new BlockLocation(0, 0, 0);
+        var playerLoc = player.location().orElse(null);
+        if (playerLoc == null) return;
+        RBlockPos playerBlock = playerLoc.blockPos();
+
         for (int a1 = axis1Start; a1 <= axis1End; a1++) {
             for (int a2 = axis2Start; a2 <= axis2End; a2++) {
-                loc = createLocation(axis, fixedVal, a1, a2, loc);
-                if (loc.distance(player.getLocation()) >= range) continue;
+                RBlockPos loc = createLocation(axis, fixedVal, a1, a2);
+
+                // Use squared distance to avoid sqrt() call (speeeeed)
+                long rangeSq = (long) range * (long) range;
+                if (distanceSquared(loc, playerBlock) >= rangeSq) continue;
 
                 platform.spawnParticle(isCorner(loc, x1, x2, y1, y2, z1, z2) ? 2 : 1, loc, player);
             }
         }
     }
 
-    private static BlockLocation createLocation(char axis, int fixedVal, int a1, int a2, BlockLocation locToChange) {
+    static RBlockPos createLocation(char axis, int fixedVal, int a1, int a2) {
         return switch (axis) {
-            case 'x' -> locToChange.setX(fixedVal).setY(a1).setZ(a2);
-            case 'y' -> locToChange.setX(a1).setY(fixedVal).setZ(a2);
-            case 'z' -> locToChange.setX(a1).setY(a2).setZ(fixedVal);
+            case 'x' -> new RBlockPos(fixedVal, a1, a2);
+            case 'y' -> new RBlockPos(a1, fixedVal, a2);
+            case 'z' -> new RBlockPos(a1, a2, fixedVal);
             default -> throw new IllegalArgumentException("Invalid axis");
         };
     }
 
-    private static boolean isCorner(BlockLocation loc, int x1, int x2, int y1, int y2, int z1, int z2) {
-        boolean xEdge = loc.getX() == x1 || loc.getX() == x2;
-        boolean yEdge = loc.getY() == y1 || loc.getY() == y2;
-        boolean zEdge = loc.getZ() == z1 || loc.getZ() == z2;
+    static boolean isCorner(RBlockPos loc, int x1, int x2, int y1, int y2, int z1, int z2) {
+        boolean xEdge = loc.x() == x1 || loc.x() == x2;
+        boolean yEdge = loc.y() == y1 || loc.y() == y2;
+        boolean zEdge = loc.z() == z1 || loc.z() == z2;
         return (xEdge && yEdge) || (xEdge && zEdge) || (yEdge && zEdge);
+    }
+
+    static long distanceSquared(RBlockPos a, RBlockPos b) {
+        long dx = (long) b.x() - a.x();
+        long dy = (long) b.y() - a.y();
+        long dz = (long) b.z() - a.z();
+        return dx * dx + dy * dy + dz * dz;
     }
 
     public void particleScheduler() {
         if (!zones.getConfig().getBoolean("visuals.particles.enabled", false)) {
             return;
         }
-        Runnable runnable = () -> {
-            for (Player player : PlayerRepository.getPlayers()) {
-                Box selection = player.getSelection();
-                if (selection == null) {
-                    continue;
-                } else if (selection.getMin() == null || selection.getMax() == null) {
-                    continue;
-                }
-                spawnParticleOutline(
-                        player,
-                        selection.getMin(),
-                        selection.getMax());
+
+        Rapunzel.context().scheduler().runRepeatingAsync(Duration.ofMillis(200), Duration.ofMillis(200), () -> {
+            for (RPlayer player : RPlayer.online()) {
+                Box selection = player.extras().get(ZonesExtraKeys.SELECTION).orElse(null);
+                if (selection == null || selection.getMin() == null || selection.getMax() == null) continue;
+                spawnParticleOutline(player, selection.getMin(), selection.getMax());
             }
-        };
-        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(runnable, 0L, 200, TimeUnit.MILLISECONDS);
+        });
     }
 }

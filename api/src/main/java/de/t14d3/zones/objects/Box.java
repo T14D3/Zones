@@ -1,21 +1,40 @@
 package de.t14d3.zones.objects;
 
+import de.t14d3.rapunzellib.objects.RBlockPos;
+import de.t14d3.rapunzellib.objects.RWorldRef;
+
+import java.util.Objects;
+
 public class Box {
-    private final BlockLocation min;
-    private final BlockLocation max;
-    private final World world;
+    private final RBlockPos min;
+    private final RBlockPos max;
+    private final RWorldRef world;
 
     @SuppressWarnings("ConstantConditions")
-    public Box(BlockLocation pos1, BlockLocation pos2, World world) {
+    public Box(RBlockPos pos1, RBlockPos pos2, RWorldRef world) {
         this(pos1, pos2, world, true);
     }
 
-    public Box(BlockLocation pos1, BlockLocation pos2, World world, boolean normalize) {
+    /**
+     * Creates a new box from two points.
+     *
+     * @param pos1      first point
+     * @param pos2      second point
+     * @param world     world of the box
+     * @param normalize whether to normalize the points
+     */
+    public Box(RBlockPos pos1, RBlockPos pos2, RWorldRef world, boolean normalize) {
         if (normalize) {
-            this.min = new BlockLocation(Math.min(pos1.getX(), pos2.getX()), Math.min(pos1.getY(), pos2.getY()),
-                    Math.min(pos1.getZ(), pos2.getZ()));
-            this.max = new BlockLocation(Math.max(pos1.getX(), pos2.getX()), Math.max(pos1.getY(), pos2.getY()),
-                    Math.max(pos1.getZ(), pos2.getZ()));
+            this.min = new RBlockPos(
+                    Math.min(pos1.x(), pos2.x()),
+                    Math.min(pos1.y(), pos2.y()),
+                    Math.min(pos1.z(), pos2.z())
+            );
+            this.max = new RBlockPos(
+                    Math.max(pos1.x(), pos2.x()),
+                    Math.max(pos1.y(), pos2.y()),
+                    Math.max(pos1.z(), pos2.z())
+            );
         } else {
             this.min = pos1;
             this.max = pos2;
@@ -24,64 +43,55 @@ public class Box {
     }
 
 
-    public Box(int x1, int y1, int z1, int x2, int y2, int z2, World world) {
-        this(new BlockLocation(x1, y1, z1), new BlockLocation(x2, y2, z2), world);
+    public Box(int x1, int y1, int z1, int x2, int y2, int z2, RWorldRef world) {
+        this(new RBlockPos(x1, y1, z1), new RBlockPos(x2, y2, z2), world);
     }
 
-    public Box(org.bukkit.Location min, org.bukkit.Location max, org.bukkit.World world, boolean normalize) {
-        this(BlockLocation.of(min), BlockLocation.of(max), World.of(world), normalize);
-    }
-
-    public Box(World world) {
+    public Box(RWorldRef world) {
         this.min = null;
         this.max = null;
         this.world = world;
     }
 
-    public BlockLocation getMin() {
+    public RBlockPos getMin() {
         return min;
     }
 
-    public BlockLocation getMax() {
+    public RBlockPos getMax() {
         return max;
     }
 
-    public World getWorld() {
+    public RWorldRef getWorld() {
         return world;
     }
 
-    public BlockLocation getCenter() {
-        return new BlockLocation((min.getX() + max.getX()) / 2, (min.getY() + max.getY()) / 2,
-                (min.getZ() + max.getZ()) / 2);
+    public RBlockPos getCenter() {
+        return new RBlockPos((min.x() + max.x()) / 2, (min.y() + max.y()) / 2, (min.z() + max.z()) / 2);
     }
 
     public int getVolume() {
-        return (max.getX() - min.getX() + 1) * (max.getY() - min.getY() + 1) * (max.getZ() - min.getZ() + 1);
+        return (max.x() - min.x() + 1) * (max.y() - min.y() + 1) * (max.z() - min.z() + 1);
     }
 
     public int getArea() {
-        return (max.getX() - min.getX() + 1) * (max.getY() - min.getY() + 1);
+        return (max.x() - min.x() + 1) * (max.y() - min.y() + 1);
     }
 
-    public boolean contains(BlockLocation location) {
-        return location.getX() >= min.getX() && location.getX() <= max.getX()
-                && location.getY() >= min.getY() && location.getY() <= max.getY()
-                && location.getZ() >= min.getZ() && location.getZ() <= max.getZ();
+    public boolean contains(RBlockPos location) {
+        return location.x() >= min.x() && location.x() <= max.x()
+                && location.y() >= min.y() && location.y() <= max.y()
+                && location.z() >= min.z() && location.z() <= max.z();
     }
 
     public boolean intersects(Box other) {
-        return other.world.equals(world) &&
-                other.min.getX() <= max.getX() && other.max.getX() >= min.getX()
-                && other.min.getY() <= max.getY() && other.max.getY() >= min.getY()
-                && other.min.getZ() <= max.getZ() && other.max.getZ() >= min.getZ();
+        return sameWorld(other.world, world) &&
+                other.min.x() <= max.x() && other.max.x() >= min.x()
+                && other.min.y() <= max.y() && other.max.y() >= min.y()
+                && other.min.z() <= max.z() && other.max.z() >= min.z();
     }
 
-    public boolean intersects(BlockLocation min, BlockLocation max, World world) {
+    public boolean intersects(RBlockPos min, RBlockPos max, RWorldRef world) {
         return intersects(new Box(min, max, world));
-    }
-
-    public org.bukkit.util.BoundingBox toBoundingBox() {
-        return new org.bukkit.util.BoundingBox(min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ());
     }
 
     @Override
@@ -89,6 +99,11 @@ public class Box {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Box box = (Box) o;
-        return world.equals(box.world) && min.equals(box.min) && max.equals(box.max);
+        return sameWorld(world, box.world) && min.equals(box.min) && max.equals(box.max);
+    }
+
+    private static boolean sameWorld(RWorldRef a, RWorldRef b) {
+        if (a == null || b == null) return false;
+        return Objects.equals(a.identifier(), b.identifier());
     }
 }

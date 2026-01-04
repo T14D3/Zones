@@ -1,4 +1,4 @@
-package de.t14d3.zones.integrations;
+package de.t14d3.zones.bukkit.integrations;
 
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.event.extent.EditSessionEvent;
@@ -7,8 +7,6 @@ import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.util.eventbus.Subscribe;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.Zones;
-import de.t14d3.zones.objects.Result;
-import de.t14d3.zones.permissions.flags.Flags;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -33,7 +31,7 @@ public class WorldEditSession {
                 player = Bukkit.getPlayer(event.getActor().getName());
             }
             Set<CuboidRegion> mask = utils.getMask(player);
-            event.setExtent(new WorldEditExtent(mask, event.getExtent()));
+            event.setExtent(new WorldEditExtent(mask, event.getExtent(), plugin, player));      
         }
     }
 
@@ -55,18 +53,22 @@ public class WorldEditSession {
 
         public HashSet<CuboidRegion> getMask(Player player) {
             HashSet<CuboidRegion> mask = new HashSet<>();
+            if (player == null) return mask;
+
+            String worldKey = player.getWorld().getKey().toString();
             for (Region region : plugin.getRegionManager().regions().values()) {
-                if ((Flags.BREAK.getCustomHandler().evaluate(region, player.getUniqueId().toString(), "break", "true")
-                        .equals(Result.TRUE) || Flags.PLACE.getCustomHandler()
-                        .evaluate(region, player.getUniqueId().toString(), "place", "true")
-                        .equals(Result.TRUE)) || region.isAdmin(player.getUniqueId())) {
-                    mask.add(new CuboidRegion(
-                            BlockVector3.at(region.getMin().getX(), region.getMin().getY(), region.getMin().getZ()),
-                            BlockVector3.at(region.getMax().getX() - 1, region.getMax().getY() - 1,
-                                    region.getMax().getZ() - 1)
-                            // Don't ask me why, but it works
-                    ));
+                if (region.getMin() == null || region.getMax() == null) continue;
+                if (region.getWorld() != null && region.getWorld().key() != null && !region.getWorld().key()
+                        .equals(worldKey)) {
+                    continue;
                 }
+
+                mask.add(new CuboidRegion(
+                        BlockVector3.at(region.getMin().x(), region.getMin().y(), region.getMin().z()),
+                        BlockVector3.at(region.getMax().x() - 1, region.getMax().y() - 1,
+                                region.getMax().z() - 1)
+                        // Don't ask me why, but it works
+                ));
             }
             return mask;
         }

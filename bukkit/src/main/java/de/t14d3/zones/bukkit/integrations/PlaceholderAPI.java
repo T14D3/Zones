@@ -1,9 +1,9 @@
-package de.t14d3.zones.integrations;
+package de.t14d3.zones.bukkit.integrations;
 
+import de.t14d3.rapunzellib.objects.RBlockPos;
+import de.t14d3.rapunzellib.objects.RWorldRef;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.bukkit.ZonesBukkit;
-import de.t14d3.zones.objects.BlockLocation;
-import de.t14d3.zones.objects.World;
 import de.t14d3.zones.permissions.flags.Flags;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.Bukkit;
@@ -11,7 +11,6 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.UUID;
 
 public class PlaceholderAPI extends PlaceholderExpansion {
     private final ZonesBukkit plugin;
@@ -67,8 +66,11 @@ public class PlaceholderAPI extends PlaceholderExpansion {
 
     @Override
     public String onPlaceholderRequest(Player player, @NotNull String params) {
-        List<Region> regions = plugin.getRegionManager()
-                .getRegionsAt(BlockLocation.of(player.getLocation()), World.of(player.getWorld()));
+        var loc = player.getLocation();
+        List<Region> regions = plugin.getRegionManager().getRegionsAt(
+                new RBlockPos(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()),
+                new RWorldRef(loc.getWorld().getName(), loc.getWorld().getKey().toString())
+        );
         if (params.equalsIgnoreCase("get_name")) {
             String name = "";
             if (!regions.isEmpty()) {
@@ -84,16 +86,13 @@ public class PlaceholderAPI extends PlaceholderExpansion {
             return key;
         }
         if (params.equalsIgnoreCase("get_members")) {
+            if (regions.isEmpty()) return "";
+
             final String[] members = {""};
-            regions.get(0).getMembers().keySet().forEach(val -> {
-                String member;
-                try {
-                    UUID uuid = UUID.fromString(val);
-                    member = Bukkit.getOfflinePlayer(uuid).getName() != null ? Bukkit.getOfflinePlayer(uuid)
-                            .getName() : String.valueOf(uuid);
-                } catch (IllegalArgumentException ignored) {
-                    member = val;
-                }
+            regions.get(0).getMembership().players().keySet().forEach(uuid -> {
+                String member = Bukkit.getOfflinePlayer(uuid).getName() != null
+                        ? Bukkit.getOfflinePlayer(uuid).getName()
+                        : String.valueOf(uuid);
 
                 if (members[0].isEmpty()) {
                     members[0] = member;
@@ -121,20 +120,20 @@ public class PlaceholderAPI extends PlaceholderExpansion {
         }
         if (params.equalsIgnoreCase("get_min_x")) {
             if (!regions.isEmpty()) {
-                return String.valueOf(regions.get(0).getMin().getX());
+                return String.valueOf(regions.get(0).getMin().x());
             }
             return "";
         }
         if (params.equalsIgnoreCase("get_min_y")) {
             int minY = 0;
             if (!regions.isEmpty()) {
-                minY = regions.get(0).getMin().getY();
+                minY = regions.get(0).getMin().y();
             }
             return String.valueOf(minY);
         }
         if (params.equalsIgnoreCase("get_min_z")) {
             if (!regions.isEmpty()) {
-                return String.valueOf(regions.get(0).getMin().getZ());
+                return String.valueOf(regions.get(0).getMin().z());
             }
             return "";
         }
@@ -146,25 +145,28 @@ public class PlaceholderAPI extends PlaceholderExpansion {
         }
         if (params.equalsIgnoreCase("get_max_x")) {
             if (!regions.isEmpty()) {
-                return String.valueOf(regions.get(0).getMax().getX());
+                return String.valueOf(regions.get(0).getMax().x());
             }
             return "";
         }
         if (params.equalsIgnoreCase("get_max_y")) {
             if (!regions.isEmpty()) {
-                return String.valueOf(regions.get(0).getMax().getY());
+                return String.valueOf(regions.get(0).getMax().y());
             }
             return "";
         }
         if (params.equalsIgnoreCase("get_max_z")) {
             if (!regions.isEmpty()) {
-                return String.valueOf(regions.get(0).getMax().getZ());
+                return String.valueOf(regions.get(0).getMax().z());
             }
             return "";
         }
         if (params.equalsIgnoreCase("is_member")) {
             if (!regions.isEmpty()) {
-                return regions.get(0).isMember(player.getUniqueId()) ? "true" : "false";
+                Region region = regions.get(0);
+                boolean isMember = plugin.getRegionManager()
+                        .withWorldReadLock(region.getWorld(), () -> region.isMember(player.getUniqueId()));
+                return isMember ? "true" : "false";
             }
             return "false";
         }

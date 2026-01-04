@@ -1,130 +1,125 @@
 package de.t14d3.zones.utils;
 
+import de.t14d3.rapunzellib.Rapunzel;
+import de.t14d3.rapunzellib.message.MessageFormatService;
+import de.t14d3.rapunzellib.message.Placeholders;
+import de.t14d3.rapunzellib.objects.RPlayer;
 import de.t14d3.zones.Region;
-import de.t14d3.zones.Zones;
-import de.t14d3.zones.objects.RegionFlagEntry;
+import de.t14d3.zones.permissions.PermissionKeyRegistry;
+import de.t14d3.zones.permissions.RegionPermissions;
+import de.t14d3.zones.permissions.subjects.*;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
-import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
-
-public class Messages {
-    private final Zones zones;
-    private final Map<String, String> messages = new HashMap<>();
-    private final static MiniMessage mm = MiniMessage.miniMessage();
-    public static Messages INSTANCE;
-
-    public Messages(Properties messagesConfig, Zones zones) {
-        this.zones = zones;
-        INSTANCE = this;
-        messagesConfig.keySet().forEach(
-                key ->
-                        messages.put(key.toString(), messagesConfig.getProperty(key.toString()))
-        );
+/**
+ * Shared message/formatting helpers.
+ */
+public final class Messages {
+    private Messages() {
     }
+
 
     /**
-     * Gets a message from the messages.yml file.
-     * Defaults to "messages.default" if not found.
+     * Formats a region summary for chat output.
      *
-     * @param key The key of the message.
-     * @return The message.
+     * <p>If {@code showMembers} is enabled, this includes all member subjects and their stored permissions. For
+     * performance reasons this method assumes callers already hold any required region/world locks.</p>
+     *
+     * @param region region to format
+     * @param showMembers whether to include member permissions
+     * @return formatted component
      */
-    public @NotNull String get(String key) {
-        return messages.getOrDefault(key,
-                zones.getConfig().getString("messages.default", key).replaceAll("<key>", key));
-    }
-
-    public @NotNull Component getCmp(String key) {
-        return mm.deserialize(messages.getOrDefault(key,
-                zones.getConfig().getString("messages.default", key).replaceAll("<key>", key)));
-    }
-
-    public @NotNull String getOrDefault(String key, String defaultValue) {
-        return messages.getOrDefault(key, defaultValue);
-    }
-
     public static Component regionInfo(Region region, boolean showMembers) {
-        Messages messages = Zones.getInstance().getMessages();
-        Component comp = Component.empty();
-        comp = comp.append(
-                mm.deserialize("<light_purple>Name: </light_purple>" + messages.get("region.info.name") + " ",
-                        parsed("name", region.getName())));
+        MessageFormatService messages = Rapunzel.context().messages();
+        Component comp = messages.component("region.info.details.name",
+                Placeholders.builder().string("name", region.getName()).build());
+
         if (region.getParent() != null) {
-            comp = comp.append(mm.deserialize(messages.get("region.info.parent") + " ",
-                    parsed("parent", region.getParent().toString())));
+            comp = comp.appendNewline().append(messages.component("region.info.details.parent",
+                    Placeholders.builder().string("parent", region.getParent().toString()).build()));
         }
-        comp = comp.append(mm.deserialize("<green>(</green>" + messages.get("region.info.min") + " - ",
-                parsed("min", region.getMinString())));
-        comp = comp.append(mm.deserialize(messages.get("region.info.max") + "<green>)</green>",
-                parsed("max", region.getMaxString())));
-        comp = comp.append(Component.text(" Members: ").color(NamedTextColor.LIGHT_PURPLE));
+
+        comp = comp.appendNewline().append(messages.component("region.info.details.bounds",
+                Placeholders.builder()
+                        .string("min", region.getMinString())
+                        .string("max", region.getMaxString())
+                        .build()));
+
+        comp = comp.appendNewline().append(messages.component("region.info.details.members"));
 
         if (showMembers) {
-            // Iterate over members to format permissions
-            for (Map.Entry<String, List<RegionFlagEntry>> member : region.getMembers().entrySet()) {
-                String playerName = null;
-                try {
-                    playerName = Zones.getInstance().getPlatform().getPlayer(UUID.fromString(member.getKey()))
-                            .getName();
-                } catch (IllegalArgumentException ignored) {
-                }
-                if (playerName == null) {
-                    playerName = member.getKey();
-                }
-                Component playerComponent = mm.deserialize(messages.get("region.info.members.name"),
-                        parsed("name", playerName));
-                playerComponent = playerComponent.appendNewline();
+            RegionPermissions perms = region.getPermissions();
+            for (Map.Entry<SubjectRef, RegionPermissions.SubjectPermissions> member : perms.subjects().entrySet()) {
+                SubjectRef subjectRef = member.getKey();
+                RegionPermissions.SubjectPermissions subject = member.getValue();
+                if (subjectRef == null || subject == null) continue;
 
-                // Extract permissions and format them using Adventure Components
-                List<RegionFlagEntry> permissions = member.getValue();
+                String subjectName;
+                if (subjectRef instanceof PlayerSubject p) {
+                    subjectName = RPlayer.get(p.uuid()).map(RPlayer::name).orElse(p.uuid().toString());
+                } else if (subjectRef instanceof GroupSubject g) {
+                    subjectName = "group:" + g.name();
+                } else if (subjectRef instanceof UniversalSubject) {
+                    subjectName = "+universal";
+                } else {
+                    subjectName = Subjects.format(subjectRef);
+                }
+
+                Component subjectComponent = messages.component("region.info.members.name",
+                        Placeholders.builder().string("name", subjectName).build()).appendNewline();
+
                 Component permissionsComponent = Component.empty();
+                for (var permEntry : subject.values().int2ObjectEntrySet()) {
+                    int permId = permEntry.getIntKey();
+                    String permName = PermissionKeyRegistry.instance().getName(permId);
+                    if (permName == null || permName.isBlank()) continue;
 
-                for (RegionFlagEntry permEntry : permissions) {
-                    String permKey = permEntry.getFlagValue();
-                    List<RegionFlagEntry.FlagValue> permValues = permEntry.getValues();
+                    RegionPermissions.PermissionValue value = permEntry.getValue();
                     List<Component> formattedComponents = new ArrayList<>();
 
-                    for (RegionFlagEntry.FlagValue val : permValues) {
-                        String value = val.getValue();
-                        Component formattedValue;
-                        if (("true".equalsIgnoreCase(value) || "*".equals(value)) && !val.isInverted()) {
-                            formattedValue = mm.deserialize(messages.get("region.info.members.values.allowed"),
-                                    parsed("value", value));
-                        } else if ("false".equalsIgnoreCase(value) || val.isInverted()) {
-                            formattedValue = mm.deserialize(messages.get("region.info.members.values.denied"),
-                                    parsed("value", "!" + value));
-                        } else {
-                            formattedValue = mm.deserialize(messages.get("region.info.members.values.allowed"),
-                                    parsed("value", value));
+                    if (value instanceof RegionPermissions.TargetDecisionValue targeted) {
+                        for (String t : targeted.allowTargets()) {
+                            formattedComponents.add(messages.component("region.info.members.values.allowed",
+                                    Placeholders.builder().string("value", t).build()));
                         }
-                        formattedComponents.add(formattedValue);
+                        for (String t : targeted.denyTargets()) {
+                            formattedComponents.add(messages.component("region.info.members.values.denied",
+                                    Placeholders.builder().string("value", t).build()));
+                        }
+                    } else if (value instanceof RegionPermissions.StringSetValue set) {
+                        for (String s : set.allowValues()) {
+                            formattedComponents.add(messages.component("region.info.members.values.allowed",
+                                    Placeholders.builder().string("value", s).build()));
+                        }
+                        for (String s : set.denyValues()) {
+                            formattedComponents.add(messages.component("region.info.members.values.denied",
+                                    Placeholders.builder().string("value", s).build()));
+                        }
                     }
-                    // Combine all formatted components into one line
-                    Component permLine = mm.deserialize(messages.get("region.info.members.permission"),
-                            parsed("permission", permKey));
 
-                    // Append all value components with comma separators
+                    if (formattedComponents.isEmpty()) continue;
+
+                    Component permLine = messages.component("region.info.members.permission",
+                            Placeholders.builder().string("permission", permName).build());
+
                     for (int i = 0; i < formattedComponents.size(); i++) {
                         permLine = permLine.append(formattedComponents.get(i));
                         if (i < formattedComponents.size() - 1) {
                             permLine = permLine.append(Component.text(", ").color(NamedTextColor.GRAY));
                         }
                     }
-                    // Append the permission line and a newline
                     permissionsComponent = permissionsComponent.append(permLine).append(Component.newline());
                 }
-                // Append the player component and their permissions to hover text
-                comp = comp.appendNewline()
-                        .append(playerComponent)
-                        .append(permissionsComponent);
+
+                comp = comp.appendNewline().append(subjectComponent).append(permissionsComponent);
             }
         }
-        comp = comp.append(mm.deserialize(messages.get("region.info.key"), parsed("key", region.getKey().toString())));
+        comp = comp.appendNewline().append(messages.component("region.info.key",
+                Placeholders.builder().string("key", region.getKey().toString()).build()));
         return comp;
     }
 }

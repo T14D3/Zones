@@ -1,18 +1,19 @@
 package de.t14d3.zones.datasource;
 
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.Zones;
-import de.t14d3.zones.objects.BlockLocation;
-import de.t14d3.zones.objects.RegionFlagEntry;
-import de.t14d3.zones.objects.World;
+import de.t14d3.zones.objects.shapes.CuboidShape;
+import de.t14d3.zones.objects.shapes.GlobalShape;
+import de.t14d3.zones.objects.shapes.ShapeProvider;
+import de.t14d3.zones.permissions.RegionMembership;
+import de.t14d3.zones.permissions.RegionPermissions;
+import de.t14d3.zones.permissions.RegionSecurityCodec;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class SQLDataSource extends AbstractDataSource {
     private Connection connection;
@@ -104,16 +105,12 @@ public class SQLDataSource extends AbstractDataSource {
                     "CREATE TABLE IF NOT EXISTS " + tableName + " (" +
                             "\"key\" INT PRIMARY KEY, " +
                             "name VARCHAR(255), " +
-                            "minX INT, " +
-                            "minY INT, " +
-                            "minZ INT, " +
-                            "maxX INT, " +
-                            "maxY INT, " +
-                            "maxZ INT, " +
                             "world VARCHAR(255), " +
                             "members TEXT, " +
                             "parent INT, " +
-                            "priority INT" +
+                            "priority INT, " +
+                            "shape_type VARCHAR(255), " +
+                            "shape_data TEXT" +
                             ")";
             connection.prepareStatement(createTableSQL).execute();
         } catch (SQLException e) {
@@ -137,42 +134,44 @@ public class SQLDataSource extends AbstractDataSource {
     }
 
     private String buildUpsertSQL() {
-        String columns = "(\"key\", name, minX, minY, minZ, maxX, maxY, maxZ, world, members, parent, priority)";
-        String values = "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String columns = "(\"key\", name, world, members, parent, priority, shape_type, shape_data)";
+        String values = "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         String updates;
-        switch (dbType) {
-            case MYSQL:
-                updates = "name=VALUES(name), minX=VALUES(minX), minY=VALUES(minY), minZ=VALUES(minZ), " +
-                        "maxX=VALUES(maxX), maxY=VALUES(maxY), maxZ=VALUES(maxZ), world=VALUES(world), " +
-                        "members=VALUES(members), parent=VALUES(parent), priority=VALUES(priority)";
-                return String.format("INSERT INTO %s %s %s ON DUPLICATE KEY UPDATE %s",
+        return switch (dbType) {
+            case MYSQL -> {
+                updates = "name=VALUES(name), world=VALUES(world), members=VALUES(members), parent=VALUES(parent), priority=VALUES(priority), "
+                        + "shape_type=VALUES(shape_type), shape_data=VALUES(shape_data)";
+                yield String.format("INSERT INTO %s %s %s ON DUPLICATE KEY UPDATE %s",
                         tableName, columns, values, updates);
-            case SQLITE:
-                return String.format("INSERT OR REPLACE INTO %s %s %s", tableName, columns, values);
-            case POSTGRESQL:
-                updates = "name=EXCLUDED.name, minX=EXCLUDED.minX, minY=EXCLUDED.minY, " +
-                        "minZ=EXCLUDED.minZ, maxX=EXCLUDED.maxX, maxY=EXCLUDED.maxY, maxZ=EXCLUDED.maxZ, " +
-                        "world=EXCLUDED.world, members=EXCLUDED.members, parent=EXCLUDED.parent, priority=EXCLUDED.priority";
-                return String.format("INSERT INTO %s %s %s ON CONFLICT (key) DO UPDATE SET %s",
+            }
+            case SQLITE -> String.format("INSERT OR REPLACE INTO %s %s %s", tableName, columns, values);
+            case POSTGRESQL -> {
+                updates = "name=EXCLUDED.name, world=EXCLUDED.world, members=EXCLUDED.members, parent=EXCLUDED.parent, priority=EXCLUDED.priority, "
+                        + "shape_type=EXCLUDED.shape_type, shape_data=EXCLUDED.shape_data";
+                yield String.format("INSERT INTO %s %s %s ON CONFLICT (key) DO UPDATE SET %s",
                         tableName, columns, values, updates);
-            case H2:
-                return String.format("MERGE INTO %s %s %s", tableName, columns, values);
-            default:
-                throw new IllegalArgumentException("Unsupported database type: " + dbType);
-        }
+            }
+            case H2 -> String.format("MERGE INTO %s %s %s", tableName, columns, values);
+            default -> throw new IllegalArgumentException("Unsupported database type: " + dbType);
+        };
     }
 
     @Override
     public List<Region> loadRegions() {
         List<Region> regions = new ArrayList<>();
         String sql = "SELECT * FROM " + tableName;
-        try (PreparedStatement statement = connection.prepareStatement(sql);
+        try (PreparedStatement statement = connection.prepareStatement(sql);    
              ResultSet rs = statement.executeQuery()) {
 
             while (rs.next()) {
-                Region region = parseRegion(rs);
-                zones.getRegionManager().addRegion(region);
-                regions.add(region);
+                Region region;
+                try {
+                    region = parseRegion(rs);
+                } catch (SQLException e) {
+                    zones.getLogger().error("Failed to parse a stored region row; skipping", e);
+                    continue;
+                }
+                if (region != null) regions.add(region);
             }
         } catch (SQLException e) {
             zones.getLogger().error("Failed to load regions! Error: {}", e.getMessage());
@@ -186,48 +185,71 @@ public class SQLDataSource extends AbstractDataSource {
     private Region parseRegion(ResultSet rs) throws SQLException {
         int key = rs.getInt("key");
         String name = rs.getString("name");
-        BlockLocation min = new BlockLocation(
-                rs.getInt("minX"),
-                rs.getInt("minY"),
-                rs.getInt("minZ")
-        );
-        BlockLocation max = new BlockLocation(
-                rs.getInt("maxX"),
-                rs.getInt("maxY"),
-                rs.getInt("maxZ")
-        );
-        World world = Zones.getInstance().getPlatform().getWorld(rs.getString("world"));
         String membersJson = rs.getString("members");
-        Map<String, List<RegionFlagEntry>> members = gson.fromJson(membersJson,
-                new TypeToken<Map<String, List<RegionFlagEntry>>>() {
-                }.getType());
+
+        RegionPermissions permissions;
+        RegionMembership membership;
+        if (membersJson != null && !membersJson.isBlank()) {
+            RegionSecurityCodec.Persisted persisted = gson.fromJson(membersJson, RegionSecurityCodec.Persisted.class);
+            RegionSecurityCodec.Decoded decoded = RegionSecurityCodec.decode(persisted);
+            permissions = decoded.acl();
+            membership = decoded.membership();
+        } else {
+            permissions = new RegionPermissions();
+            membership = new RegionMembership();
+        }
         int parentKey = rs.getInt("parent");
         RegionKey parent = parentKey != 0 ? RegionKey.fromInt(parentKey) : null;
         int priority = rs.getInt("priority");
 
-        return new Region(name, min, max, world, members,
-                RegionKey.fromInt(key), parent, priority);
+        String shapeType = rs.getString("shape_type");
+        if (shapeType == null || shapeType.isBlank()) {
+            zones.getLogger().error("Region {} is missing required shape_type; skipping", key);
+            return null;
+        }
+        String shapeData = rs.getString("shape_data");
+        if (shapeData == null || shapeData.isBlank()) {
+            zones.getLogger().error("Region {} is missing required shape_data; skipping", key);
+            return null;
+        }
+
+        ShapeProvider shape;
+        try {
+            switch (shapeType) {
+                case "global" -> shape = GlobalShape.fromJson(shapeData);
+                case "cuboid" -> shape = CuboidShape.fromJson(shapeData);
+                default -> {
+                    zones.getLogger().error("Unknown shape type {} for region {}; skipping", shapeType, key);
+                    return null;
+                }
+            }
+        } catch (Exception e) {
+            zones.getLogger().error("Failed to parse shape for region {}; skipping", key, e);
+            return null;
+        }
+
+        return new Region(name, shape, permissions, membership, RegionKey.fromInt(key), parent, priority);
     }
+
 
     @Override
     public void saveRegions(List<Region> regions) {
         String sql = buildUpsertSQL();
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {       
             for (Region region : regions) {
                 stmt.setInt(1, region.getKey().getValue());
                 stmt.setString(2, region.getName());
-                BlockLocation min = region.getMin();
-                stmt.setInt(3, min.getX());
-                stmt.setInt(4, min.getY());
-                stmt.setInt(5, min.getZ());
-                BlockLocation max = region.getMax();
-                stmt.setInt(6, max.getX());
-                stmt.setInt(7, max.getY());
-                stmt.setInt(8, max.getZ());
-                stmt.setString(9, region.getWorld() != null ? region.getWorld().getName() : null);
-                stmt.setString(10, gson.toJson(region.getMembers()));
-                stmt.setInt(11, region.getParent() != null ? region.getParent().getValue() : 0);
-                stmt.setInt(12, region.getPriority());
+                stmt.setString(3, region.getWorld() != null ? region.getWorld().identifier() : null);
+                stmt.setString(4,
+                        gson.toJson(RegionSecurityCodec.encode(region.getPermissions(), region.getMembership())));
+                stmt.setInt(5, region.getParent() != null ? region.getParent().getValue() : 0);
+                stmt.setInt(6, region.getPriority());
+
+                // Shape data
+                ShapeProvider shape = region.getShape();
+                stmt.setString(7, shape.getShapeType());
+                stmt.setString(8, shape.toJson());
+
                 stmt.addBatch();
             }
             stmt.executeBatch();
@@ -242,7 +264,7 @@ public class SQLDataSource extends AbstractDataSource {
     @Override
     public Region loadRegion(String key) {
         String sql = "SELECT * FROM " + tableName + " WHERE key = ?";
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {       
             stmt.setString(1, key);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
@@ -260,21 +282,19 @@ public class SQLDataSource extends AbstractDataSource {
     @Override
     public void saveRegion(String key, Region region) {
         String sql = buildUpsertSQL();
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {       
             stmt.setInt(1, RegionKey.fromString(key).getValue());
             stmt.setString(2, region.getName());
-            BlockLocation min = region.getMin();
-            stmt.setInt(3, min.getX());
-            stmt.setInt(4, min.getY());
-            stmt.setInt(5, min.getZ());
-            BlockLocation max = region.getMax();
-            stmt.setInt(6, max.getX());
-            stmt.setInt(7, max.getY());
-            stmt.setInt(8, max.getZ());
-            stmt.setString(9, region.getWorld() != null ? region.getWorld().getName() : null);
-            stmt.setString(10, gson.toJson(region.getMembers()));
-            stmt.setInt(11, region.getParent() != null ? region.getParent().getValue() : 0);
-            stmt.setInt(12, region.getPriority());
+            stmt.setString(3, region.getWorld() != null ? region.getWorld().identifier() : null);
+            stmt.setString(4, gson.toJson(RegionSecurityCodec.encode(region.getPermissions(), region.getMembership())));
+            stmt.setInt(5, region.getParent() != null ? region.getParent().getValue() : 0);
+            stmt.setInt(6, region.getPriority());
+
+            // Shape data
+            ShapeProvider shape = region.getShape();
+            stmt.setString(7, shape.getShapeType());
+            stmt.setString(8, shape.toJson());
+
             stmt.executeUpdate();
         } catch (SQLException e) {
             zones.getLogger()

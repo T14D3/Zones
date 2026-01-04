@@ -1,22 +1,22 @@
 package de.t14d3.zones.visuals;
 
-import de.t14d3.zones.objects.BlockLocation;
+import de.t14d3.rapunzellib.objects.RBlockPos;
 import net.kyori.adventure.text.format.NamedTextColor;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class BeaconUtils {
-    public static List<BlockChange> resetList(BlockLocation location) {
+    public static List<BlockChange> resetList(RBlockPos location) {
         List<BlockChange> changes = new ArrayList<>();
 
         if (location == null) {
             return changes;
         }
 
-        int x = location.getX();
+        int x = location.x();
         int y = -62;
-        int z = location.getZ();
+        int z = location.z();
 
         changes.add(new BlockChange(x, 1, z, null)); // Assuming null will be handled as default block data
 
@@ -33,16 +33,16 @@ public class BeaconUtils {
         return changes;
     }
 
-    public static List<BlockChange> createList(BlockLocation location, NamedTextColor color) {
+    public static List<BlockChange> createList(RBlockPos location, NamedTextColor color) {
         List<BlockChange> changes = new ArrayList<>();
 
         if (location == null) {
             return changes;
         }
 
-        int x = location.getX();
+        int x = location.x();
         int y = -62;
-        int z = location.getZ();
+        int z = location.z();
 
         for (int xPoint = x - 1; xPoint <= x + 1; xPoint++) {
             for (int zPoint = z - 1; zPoint <= z + 1; zPoint++) {
@@ -64,31 +64,6 @@ public class BeaconUtils {
         return changes;
     }
 
-    public static class BlockChange {
-        private final int x, y, z;
-        private final String blockData;
-
-        public BlockChange(int x, int y, int z, String blockData) {
-            this.x = x;
-            this.y = y;
-            this.z = z;
-            this.blockData = blockData;
-        }
-
-        public int getX() {
-            return x;
-        }
-
-        public int getY() {
-            return y;
-        }
-
-        public int getZ() {
-            return z;
-        }
-
-        public String getBlockData() {
-            return blockData;
-        }
+    public record BlockChange(int x, int y, int z, String blockData) {
     }
 }

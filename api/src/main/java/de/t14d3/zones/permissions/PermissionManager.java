@@ -4,198 +4,45 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonReader;
+import de.t14d3.rapunzellib.objects.RBlockPos;
+import de.t14d3.rapunzellib.objects.RPlayer;
+import de.t14d3.rapunzellib.objects.RWorldRef;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.Zones;
-import de.t14d3.zones.objects.*;
+import de.t14d3.zones.objects.Flag;
+import de.t14d3.zones.objects.Result;
+import de.t14d3.zones.permissions.flags.FlagContext;
+import de.t14d3.zones.permissions.subjects.GroupSubject;
+import de.t14d3.zones.permissions.subjects.PlayerSubject;
+import de.t14d3.zones.permissions.subjects.SubjectRef;
+import de.t14d3.zones.permissions.subjects.Subjects;
+import de.t14d3.zones.rapunzellib.ZonesPermissionCache;
 import de.t14d3.zones.utils.DebugLoggerManager;
+import de.t14d3.zones.utils.TypeKeys;
 
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class PermissionManager {
-    private final CacheUtils cacheUtils;
     private final DebugLoggerManager debugLogger;
     private final Zones zones;
-    public static final String UNIVERSAL = "+universal";
     private final List<Permission> permissionMap;
+
+    private final AtomicLong cacheVersion = new AtomicLong(1);
+    private final RegionPermissionEvaluator evaluator;
+    private final long permissionCacheTtlNanos;
 
     public PermissionManager(Zones zones) {
         this.zones = zones;
         this.debugLogger = zones.getDebugLogger();
-        this.cacheUtils = CacheUtils.getInstance();
-        this.permissionMap = readPermissions();
-    }
 
-    public boolean checkAction(BlockLocation location, World world, UUID playerUUID, Flag action, String type, Object... extra) {
-        return checkAction(location, world, playerUUID.toString(), action, type, extra);
-    }
-
-    /**
-     * Checks if a player can interact with a region.
-     *
-     * @param location The location of the interaction.
-     * @param who      The UUID of the player.
-     * @param action   The action the player wants to perform.
-     * @param type     The type of the block or entity the interaction happened with.
-     * @param extra    Additional, optional information, for example a spawn reason.
-     * @return True if the player can interact with the region, false otherwise.
-     */
-    public boolean checkAction(BlockLocation location, World world, String who, Flag action, String type, Object... extra) {
-        debugLogger.log(DebugLoggerManager.CHECK, action.name(), who, location, type);
-        boolean nonplayer = who.equalsIgnoreCase(UNIVERSAL) || extra.length != 0 && (boolean) extra[0];
-        boolean base = extra.length == 0;
-        if (nonplayer) {
-            debugLogger.log(DebugLoggerManager.UNI_CHECK, action.name(), location, type);
-            return checkAction(location, world, action, type, extra);
-        }
-        // Check interaction cache
-        if (base && cacheUtils.interactionCache.containsKey(who)) {
-            ConcurrentLinkedQueue<CacheEntry> entries = cacheUtils.interactionCache.get(who);
-            for (CacheEntry entry : entries) {
-                if (entry.isEqual(location, action.name(), type)) {
-                    debugLogger.log(DebugLoggerManager.CACHE_HIT_ACTION, action.name(), who, location, type);
-                    return entry.result.equals(Result.TRUE);
-                }
-            }
-        }
-
-        List<Region> regions = zones.getRegionManager().getRegionsAt(location, world);
-        if (!regions.isEmpty()) {
-            Result result = Result.UNDEFINED;
-            int priority = Integer.MIN_VALUE;
-
-            for (Region region : regions) {
-                debugLogger.log("Checking region " + region.getKey()
-                        .toString() + " for " + action.name() + " with type " + type, DebugLoggerManager.CHECK);
-
-                // Only check regions with a higher priority than the current value
-                if (region.getPriority() > priority) {
-                    Result hasPermission = action.getCustomHandler().evaluate(region, who, action.name(), type);
-                    if (!hasPermission.equals(Result.UNDEFINED)) {
-                        result = hasPermission;
-                        priority = region.getPriority();
-                        continue;
-                    }
-                }
-                // If same priority, both have to be true, otherwise will assume false
-                else if (region.getPriority() == priority) {
-                    Result hasPermission = action.getCustomHandler().evaluate(region, who, action.name(), type);
-                    if (hasPermission.equals(Result.FALSE) || result.equals(Result.FALSE)) {
-                        result = Result.FALSE;
-                        priority = region.getPriority();
-                        continue;
-                    }
-                }
-            }
-
-            if (result.equals(Result.UNDEFINED)) {
-                result = Result.valueOf(action.getDefaultValue(who));
-            }
-
-            // Update cache if needed
-            if (base) {
-                cacheUtils.interactionCache.computeIfAbsent(who, k -> new ConcurrentLinkedQueue<>())
-                        .add(new CacheEntry(location, action.name(), type, result));
-            }
-            debugLogger.log(DebugLoggerManager.CACHE_MISS_ACTION, action.name(), who, location, type, result);
-            return result.equals(Result.TRUE);
-
-        } else {
-            // No region found, check player permissions
-            boolean bypass = false;
-            Player player = PlayerRepository.get(UUID.fromString(who));
-            if (player != null && player.hasPermission("zones.bypass.unclaimed")) {
-                bypass = true;
-            }
-            debugLogger.log(DebugLoggerManager.PERM, action.name(), who, location, type, bypass);
-            if (base) {
-                cacheUtils.interactionCache.computeIfAbsent(who, k -> new ConcurrentLinkedQueue<>())
-                        .add(new CacheEntry(location, action.name(), type, bypass ? Result.TRUE : Result.UNDEFINED));
-            }
-            return bypass;
-        }
-    }
-
-    /**
-     * Checks if a universal/non-player action is allowed at a location.
-     * This method bypasses player-specific checks for efficiency.
-     *
-     * @param location The location of the interaction
-     * @param action   The action being performed
-     * @param type     The type of block/entity involved
-     * @param extra    Additional context (used for cache control)
-     * @return true if the action is allowed, false otherwise
-     */
-    public boolean checkAction(BlockLocation location, World world, Flag action, String type, Object... extra) {
-        boolean base = extra == null || extra.length == 0;
-
-        if (base && cacheUtils.interactionCache.containsKey(UNIVERSAL)) {
-            ConcurrentLinkedQueue<CacheEntry> entries = cacheUtils.interactionCache.get(UNIVERSAL);
-            for (CacheEntry entry : entries) {
-                if (entry.isEqual(location, action.name(), type)) {
-                    debugLogger.log(DebugLoggerManager.CACHE_HIT_ACTION, DebugLoggerManager.UNI_CHECK, action.name(),
-                            location, type, entry.result);
-                    return entry.result.equals(Result.TRUE);
-                }
-            }
-        }
-
-        List<Region> regions = zones.getRegionManager().getRegionsAt(location, world);
-        Result result = Result.UNDEFINED;
-        if (!regions.isEmpty()) {
-            int priority = Integer.MIN_VALUE;
-
-            for (Region region : regions) {
-                if (region.getPriority() > priority) {
-                    Result regionResult = action.getCustomHandler().evaluate(region, action.name(), type);
-                    if (regionResult != Result.UNDEFINED) {
-                        result = regionResult;
-                        priority = region.getPriority();
-                    }
-                } else if (region.getPriority() == priority) {
-                    Result regionResult = action.getCustomHandler().evaluate(region, action.name(), type);
-                    if (regionResult == Result.FALSE || result == Result.FALSE) {
-                        result = Result.FALSE;
-                        priority = region.getPriority();
-                    }
-                }
-            }
-        }
-        // No regions at location - use default value
-
-        if (result == Result.UNDEFINED) {
-            result = Result.valueOf(action.getDefaultValue(UNIVERSAL));
-        }
-
-        cacheUtils.interactionCache.computeIfAbsent(UNIVERSAL, k -> new ConcurrentLinkedQueue<>())
-                .add(new CacheEntry(location, action.name(), type, result));
-
-        debugLogger.log(DebugLoggerManager.CACHE_MISS_ACTION, DebugLoggerManager.UNI_CHECK, action.name(), location,
-                type, result, extra);
-
-        return result == Result.TRUE;
-    }
-
-    public static Result isAllowed(String perm, String type, Result result) {
-        perm = perm.toLowerCase();
-        type = type.toLowerCase();
-        if (perm.equals("true") || perm.equals("*")) {
-            result = Result.TRUE;
-        } else if (perm.equals("false") || perm.equals("!*")) {
-            result = Result.FALSE;
-        } else if (perm.equals(type)) {
-            result = Result.TRUE;
-        } else if (perm.equals("!" + type)) {
-            result = Result.FALSE;
-        }
-        return result;
-    }
-
-    public List<Permission> readPermissions() {
+        // Load the permission registry shipped with the plugin (permissions.json).
+        // This is exposed for help/inspection; permission evaluation itself is based on region data.
         List<Permission> permissions = new ArrayList<>();
         Gson gson = new Gson();
         JsonObject obj = gson.fromJson(
@@ -208,7 +55,242 @@ public class PermissionManager {
             int level = permission.get("level").getAsInt();
             permissions.add(new Permission(key, description, level));
         }
-        return permissions;
+        this.permissionMap = permissions;
+
+        long ttlSeconds = zones.getConfig().getInt("cache.ttl", 300);
+        int limit = zones.getConfig().getInt("cache.limit", 0);
+        int permissionTtlSeconds = zones.getConfig().getInt("cache.permission-ttl", 2);
+        this.permissionCacheTtlNanos = TimeUnit.SECONDS.toNanos(Math.max(0, permissionTtlSeconds));
+
+        this.evaluator = new RegionPermissionEvaluator(
+                zones.getRegionManager(),
+                cacheVersion::get,
+                ttlSeconds * 1000L,
+                limit
+        );
+    }
+
+    /**
+     * Invalidates all cached permission decisions.
+     */
+    public void invalidateAll() {
+        cacheVersion.incrementAndGet();
+        evaluator.invalidateAll();
+    }
+
+    /**
+     * Invalidates cached decisions for a specific subject (player UUID).
+     */
+    public void invalidateSubject(UUID uuid) {
+        if (uuid == null) return;
+        evaluator.invalidateSubject(new PlayerSubject(uuid));
+    }
+
+
+    /**
+     * Checks whether a player is allowed to perform an action at a given location.
+     *
+     * @param location   block position
+     * @param world      world reference
+     * @param playerUUID player UUID
+     * @param action     action flag
+     * @param type       type key involved in the interaction
+     */
+    public boolean checkAction(RBlockPos location, RWorldRef world, UUID playerUUID, Flag action, String type) {
+        if (playerUUID == null) return false;
+        return checkAction(location, world, new PlayerSubject(playerUUID), action, type, FlagContext.none());
+    }
+
+
+    /**
+     * Checks if a player can interact with a region.
+     *
+     * @param location The location of the interaction.
+     * @param who      The UUID of the player.
+     * @param action   The action the player wants to perform.
+     * @param type     The type of the block or entity the interaction happened with.
+     * @return True if the player can interact with the region, false otherwise.
+     */
+    public boolean checkAction(RBlockPos location, RWorldRef world, String who, Flag action, String type) {
+        return checkAction(location, world, parseSubject(who), action, type, FlagContext.none());
+    }
+
+    /**
+     * Checks if a player can interact with a region.
+     *
+     * @param location The location of the interaction.
+     * @param subject  The subject of the interaction.
+     * @param action   The action the player wants to perform.
+     * @param type     The type of the block or entity the interaction happened with.
+     * @param context  Additional, optional information, for example a spawn reason.
+     * @return True if the player can interact with the region, false otherwise.
+     */
+    public boolean checkAction(RBlockPos location, RWorldRef world, SubjectRef subject, Flag action, String type, FlagContext context) {
+        if (action == null) return true;
+        FlagContext ctx = context != null ? context : FlagContext.none();
+        if (location == null || world == null) return action.getDefaultValue(ctx);
+
+        final SubjectRef effectiveSubject = subject != null ? subject : Subjects.universal();
+        final String subjectLabel = Subjects.format(effectiveSubject);
+
+        String normalizedType = TypeKeys.normalize(type);
+        debugLogger.log(DebugLoggerManager.CHECK, action.name(), subjectLabel, location, normalizedType);
+
+        return zones.getRegionManager().withWorldReadLock(world, () -> {
+            List<Region> regions = zones.getRegionManager().getRegionsAt(location, world);
+            if (regions.isEmpty()) {
+                if (effectiveSubject instanceof PlayerSubject p) {
+                    boolean bypass = RPlayer.get(p.uuid())
+                            .map(player -> ZonesPermissionCache.hasPermissionCached(player, "zones.bypass.unclaimed",
+                                    permissionCacheTtlNanos))
+                            .orElse(false);
+                    debugLogger.log(DebugLoggerManager.PERM, action.name(), subjectLabel, location, normalizedType,
+                            bypass);
+                    return bypass;
+                }
+                return action.getDefaultValue(ctx);
+            }
+
+            int maxPriority = Integer.MIN_VALUE;
+            for (Region region : regions) {
+                if (region.getPriority() > maxPriority) maxPriority = region.getPriority();
+            }
+
+            boolean anyAllow = false;
+            for (Region region : regions) {
+                if (region.getPriority() != maxPriority) continue;
+
+                Decision decision = evaluator.evaluate(region, effectiveSubject, action, normalizedType);
+                if (decision.result() == Result.FALSE) return false;
+                if (decision.result() == Result.TRUE) anyAllow = true;
+            }
+
+            if (anyAllow) return true;
+            return action.getDefaultValue(ctx);
+        });
+    }
+
+    /**
+     * Checks if a universal/non-player action is allowed at a location.
+     * This method bypasses player-specific checks for efficiency.
+     *
+     * @param location The location of the interaction
+     * @param action   The action being performed
+     * @param type     The type of block/entity involved
+     * @return true if the action is allowed, false otherwise
+     */
+    public boolean checkAction(RBlockPos location, RWorldRef world, Flag action, String type) {
+        return checkAction(location, world, Subjects.universal(), action, type, FlagContext.none());
+    }
+
+    /**
+     * Checks if a universal/non-player action is allowed at a location.
+     * This method bypasses player-specific checks for efficiency.
+     *
+     * @param location The location of the interaction
+     * @param action   The action being performed
+     * @param type     The type of block/entity involved
+     * @param context  Additional context (used for flag defaults)
+     * @return true if the action is allowed, false otherwise
+     */
+    public boolean checkAction(RBlockPos location, RWorldRef world, Flag action, String type, FlagContext context) {
+        return checkAction(location, world, Subjects.universal(), action, type, context);
+    }
+
+    /**
+     * Checks whether a player is allowed to perform multiple actions at a location.
+     *
+     * <p>This batches evaluation under a single world read-lock and reuses the same region query for all flags.
+     * Semantics match calling {@link #checkAction(RBlockPos, RWorldRef, UUID, Flag, String)} for each flag.</p>
+     *
+     * @param location   block position
+     * @param world      world reference
+     * @param playerUUID player UUID
+     * @param type       type key involved in the interaction
+     * @param actions    action flags to evaluate
+     * @return {@code true} if all actions are allowed, otherwise {@code false}
+     */
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    public boolean checkActions(RBlockPos location, RWorldRef world, UUID playerUUID, String type, Flag... actions) {
+        if (playerUUID == null) return false;
+        if (actions == null || actions.length == 0) return true;
+        if (location == null || world == null) {
+            for (Flag action : actions) {
+                if (action == null) continue;
+                if (!action.getDefaultValue()) return false;
+            }
+            return true;
+        }
+
+        SubjectRef subject = new PlayerSubject(playerUUID);
+        String normalizedType = TypeKeys.normalize(type);
+
+        return zones.getRegionManager().withWorldReadLock(world, () -> {
+            List<Region> regions = zones.getRegionManager().getRegionsAt(location, world);
+            if (regions.isEmpty()) {
+                boolean bypass = RPlayer.get(playerUUID)
+                        .map(p -> ZonesPermissionCache.hasPermissionCached(p, "zones.bypass.unclaimed",
+                                permissionCacheTtlNanos))
+                        .orElse(false);
+
+                for (Flag action : actions) {
+                    if (action == null) continue;
+                    debugLogger.log(DebugLoggerManager.CHECK, action.name(), Subjects.format(subject), location,
+                            normalizedType);
+                    debugLogger.log(DebugLoggerManager.PERM, action.name(), Subjects.format(subject), location,
+                            normalizedType, bypass);
+                }
+
+                // In unclaimed land, bypass is a global allow/deny for players (matches single-flag behavior).
+                return bypass;
+
+            }
+
+            int maxPriority = Integer.MIN_VALUE;
+            for (Region region : regions) {
+                int priority = region.getPriority();
+                if (priority > maxPriority) maxPriority = priority;
+            }
+
+            for (Flag action : actions) {
+                if (action == null) continue;
+
+                debugLogger.log(DebugLoggerManager.CHECK, action.name(), Subjects.format(subject), location,
+                        normalizedType);
+
+                boolean anyAllow = false;
+                for (Region region : regions) {
+                    if (region.getPriority() != maxPriority) continue;
+                    Decision decision = evaluator.evaluate(region, subject, action, normalizedType);
+                    if (decision.result() == Result.FALSE) return false;
+                    if (decision.result() == Result.TRUE) anyAllow = true;
+                }
+
+                if (anyAllow) continue;
+                if (!action.getDefaultValue()) return false;
+            }
+
+            return true;
+        });
+    }
+
+    private static SubjectRef parseSubject(String raw) {
+        if (raw == null || raw.isBlank()) return Subjects.universal();
+        String s = raw.trim();
+        if ("universal".equalsIgnoreCase(s)
+                || "+universal".equalsIgnoreCase(s)) {
+            return Subjects.universal();
+        }
+        if (s.regionMatches(true, 0, "group:", 0, "group:".length())) {
+            String name = Subjects.normalizeGroupName(s.substring("group:".length()));
+            return name == null ? Subjects.universal() : new GroupSubject(name);
+        }
+        if (s.regionMatches(true, 0, "player:", 0, "player:".length())) s = s.substring("player:".length());
+        try {
+            return new PlayerSubject(UUID.fromString(s));
+        } catch (IllegalArgumentException ignored) {
+            return Subjects.universal();
+        }
     }
 
     /**
@@ -224,34 +306,15 @@ public class PermissionManager {
      * Simple permission object.
      * Contains a name, description, and level (Vanilla operator level equivalent).
      */
-    public static class Permission {
-        private final String value;
-        private final String description;
-        private final int level;
-
+    public record Permission(String name, String description, int level) {
         /**
          * Creates a new permission object.
-         * @param value The permission name.
+         *
+         * @param name       The permission name.
          * @param description The permission description.
-         * @param level The permission level.
+         * @param level       The permission level.
          */
-        public Permission(String value, String description, int level) {
-            this.value = value;
-            this.description = description;
-            this.level = level;
+        public Permission {}
         }
-
-        public String getName() {
-            return this.value;
-        }
-
-        public String getDescription() {
-            return this.description;
-        }
-
-        public int getLevel() {
-            return this.level;
-        }
-    }
 
 }

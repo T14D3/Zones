@@ -1,18 +1,15 @@
 package de.t14d3.zones.bukkit.commands;
 
+import de.t14d3.rapunzellib.message.MessageFormatService;
+import de.t14d3.rapunzellib.message.Placeholders;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.bukkit.ZonesBukkit;
-import de.t14d3.zones.utils.Messages;
 import dev.jorel.commandapi.CommandAPICommand;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-
-import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
 
 public class LoadCommand {
     private final ZonesBukkit plugin;
     private RegionManager regionManager;
-    private Messages messages;
-    private final MiniMessage mm = MiniMessage.miniMessage();
+    private MessageFormatService messages;
 
     public LoadCommand(ZonesBukkit plugin) {
         this.plugin = plugin;
@@ -26,6 +23,7 @@ public class LoadCommand {
                 regionManager.loadRegions();
                 int count = regionManager.regions().size();
                 sender.sendMessage(
-                        mm.deserialize(messages.get("commands.load"), parsed("count", String.valueOf(count))));
+                        messages.component("commands.load",
+                                Placeholders.builder().string("count", String.valueOf(count)).build()));
             });
 }

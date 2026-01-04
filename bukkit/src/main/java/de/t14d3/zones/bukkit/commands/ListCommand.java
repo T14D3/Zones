@@ -1,5 +1,7 @@
 package de.t14d3.zones.bukkit.commands;
 
+import de.t14d3.rapunzellib.message.MessageFormatService;
+import de.t14d3.rapunzellib.message.Placeholders;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.bukkit.ZonesBukkit;
@@ -9,17 +11,13 @@ import dev.jorel.commandapi.arguments.IntegerArgument;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.entity.Player;
 
 import java.util.List;
 
-import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
-
 public class ListCommand {
-    private final MiniMessage mm = MiniMessage.miniMessage();
     private RegionManager regionManager;
-    private Messages messages;
+    private MessageFormatService messages;
 
     public ListCommand(ZonesBukkit plugin) {
         this.regionManager = plugin.getRegionManager();
@@ -36,27 +34,33 @@ public class ListCommand {
                     page = 1;
                 }
 
-                Player player;
-                if (sender instanceof Player temp) {
-                    player = temp;
-                } else {
-                    player = null;
-                }
-                List<Region> regions = regionManager.regions().values().parallelStream()
-                        .filter(region -> perm || (player != null && region.isMember(player.getUniqueId()))).toList();
+                Player player = sender instanceof Player temp ? temp : null;
+                var uuid = player != null ? player.getUniqueId() : null;
+                List<Region> regions = regionManager.regions().values().stream()
+                        .filter(region -> perm || (uuid != null && regionManager.withWorldReadLock(region.getWorld(),
+                                () -> region.isMember(uuid))))
+                        .toList();
                 if (regions.isEmpty()) {
-                    sender.sendMessage(messages.getCmp("region.none-found"));
+                    sender.sendMessage(messages.component("region.none-found"));
                     return;
                 }
-                regions = regions.subList((page - 1) * 10, Math.min(regions.size(), page * 10));
+                int start = (page - 1) * 10;
+                if (start >= regions.size()) {
+                    sender.sendMessage(messages.component("region.none-found"));
+                    return;
+                }
+                regions = regions.subList(start, Math.min(regions.size(), start + 10));
                 Component[] msgs = new Component[regions.size()];
                 int i = 0;
                 for (Region region : regions) {
+                    Component hoverText = regionManager.withWorldReadLock(region.getWorld(), () -> {
+                        boolean showMembers = perm || (uuid != null && region.isAdmin(uuid));
+                        return Messages.regionInfo(region, showMembers);
+                    });
                     msgs[i] = Component.newline()
-                            .append(mm.deserialize(messages.get("region.info.name"), parsed("name", region.getName()),
-                                            parsed("key", region.getKey().toString()))
-                                    .hoverEvent(HoverEvent.showText(Messages.regionInfo(region,
-                                            (perm || region.isAdmin(player.getUniqueId())))))
+                            .append(messages.component("region.info.name",
+                                            Placeholders.builder().string("name", region.getName()).build())
+                                    .hoverEvent(HoverEvent.showText(hoverText))
                                     .clickEvent(ClickEvent.runCommand("/zone info " + region.getKey())));
                     i++;
                 }

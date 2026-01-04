@@ -1,8 +1,9 @@
 package de.t14d3.zones.fabric.commands;
 
+
 import com.mojang.brigadier.context.CommandContext;
+import de.t14d3.rapunzellib.objects.RPlayer;
 import de.t14d3.zones.fabric.ZonesFabric;
-import de.t14d3.zones.objects.Player;
 import net.minecraft.commands.CommandSourceStack;
 
 public class FindCommand {
@@ -13,18 +14,24 @@ public class FindCommand {
     }
 
     int execute(CommandContext<CommandSourceStack> context) {
-        if (context.getSource().getPlayer() != null) {
-            Player player = mod.getPlatform().getPlayer(context.getSource().getPlayer().getUUID());
-            if (mod.getZones().getFindBossbar().players.containsKey(player)) {
-                mod.getPlatform().getAudience(player).hideBossBar(mod.getZones().getFindBossbar().players.get(player));
-                mod.getZones().getFindBossbar().players.remove(player);
-            } else {
-                mod.getZones().getFindBossbar().players.put(player,
-                        null); // null to let the bossbar handler do the creation
+        if (context.getSource().getPlayer() == null) {
+            context.getSource().sendMessage(mod.getMessages().component("commands.only-player"));
+            return 0;
+        }
+
+        RPlayer player = RPlayer.wrap(context.getSource().getPlayer()).orElse(null);
+        if (player == null) return 0;
+
+        if (mod.getZones().getFindBossbar().players.containsKey(player)) {
+            var bar = mod.getZones().getFindBossbar().players.get(player);
+            if (bar != null) {
+                player.audience().hideBossBar(bar);
             }
+            mod.getZones().getFindBossbar().players.remove(player);
         } else {
-            context.getSource().sendMessage(mod.getMessages().getCmp("commands.only-player"));
+            mod.getZones().getFindBossbar().players.put(player, null);
         }
         return 1;
     }
 }
+

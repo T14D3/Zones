@@ -1,20 +1,14 @@
 package de.t14d3.zones.bukkit;
 
 import de.t14d3.zones.utils.Types;
-import io.papermc.paper.registry.RegistryAccess;
-import io.papermc.paper.registry.RegistryKey;
-import org.bukkit.Material;
-import org.bukkit.block.BlockState;
-import org.bukkit.block.Container;
-import org.bukkit.block.data.BlockData;
-import org.bukkit.block.data.Powerable;
-import org.bukkit.entity.EntityType;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.Container;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class BukkitTypes extends Types {
 
@@ -24,69 +18,42 @@ public class BukkitTypes extends Types {
 
     @Override
     public void populateTypes() {
-
-        blockTypes = Arrays.stream(Material.values())
-                .parallel()
-                .filter(material -> !material.isLegacy() && material.isBlock())
-                .flatMap(material -> Stream.of(material.name().toLowerCase(), "!" + material.name().toLowerCase()))
-                .collect(Collectors.toList());
-
-        entityTypes = Arrays.stream(EntityType.values())
-                .parallel()
-                .flatMap(
-                        entityType -> Stream.of(entityType.name().toLowerCase(),
-                                "!" + entityType.name().toLowerCase()))
-                .collect(Collectors.toList());
-
         allTypes = new ArrayList<>();
-        allTypes.addAll(blockTypes);
-        allTypes.addAll(entityTypes);
+        blockTypes = new ArrayList<>();
+        entityTypes = new ArrayList<>();
+        containerTypes = new ArrayList<>();
+        redstoneTypes = new ArrayList<>();
+        damageTypes = new ArrayList<>();
 
-        allTypes.addAll(List.of("owner", "admin", "true", "false"));
-        blockTypes.addAll(List.of("owner", "admin", "true", "false"));
-        entityTypes.addAll(List.of("owner", "admin", "true", "false"));
+        BuiltInRegistries.BLOCK.forEach(block -> {
+            ResourceLocation key = BuiltInRegistries.BLOCK.getKey(block);
+            if (key == null) return;
+            String id = key.getPath();
 
+            blockTypes.add(id);
+            allTypes.add(id);
 
-        new Thread(() -> {
-            containerTypes = Arrays.stream(Material.values())
-                    .parallel()
-                    .filter(material -> material.isBlock() && !material.isLegacy())
-                    .flatMap(material -> {
-                        try {
-                            BlockData data = material.createBlockData();
-                            BlockState state = data.createBlockState();
-                            return (state instanceof Container) ? Stream.of(material) : Stream.empty();
-                        } catch (Exception e) {
-                            return Stream.empty();
-                        }
-                    })
-                    .flatMap(material -> Stream.of(material.name().toLowerCase(), "!" + material.name().toLowerCase()))
-                    .collect(Collectors.toList());
-            containerTypes.addAll(List.of("owner", "admin", "true", "false"));
+            BlockState state = block.defaultBlockState();
+            if (state.hasBlockEntity() && block instanceof EntityBlock entityBlock) {
+                var blockEntity = entityBlock.newBlockEntity(BlockPos.ZERO, state);
+                if (blockEntity instanceof Container) {
+                    containerTypes.add(id);
+                }
+            }
 
-            redstoneTypes = Arrays.stream(Material.values())
-                    .parallel()
-                    .filter(material -> material.isBlock() && !material.isLegacy())
-                    .flatMap(material -> {
-                        try {
-                            BlockData data = material.createBlockData();
-                            return (data instanceof Powerable) ? Stream.of(material) : Stream.empty();
-                        } catch (Exception e) {
-                            return Stream.empty();
-                        }
-                    })
-                    .flatMap(material -> Stream.of(material.name().toLowerCase(), "!" + material.name().toLowerCase()))
-                    .collect(Collectors.toList());
-            redstoneTypes.addAll(List.of("owner", "admin", "true", "false"));
-        }).start();
+            if (state.isSignalSource()) {
+                redstoneTypes.add(id);
+            }
+        });
 
-        damageTypes = RegistryAccess.registryAccess().getRegistry(RegistryKey.DAMAGE_TYPE).stream()
-                .parallel()
-                .flatMap(damageType -> Stream.of(
-                        damageType.getTranslationKey().toLowerCase(),
-                        "!" + damageType.getTranslationKey().toLowerCase()
-                ))
-                .collect(Collectors.toList());
-        damageTypes.addAll(List.of("owner", "admin", "true", "false"));
+        BuiltInRegistries.ENTITY_TYPE.forEach(entityType -> {
+            ResourceLocation key = BuiltInRegistries.ENTITY_TYPE.getKey(entityType);
+            if (key == null) return;
+            String id = key.getPath();
+
+            entityTypes.add(id);
+            allTypes.add(id);
+        });
+
     }
 }

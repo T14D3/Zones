@@ -1,5 +1,6 @@
 package de.t14d3.zones.bukkit.commands;
 
+/*
 import de.t14d3.zones.bukkit.ZonesBukkit;
 import de.t14d3.zones.objects.Player;
 import dev.jorel.commandapi.CommandAPICommand;
@@ -26,6 +27,40 @@ public class FindCommand {
                     }
                 } else {
                     sender.sendMessage(plugin.getMessages().getCmp("commands.only-player"));
+                }
+            });
+}
+*/
+
+import de.t14d3.rapunzellib.objects.RPlayer;
+import de.t14d3.zones.bukkit.ZonesBukkit;
+import dev.jorel.commandapi.CommandAPICommand;
+
+public class FindCommand {
+    private ZonesBukkit plugin;
+
+    public FindCommand(ZonesBukkit plugin) {
+        this.plugin = plugin;
+    }
+
+    public CommandAPICommand find = new CommandAPICommand("find")
+            .withPermission("zones.find")
+            .executes((sender, args) -> {
+                if (sender instanceof org.bukkit.entity.Player nativePlayer) {
+                    RPlayer player = RPlayer.wrap(nativePlayer).orElse(null);
+                    if (player == null) return;
+
+                    if (plugin.getZones().getFindBossbar().players.containsKey(player)) {
+                        var bar = plugin.getZones().getFindBossbar().players.get(player);
+                        if (bar != null) {
+                            player.audience().hideBossBar(bar);
+                        }
+                        plugin.getZones().getFindBossbar().players.remove(player);
+                    } else {
+                        plugin.getZones().getFindBossbar().players.put(player, null);
+                    }
+                } else {
+                    sender.sendMessage(plugin.getMessages().component("commands.only-player"));
                 }
             });
 }

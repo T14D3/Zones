@@ -49,14 +49,17 @@ The plugin provides the following commands:
   * Only shows regions the player is a member of, unless the player has the `zones.list.other` permission
 * `/zone cancel`: Cancels the current region selection.
     * Usage: `/zone cancel`
-* `/zone set`: Sets a permission for a member of a region.
-  * Usage: `/zone set <regionKey> <who> <permission> <value>`
-  * `<regionKey>` is the key of the region.
-  * `<who>` who to set the permission for.
-    * e.g., `Player1` - to create or modify a group, use `+group-GROUPNAME`, where GROUPNAME can be any name.
-  * `<permission>` is the permission to set (e.g., `role`, `break`, `place`, `interact`).
-  * `<value>` is the value to set for the permission (
-    * e.g., `owner`, `true`, `false`, `*`, `!*`, `GRASS_BLOCK`, `!GRASS_BLOCK`).
+* `/zone perm`: Manage region permissions.
+    * Usage:
+        * `/zone perm allow <regionKey> <target> <permission> <value>`
+        * `/zone perm deny <regionKey> <target> <permission> <value>`
+        * `/zone perm unset <regionKey> <target> <permission> <value>`
+        * `/zone perm clear <regionKey> <target> <permission>`
+    * `<target>` can be a player name/UUID, `+universal`, `group:<name>`, or `player:<name|uuid>`.
+    * For pattern-based permissions (e.g. `break`/`place`/`interact`), `<value>` supports `*` wildcards (glob, not
+      regex).
+      Use `*` or `all` for "everything".
+    * For membership permissions, `role`/`group` use `<value>` as a role/group name.
 * `/zone rename`: Renames a region.
   * Usage: `/zone rename <regionKey> <newName>`
   * `<regionKey>` is the key of the region, `<newName>` is the new name of the region.
@@ -103,19 +106,20 @@ The plugin provides the following commands:
 
 ### Setting Permissions
 
-1. Use the `/zone set <regionKey> <player> <permission> <value>` command to set permissions for a member of a region.
-  * Example: `/zone set <key> Player1 break true` allows "Player1" to break blocks in the specified region.
-  * Example: `/zone set <key> Player2 break GRASS_BLOCK` allows "Player2" to break only `GRASS_BLOCK` blocks
-    in the specified region.
-  * Example: `/zone set <key> Player3 interact !OAK_DOOR` denies "Player3" to interact with `OAK_DOOR`in
-    the specified region.
-  * Example: `/zone set <key> Player4 place *` allows "Player4" to place all blocks in the specified region.
-  * Example: `/zone set <key> Player5 break !*` denies "Player5" to break all blocks in the specified region.
-* Groups:
-  * To assign a group, set the value of the permission `group` to the group name.
-  * e.g.: Create a group and assign permission: `/zone set <regionKey> +group-some-group-name break true`
-  * e.g. `/zone set <regionKey> ExamplePlayer group some-group-name`
-  * ExamplePlayer now inherits the permission `break` from the group `some-group-name`
+1. Use `/zone perm ...` to add/remove rules for players, groups, or universal.
+
+* Allow everyone to break everything in a region: `/zone perm allow <key> +universal break *`
+* Allow Player1 to break everything in a region: `/zone perm allow <key> Player1 break all`
+* Allow only grass blocks: `/zone perm allow <key> Player2 break grass_block`
+* Deny interacting with oak doors: `/zone perm deny <key> Player3 interact oak_door`
+* Allow placing everything: `/zone perm allow <key> Player4 place all`
+* Deny breaking everything: `/zone perm deny <key> Player5 break all`
+
+2. Groups:
+
+* Create/edit a group subject: `/zone perm allow <key> group:builders break *`
+* Group inheritance (group includes group): `/zone perm allow <key> group:builders group members`
+* Add a player to a group: `/zone perm allow <key> ExamplePlayer group builders`
 
 ### Viewing Region Information
 

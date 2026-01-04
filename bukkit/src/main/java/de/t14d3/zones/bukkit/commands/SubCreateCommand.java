@@ -1,9 +1,11 @@
 package de.t14d3.zones.bukkit.commands;
 
+/*
 import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.bukkit.ZonesBukkit;
+import de.t14d3.zones.bukkit.commands.utils.CustomArgument;
 import de.t14d3.zones.objects.*;
 import de.t14d3.zones.utils.Messages;
 import dev.jorel.commandapi.CommandAPICommand;
@@ -88,5 +90,103 @@ public class SubCreateCommand {
                 } else {
                     sender.sendMessage(mm.deserialize(messages.get("commands.only-player")));
                 }
+            });
+}
+*/
+
+import de.t14d3.rapunzellib.message.MessageFormatService;
+import de.t14d3.rapunzellib.objects.RBlockPos;
+import de.t14d3.rapunzellib.objects.RPlayer;
+import de.t14d3.rapunzellib.objects.RWorldRef;
+import de.t14d3.zones.Region;
+import de.t14d3.zones.RegionManager;
+import de.t14d3.zones.bukkit.ZonesBukkit;
+import de.t14d3.zones.bukkit.commands.utils.CustomArgument;
+import de.t14d3.zones.objects.Box;
+import de.t14d3.zones.rapunzellib.ZonesExtraKeys;
+import dev.jorel.commandapi.CommandAPICommand;
+import org.bukkit.entity.Player;
+
+public class SubCreateCommand {
+    private RegionManager regionManager;
+    private MessageFormatService messages;
+    private ZonesBukkit plugin;
+
+    public SubCreateCommand(ZonesBukkit plugin) {
+        this.plugin = plugin;
+        this.regionManager = plugin.getRegionManager();
+        this.messages = plugin.getMessages();
+    }
+
+    public CommandAPICommand subcreate = new CommandAPICommand("subcreate")
+            .withPermission("zones.subcreate")
+            .withOptionalArguments(CustomArgument.region("key", "zones.set.other", CustomArgument.MemberType.ADMIN))
+            .executes((sender, args) -> {
+                if (!(sender instanceof Player player)) {
+                    sender.sendMessage(messages.component("commands.only-player"));
+                    return;
+                }
+
+                RPlayer rPlayer = RPlayer.wrap(player).orElse(null);
+                if (rPlayer == null) return;
+
+                Box selection = rPlayer.extras().get(ZonesExtraKeys.SELECTION).orElse(null);
+                boolean selecting = rPlayer.extras().get(ZonesExtraKeys.SELECTION_CREATING).orElse(false);
+
+                if (selection == null || !selecting) {
+                    rPlayer.extras().put(ZonesExtraKeys.SELECTION, new Box(rPlayer.worldOrThrow().ref()));
+                    rPlayer.extras().put(ZonesExtraKeys.SELECTION_CREATING, true);
+                    player.sendMessage(messages.component("commands.create.click-corners"));
+                    return;
+                }
+
+                if (selection.getMin() == null || selection.getMax() == null) {
+                    player.sendMessage(messages.component("commands.create.click-corners"));
+                    return;
+                }
+
+                RWorldRef selectionWorld = selection.getWorld() != null ? selection.getWorld() : rPlayer.worldOrThrow()
+                        .ref();
+
+                Region parentRegion = (Region) args.get("key");
+                if (parentRegion == null) {
+                    RBlockPos pos = rPlayer.locationOrThrow().blockPos();
+                    parentRegion = regionManager.withWorldReadLock(selectionWorld, () -> {
+                        for (Region region : regionManager.getRegionsAt(pos, selectionWorld)) {
+                            if (region.isAdmin(player.getUniqueId())) return region;
+                        }
+                        return null;
+                    });
+                }
+
+                if (parentRegion == null) {
+                    player.sendMessage(messages.component("commands.subcreate.no-parent"));
+                    return;
+                }
+
+                Region finalParentRegion = parentRegion;
+                boolean insideParent = regionManager.withWorldReadLock(finalParentRegion.getWorld(), () ->
+                        finalParentRegion.contains(selection.getMin()) && finalParentRegion.contains(
+                                selection.getMax()));
+                if (!insideParent) {
+                    player.sendMessage(messages.component("commands.subcreate.outside-parent"));
+                    return;
+                }
+
+                regionManager.createSubRegion(
+                        finalParentRegion.getName() + "_subb",
+                        selection.getMin(),
+                        selection.getMax(),
+                        selectionWorld,
+                        player.getUniqueId(),
+                        finalParentRegion
+                );
+
+                plugin.getPlatform().removeBeacon(rPlayer, selectionWorld, selection.getMin());
+                plugin.getPlatform().removeBeacon(rPlayer, selectionWorld, selection.getMax());
+                rPlayer.extras().remove(ZonesExtraKeys.SELECTION);
+                rPlayer.extras().put(ZonesExtraKeys.SELECTION_CREATING, false);
+
+                player.sendMessage(messages.component("commands.subcreate.success"));
             });
 }
