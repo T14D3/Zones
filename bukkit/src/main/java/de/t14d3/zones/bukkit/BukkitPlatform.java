@@ -5,6 +5,7 @@ import de.t14d3.rapunzellib.objects.RBlockPos;
 import de.t14d3.rapunzellib.objects.RPlayer;
 import de.t14d3.rapunzellib.objects.RWorldRef;
 import de.t14d3.zones.Zones;
+import de.t14d3.zones.ZonesParticleRole;
 import de.t14d3.zones.ZonesPlatform;
 import de.t14d3.zones.permissions.PermissionManager;
 import de.t14d3.zones.utils.Types;
@@ -22,11 +23,13 @@ public class BukkitPlatform implements ZonesPlatform {
     private final ZonesBukkit plugin;
     private final Particle primary;
     private final Particle secondary;
+    private final Particle preview;
 
     public BukkitPlatform(ZonesBukkit plugin) {
         this.plugin = plugin;
         this.primary = Particle.valueOf(plugin.getConfig().getString("visuals.particles.primary", "WAX_OFF"));
         this.secondary = Particle.valueOf(plugin.getConfig().getString("visuals.particles.secondary", "WAX_ON"));
+        this.preview = Particle.valueOf(plugin.getConfig().getString("visuals.particles.preview", "COMPOSTER"));
     }
 
     @Override
@@ -49,12 +52,17 @@ public class BukkitPlatform implements ZonesPlatform {
     }
 
     @Override
-    public void spawnParticle(int type, RBlockPos particleLocation, RPlayer player) {
+    public void spawnParticle(ZonesParticleRole role, RBlockPos particleLocation, RPlayer player) {
         org.bukkit.entity.Player bukkitPlayer = player.tryHandle(org.bukkit.entity.Player.class).orElse(null);
         if (bukkitPlayer == null) return;
         org.bukkit.Location bukkitLocation = new Location(bukkitPlayer.getWorld(), particleLocation.x(),
                 particleLocation.y(), particleLocation.z());
-        ParticleBuilder particleBuilder = new ParticleBuilder(type == 1 ? primary : secondary);
+        Particle particle = switch (role) {
+            case PRIMARY -> primary;
+            case SECONDARY -> secondary;
+            case PREVIEW -> preview;
+        };
+        ParticleBuilder particleBuilder = new ParticleBuilder(particle);
         particleBuilder.location(bukkitLocation);
         particleBuilder.receivers(bukkitPlayer);
         particleBuilder.count(1);

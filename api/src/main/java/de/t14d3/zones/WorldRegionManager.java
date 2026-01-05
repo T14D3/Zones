@@ -160,6 +160,29 @@ final class WorldRegionManager {
         return found;
     }
 
+    List<Region> getRegionsNearLocked(RBlockPos center, int blockRange) {
+        if (center == null) return Collections.emptyList();
+        int r = Math.max(0, blockRange);
+
+        int minXChunk = (center.x() - r) >> 4;
+        int minZChunk = (center.z() - r) >> 4;
+        int maxXChunk = (center.x() + r) >> 4;
+        int maxZChunk = (center.z() + r) >> 4;
+
+        LinkedHashSet<Region> found = new LinkedHashSet<>();
+        for (int x = minXChunk; x <= maxXChunk; x++) {
+            for (int z = minZChunk; z <= maxZChunk; z++) {
+                long key = ((long) x << 32) | (z & 0xFFFFFFFFL);
+                List<Region> candidates = chunkRegions.get(key);
+                if (candidates != null) found.addAll(candidates);
+            }
+        }
+
+        if (!globalRegions.isEmpty()) found.addAll(globalRegions);
+        if (found.isEmpty()) return Collections.emptyList();
+        return new ArrayList<>(found);
+    }
+
     @Nullable Region getEffectiveRegionAtLocked(RBlockPos location) {
         List<Region> regions = getRegionsAtLocked(location);
         int priority = Integer.MIN_VALUE;
@@ -205,4 +228,3 @@ final class WorldRegionManager {
         }
     }
 }
-

@@ -75,16 +75,22 @@ public class ZonesFabric implements DedicatedServerModInitializer {
 
         String primaryType = zones.getConfig().getString("visuals.particles.primary", "WAX_OFF").toLowerCase();
         String secondaryType = zones.getConfig().getString("visuals.particles.secondary", "WAX_ON").toLowerCase();
+        String previewType = zones.getConfig().getString("visuals.particles.preview", "COMPOSTER").toLowerCase();
         ParticleType<?> primary = BuiltInRegistries.PARTICLE_TYPE
-                .get(ResourceLocation.withDefaultNamespace(primaryType))
+                .get(ResourceLocation.withDefaultNamespace(primaryType))        
                 .map(ref -> ref.value())
                 .orElseThrow();
         ParticleType<?> secondary = BuiltInRegistries.PARTICLE_TYPE
                 .get(ResourceLocation.withDefaultNamespace(secondaryType))
                 .map(ref -> ref.value())
                 .orElseThrow();
+        ParticleType<?> preview = BuiltInRegistries.PARTICLE_TYPE
+                .get(ResourceLocation.withDefaultNamespace(previewType))
+                .map(ref -> ref.value())
+                .orElseThrow();
         ((FabricPlatform) platform).primary = (SimpleParticleType) primary;
         ((FabricPlatform) platform).secondary = (SimpleParticleType) secondary;
+        ((FabricPlatform) platform).preview = (SimpleParticleType) preview;
 
     }
 

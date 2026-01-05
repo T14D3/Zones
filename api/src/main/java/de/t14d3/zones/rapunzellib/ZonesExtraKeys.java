@@ -13,6 +13,7 @@ public final class ZonesExtraKeys {
     public static final RExtraKey<String> SELECTION_MODE = RExtraKey.of("zones", "selection_mode", String.class);
     public static final RExtraKey<Long> LAST_ACTIONBAR_NANOS = RExtraKey.of("zones", "last_actionbar_nanos",
             Long.class);
+    public static final RExtraKey<Boolean> NEARBY_VISUALS = RExtraKey.of("zones", "nearby_visuals", Boolean.class);
     public static final RExtraKey<ZonesPermissionCache> PERMISSION_CACHE = RExtraKey.of("zones", "permission_cache",
             ZonesPermissionCache.class);
 }

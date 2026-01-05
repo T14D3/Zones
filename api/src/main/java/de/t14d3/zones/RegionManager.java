@@ -233,6 +233,18 @@ public class RegionManager {
     }
 
     /**
+     * Returns regions near the given location by chunk index.
+     *
+     * <p>This returns candidates from the chunk index, not necessarily regions within the
+     * exact distance.</p>
+     */
+    public List<Region> getRegionsNear(RBlockPos center, RWorldRef world, int blockRange) {
+        if (world == null || center == null) return Collections.emptyList();
+        WorldRegionManager manager = getOrCreateWorldManager(world);
+        return manager.withReadLock(() -> manager.getRegionsNearLocked(center, blockRange));
+    }
+
+    /**
      * Gets the region with the highest priority at the given location
      *
      * @param location Location to check

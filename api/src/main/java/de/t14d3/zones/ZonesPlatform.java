@@ -18,7 +18,7 @@ public interface ZonesPlatform {
         return new PermissionManager(zones);
     }
 
-    void spawnParticle(int type, RBlockPos particleLocation, RPlayer player);
+    void spawnParticle(ZonesParticleRole role, RBlockPos particleLocation, RPlayer player);
 
     void showBeacon(RPlayer player, RBlockPos location, RWorldRef world, NamedTextColor color);
 

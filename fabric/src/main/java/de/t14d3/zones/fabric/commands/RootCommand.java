@@ -1,6 +1,7 @@
 package de.t14d3.zones.fabric.commands;
 
 
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
@@ -135,7 +136,14 @@ public class RootCommand {
                                         .executes(modeCommand::execute)))
                         .then(Commands.literal("find")
                                 .requires(source -> CommandPermissions.check(source, "zones.find"))
-                                .executes(findCommand::execute))
+                                .executes(findCommand::execute)
+                                .then(Commands.literal("nearby")
+                                        .executes(findCommand::toggleNearby)
+                                        .then(Commands.argument("enabled", BoolArgumentType.bool())
+                                                .executes(context -> findCommand.setNearby(
+                                                        context,
+                                                        BoolArgumentType.getBool(context, "enabled")
+                                                )))))
                         .then(Commands.literal("select")
                                 .requires(source -> CommandPermissions.check(source, "zones.select"))
                                 .executes(selectCommand::execute)
@@ -170,4 +178,3 @@ public class RootCommand {
         ));
     }
 }
-

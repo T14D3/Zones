@@ -5,6 +5,7 @@ import de.t14d3.rapunzellib.objects.RBlockPos;
 import de.t14d3.rapunzellib.objects.RPlayer;
 import de.t14d3.rapunzellib.objects.RWorldRef;
 import de.t14d3.zones.Zones;
+import de.t14d3.zones.ZonesParticleRole;
 import de.t14d3.zones.ZonesPlatform;
 import de.t14d3.zones.permissions.PermissionManager;
 import de.t14d3.zones.utils.Types;
@@ -28,6 +29,7 @@ public class FabricPlatform implements ZonesPlatform {
 
     public SimpleParticleType primary;
     public ParticleOptions secondary;
+    public ParticleOptions preview;
 
     public FabricPlatform(ZonesFabric mod) {
         this.mod = mod;
@@ -49,13 +51,19 @@ public class FabricPlatform implements ZonesPlatform {
     }
 
     @Override
-    public void spawnParticle(int type, RBlockPos particleLocation, RPlayer player) {
+    public void spawnParticle(ZonesParticleRole role, RBlockPos particleLocation, RPlayer player) {
         ServerPlayer serverPlayer = player.tryHandle(ServerPlayer.class).orElse(null);
         if (serverPlayer == null) return;
 
+        ParticleOptions particle = switch (role) {
+            case PRIMARY -> primary;
+            case SECONDARY -> secondary;
+            case PREVIEW -> preview != null ? preview : secondary;
+        };
+
         serverPlayer.serverLevel().sendParticles(
                 serverPlayer,
-                (type == 1 ? primary : secondary),
+                particle,
                 false,
                 false,
                 particleLocation.x(),
@@ -127,4 +135,3 @@ public class FabricPlatform implements ZonesPlatform {
         return fallbackPlayer.serverLevel();
     }
 }
-

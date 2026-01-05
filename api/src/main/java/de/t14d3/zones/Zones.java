@@ -9,6 +9,7 @@ import de.t14d3.zones.utils.DebugLoggerManager;
 import de.t14d3.zones.utils.Types;
 import de.t14d3.zones.utils.Utils;
 import de.t14d3.zones.visuals.FindBossbar;
+import de.t14d3.zones.visuals.particles.ParticleVisualManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +37,7 @@ public class Zones {
     private final YamlConfig config;
     private final ThreadPoolExecutor executor;
     private final FindBossbar findBossbar;
+    private final ParticleVisualManager particleVisualManager;
 
     public boolean debug = false;
 
@@ -60,6 +62,7 @@ public class Zones {
 
         this.regionManager = new RegionManager(this);
         this.permissionManager = platform.createPermissionManager(this);
+        this.particleVisualManager = new ParticleVisualManager(this);
         this.executor = new ThreadPoolExecutor(
                 0,
                 config.getInt("advanced.thread-pool.max-size", Runtime.getRuntime().availableProcessors() * 2),
@@ -155,5 +158,9 @@ public class Zones {
      */
     public FindBossbar getFindBossbar() {
         return findBossbar;
+    }
+
+    public ParticleVisualManager getParticleVisualManager() {
+        return particleVisualManager;
     }
 }

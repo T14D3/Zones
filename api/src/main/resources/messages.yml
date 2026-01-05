@@ -50,6 +50,10 @@ commands:
     worldguard-tooltip: "<gray>Imports regions from WorldGuard"
   mode:
     set: "<green>Mode set to <mode>"
+  find:
+    nearby:
+      enabled: "<green>Nearby region boundaries enabled."
+      disabled: "<yellow>Nearby region boundaries disabled."
 
 region:
   none-found: "<red>No regions found!"

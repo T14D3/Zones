@@ -13,10 +13,8 @@ import org.bukkit.entity.Player;
 public class DeleteCommand {
     private RegionManager regionManager;
     private MessageFormatService messages;
-    private final ZonesBukkit plugin;
 
     public DeleteCommand(ZonesBukkit plugin) {
-        this.plugin = plugin;
         this.regionManager = plugin.getRegionManager();
         this.messages = plugin.getMessages();
     }

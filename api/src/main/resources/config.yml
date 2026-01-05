@@ -38,10 +38,37 @@ visuals:
     # Defines the particle type used for the corners of the selection
     # Defaults to WAX_ON
     secondary: WAX_ON
+    # Defines the particle type used for previews (e.g. expand preview)
+    # Defaults to COMPOSTER
+    preview: COMPOSTER
     # Maximum distance from the player to spawn particles
     # Defaults to 15
     # Don't set this too high, can easily cause players to time out
     range: 15
+    # How often particle visuals are rendered (in ms)
+    # Defaults to 200
+    period-ms: 200
+    # Maximum unique particle points per player per tick (hard cap)
+    # Defaults to 2500
+    budget-per-player: 2500
+
+    selection:
+      # Render mode for the player's current selection
+      # Valid values are: FACES, WIRE_EDGES, PERIMETER_AT_VIEWER_Y
+      # Defaults to FACES
+      mode: FACES
+      # Sampling step (1 = every block)
+      step: 1
+
+    nearby:
+      # Shows the boundaries of all nearby regions
+      # Render mode for nearby region boundaries
+      # Valid values are: PERIMETER_AT_VIEWER_Y, WIRE_EDGES, FACES
+      mode: PERIMETER_AT_VIEWER_Y
+      # Sampling step for nearby region boundaries
+      step: 1
+      # Highlights the effective region at the player's current position
+      highlight-effective: true
 
 zone-saving:
   # Valid values are SHUTDOWN, MODIFIED, PERIODIC
