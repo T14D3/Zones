@@ -9,7 +9,7 @@ plugins {
 }
 
 
-group = "de.t14d3"
+group = "de.t14d3.zones"
 val buildVersion = System.getenv("VERSION")?.takeIf { it.isNotBlank() } ?: "0.3.0"
 version = buildVersion
 
@@ -61,8 +61,7 @@ val reposiliteUsername: String? =
 val reposilitePassword: String? =
     (findProperty("reposilitePassword") as String?) ?: System.getenv("REPOSILITE_PASSWORD")
 
-val reposiliteRepo = if (buildVersion.endsWith("SNAPSHOT")) "snapshots" else "releases"
-val reposiliteRepoUrl = "${reposiliteBaseUrl.trimEnd('/')}/$reposiliteRepo"
+val reposiliteRepoUrl = "${reposiliteBaseUrl.trimEnd('/')}/snapshots"
 
 val checkReposiliteConfig = tasks.register<CheckReposiliteConfig>("checkReposiliteConfig") {
     group = "publishing"

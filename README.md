@@ -184,7 +184,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("de.t14d3.zones:api:<version>")
+    compileOnly("de.t14d3.zones:zones-api:<version>")
 }
 
 ```
