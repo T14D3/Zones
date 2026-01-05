@@ -1,7 +1,8 @@
+import net.fabricmc.loom.task.RemapJarTask
+
 plugins {
     id("java")
     id("fabric-loom")
-    alias(libs.plugins.shadow)
 }
 
 repositories {
@@ -49,9 +50,15 @@ dependencies {
 
     modImplementation(include("net.kyori:adventure-platform-fabric:${libs.versions.adventure.platform.fabric.get()}")!!)
     implementation(rootProject.libs.adventure.minimessage)
+    include(rootProject.libs.adventure.minimessage)
 
-    modImplementation(include("de.t14d3.rapunzellib:platform-fabric:${libs.versions.rapunzellib.get()}")!!)
-    modImplementation(include("de.t14d3.rapunzellib:events-fabric:${libs.versions.rapunzellib.get()}")!!)
+    // Keep the mod dependency on the Loom-remapped classpath (dev runs use Mojang-mapped Minecraft),
+    // but still include the jars for jar-in-jar distribution.
+    modImplementation("de.t14d3.rapunzellib:platform-fabric:${libs.versions.rapunzellib.get()}")
+    include("de.t14d3.rapunzellib:platform-fabric:${libs.versions.rapunzellib.get()}")
+
+    modImplementation("de.t14d3.rapunzellib:events-fabric:${libs.versions.rapunzellib.get()}")
+    include("de.t14d3.rapunzellib:events-fabric:${libs.versions.rapunzellib.get()}")
 }
 
 tasks.processResources {
@@ -68,14 +75,12 @@ tasks.test {
 }
 
 tasks {
-    shadowJar {
-        exclude("*mixins.json")
-        exclude("*refmap.json")
-        exclude("*.accesswidener")
-        exclude("fabric-installer*")
-        exclude("LICENSE*")
-        exclude("/assets/")
-        exclude("/net/")
-        exclude("/ui/")
+    jar {
+        archiveClassifier.set("dev")
+        from(project(":api").the<SourceSetContainer>()["main"].output)
     }
+}
+
+tasks.named<RemapJarTask>("remapJar") {
+    archiveClassifier.set("")
 }

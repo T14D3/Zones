@@ -4,10 +4,6 @@ plugins {
 
 repositories {
     mavenCentral()
-    maven {
-        name = "JitPack"
-        url = uri("https://jitpack.io")
-    }
 }
 
 dependencies {

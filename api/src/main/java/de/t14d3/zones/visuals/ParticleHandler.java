@@ -1,19 +1,9 @@
 package de.t14d3.zones.visuals;
 
 import de.t14d3.rapunzellib.objects.RBlockPos;
-import de.t14d3.zones.Zones;
 import de.t14d3.zones.visuals.particles.ParticleRenderMode;
 
 public class ParticleHandler {
-    private final Zones zones;
-
-    public ParticleHandler(Zones zones) {
-        this.zones = zones;
-    }
-
-    public void particleScheduler() {
-        zones.getParticleVisualManager().start();
-    }
 
     @FunctionalInterface
     public interface ParticlePointConsumer {

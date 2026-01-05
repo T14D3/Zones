@@ -1,6 +1,7 @@
 package de.t14d3.zones.fabric.commands;
 
 
+import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -12,7 +13,6 @@ import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.Zones;
 import de.t14d3.zones.fabric.ZonesFabric;
 import de.t14d3.zones.utils.Messages;
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.kyori.adventure.platform.modcommon.impl.NonWrappingComponentSerializer;
 import net.kyori.adventure.platform.modcommon.impl.WrappedComponent;
 import net.minecraft.commands.CommandSourceStack;
@@ -24,6 +24,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class RootCommand {
+    private final ZonesFabric mod;
     private final CancelCommand cancelCommand;
     private final CreateCommand createCommand;
     private final DeleteCommand deleteCommand;
@@ -41,6 +42,7 @@ public class RootCommand {
     private final MigrateCommand migrateCommand;
 
     public RootCommand(ZonesFabric mod) {
+        this.mod = mod;
         this.cancelCommand = new CancelCommand(mod);
         this.createCommand = new CreateCommand(mod);
         this.deleteCommand = new DeleteCommand(mod);
@@ -92,7 +94,9 @@ public class RootCommand {
     }
 
     public void register() {
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
+        Zones.getInstance().getLogger().info("Registering zones command tree.");
+        CommandDispatcher<CommandSourceStack> dispatcher = mod.getServer().getCommands().getDispatcher();
+        dispatcher.register(
                 Commands.literal("zone")
                         .then(Commands.literal("cancel")
                                 .requires(source -> CommandPermissions.check(source, "zones.cancel"))
@@ -175,6 +179,6 @@ public class RootCommand {
                                             return builder.buildFuture();
                                         })
                                         .executes(migrateCommand::execute)))
-        ));
+        );
     }
 }

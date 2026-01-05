@@ -47,6 +47,13 @@ public class ZonesFabric implements DedicatedServerModInitializer {
         ServerLifecycleEvents.SERVER_STOPPING.register(this::onDisable);
 
         this.dataFolder = new File(FabricLoader.getInstance().getConfigDir().toFile(), "Zones");
+    }
+
+    void onEnable(@NotNull MinecraftServer server) {
+        this.server = server;
+
+        FabricRapunzelBootstrap.bootstrap(MOD_ID, server, ZonesFabric.class);
+
         this.platform = new FabricPlatform(this);
 
         this.types = new FabricTypes(this);
@@ -54,22 +61,18 @@ public class ZonesFabric implements DedicatedServerModInitializer {
         this.zones = new Zones(platform);
         this.regionManager = zones.getRegionManager();
 
+        GameEvents.install(this);
+        ZonesRapunzelHooks.install(zones);
+
         this.permissionManager = (FabricPermissionManager) zones.getPermissionManager();
+
+        this.rootCommand = new RootCommand(this);
 
         Zones.getInstance().getLogger().info("Zones Fabric mod initialized!");
     }
 
-    void onEnable(@NotNull MinecraftServer server) {
-        this.server = server;
-
-        FabricRapunzelBootstrap.bootstrap(MOD_ID, server, ZonesFabric.class);
-        GameEvents.install(this);
-        ZonesRapunzelHooks.install(zones);
-        this.rootCommand = new RootCommand(this);
-        // Fabric callbacks are bridged into RapunzelLib GameEvents; Zones subscribes via ZonesRapunzelHooks.
-    }
-
     void onStarted(MinecraftServer server) {
+        if (zones == null || regionManager == null) return;
         regionManager.loadRegions();
         zones.getLogger().info("Mod enabled, loaded {} regions.", zones.getRegionManager().regions().size());
 
@@ -95,7 +98,9 @@ public class ZonesFabric implements DedicatedServerModInitializer {
     }
 
     void onDisable(MinecraftServer server) {
-        regionManager.saveRegions();
+        if (regionManager != null) {
+            regionManager.saveRegions();
+        }
         Rapunzel.shutdown(MOD_ID);
     }
 

@@ -60,8 +60,7 @@ public class FabricPlatform implements ZonesPlatform {
             case SECONDARY -> secondary;
             case PREVIEW -> preview != null ? preview : secondary;
         };
-
-        serverPlayer.serverLevel().sendParticles(
+        serverPlayer.level().sendParticles(
                 serverPlayer,
                 particle,
                 false,
@@ -125,13 +124,13 @@ public class FabricPlatform implements ZonesPlatform {
     }
 
     private ServerLevel resolveWorld(RWorldRef world, ServerPlayer fallbackPlayer) {
-        if (world == null) return fallbackPlayer.serverLevel();
+        if (world == null) return fallbackPlayer.level();
         String id = world.identifier();
         for (ServerLevel level : mod.getServer().getAllLevels()) {
             if (level.dimension().location().toString().equals(id)) {
                 return level;
             }
         }
-        return fallbackPlayer.serverLevel();
+        return fallbackPlayer.level();
     }
 }

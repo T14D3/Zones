@@ -2,6 +2,7 @@ plugins {
     id("java")
     alias(libs.plugins.run.paper)
     alias(libs.plugins.paperweight.userdev)
+    alias(libs.plugins.shadow)
 }
 
 repositories {
@@ -34,64 +35,16 @@ dependencies {
     compileOnly(rootProject.libs.placeholderapi)
     compileOnly(rootProject.libs.worldedit.bukkit)
     compileOnly(rootProject.libs.worldguard.bukkit)
-    implementation(platform(rootProject.libs.intellectualsites.bom))
+    compileOnly(platform(rootProject.libs.intellectualsites.bom))
     compileOnly(rootProject.libs.fawe.core)
     compileOnly(rootProject.libs.fawe.bukkit)
     implementation(rootProject.libs.commandapi.paper.shade)
 
-    implementation(rootProject.libs.adventure.platform.bukkit)
+    compileOnly(rootProject.libs.adventure.platform.bukkit)
 
-    val localRapunzelLibsDir = rootProject.file("../RapunzelLib/build/libs")
-
-    val localRapunzelPlatformPaper = localRapunzelLibsDir
-        .takeIf { it.isDirectory }
-        ?.listFiles()
-        ?.filter { it.isFile && it.name.startsWith("rapunzellib-platform-paper-") && it.name.endsWith("-shaded.jar") }
-        ?.maxByOrNull { it.lastModified() }
-
-    val localRapunzelEventsPaper = localRapunzelLibsDir
-        .takeIf { it.isDirectory }
-        ?.listFiles()
-        ?.filter {
-            it.isFile &&
-                    it.name.startsWith("rapunzellib-events-paper-") &&
-                    it.name.endsWith(".jar") &&
-                    !it.name.endsWith("-sources.jar") &&
-                    !it.name.endsWith("-javadoc.jar")
-        }
-        ?.maxByOrNull { it.lastModified() }
-
-    val localRapunzelEvents = localRapunzelLibsDir
-        .takeIf { it.isDirectory }
-        ?.listFiles()
-        ?.filter {
-            it.isFile &&
-                    it.name.startsWith("rapunzellib-events-") &&
-                    it.name.endsWith(".jar") &&
-                    !it.name.contains("-paper-") &&
-                    !it.name.contains("-fabric-") &&
-                    !it.name.endsWith("-sources.jar") &&
-                    !it.name.endsWith("-javadoc.jar")
-        }
-        ?.maxByOrNull { it.lastModified() }
-
-    if (localRapunzelPlatformPaper != null) {
-        implementation(files(localRapunzelPlatformPaper))
-    } else {
-        implementation("de.t14d3.rapunzellib:platform-paper:${libs.versions.rapunzellib.get()}:shaded")
-    }
-
-    if (localRapunzelEvents != null) {
-        implementation(files(localRapunzelEvents))
-    } else {
-        implementation(rootProject.libs.rapunzellib.events)
-    }
-
-    if (localRapunzelEventsPaper != null) {
-        implementation(files(localRapunzelEventsPaper))
-    } else {
-        implementation(rootProject.libs.rapunzellib.events.paper)
-    }
+    implementation(rootProject.libs.rapunzellib.api)
+    implementation(rootProject.libs.rapunzellib.platform.paper)
+    implementation(rootProject.libs.rapunzellib.events.paper)
 
     paperweight.paperDevBundle(rootProject.libs.versions.paper.dev.bundle.get())
 }
@@ -125,4 +78,22 @@ tasks.runServer {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks {
+    jar {
+        archiveClassifier.set("dev")
+    }
+
+    shadowJar {
+        archiveClassifier.set("")
+        mergeServiceFiles()
+
+        exclude("LICENSE*")
+        exclude("net/kyori/**")
+    }
+
+    build {
+        dependsOn(shadowJar)
+    }
 }

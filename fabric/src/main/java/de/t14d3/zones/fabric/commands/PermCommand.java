@@ -28,6 +28,7 @@ import net.kyori.adventure.platform.modcommon.impl.WrappedComponent;
 import net.kyori.adventure.text.Component;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.server.players.ProfileResolver;
 
 import java.util.Locale;
 import java.util.UUID;
@@ -219,7 +220,7 @@ public class PermCommand {
             if (flag.valueKind() == FlagValueKind.STRING_SET && (flag == Flags.ROLE || flag == Flags.GROUP)) {
                 didChange = remove
                         ? applyMembershipUnset(membership, subject, flag, rawPattern)
-                        : applyMembership(membership, subject, flag, rawPattern, allow, false);
+                        : applyMembership(membership, subject, flag, rawPattern, allow);
             } else {
                 if (!remove) {
                     didChange = applyAdd(perms, subject, flag, rawPattern, allow);
@@ -286,66 +287,54 @@ public class PermCommand {
         RegionPermissions.SubjectPermissions subjectPerms = perms.subjects().get(subject);
         if (subjectPerms == null) return false;
         RegionPermissions.PermissionValue pv = subjectPerms.get(flag.id());
-        if (pv == null) return false;
-
-        if (pv instanceof RegionPermissions.TargetDecisionValue targeted) {
-            String pattern = normalizeTargetDecisionValue(rawPattern);
-            return targeted.removeAllow(pattern) || targeted.removeDeny(pattern);
-        }
-
-        if (pv instanceof RegionPermissions.StringSetValue set) {
-            String value = rawPattern == null ? "" : rawPattern.trim().toLowerCase(Locale.ROOT);
-            if (value.isEmpty()) return false;
-            return set.allowValues().remove(value) || set.denyValues().remove(value);
+        switch (pv) {
+            case null -> {
+                return false;
+            }
+            case RegionPermissions.TargetDecisionValue targeted -> {
+                String pattern = normalizeTargetDecisionValue(rawPattern);
+                return targeted.removeAllow(pattern) || targeted.removeDeny(pattern);
+            }
+            case RegionPermissions.StringSetValue set -> {
+                String value = rawPattern == null ? "" : rawPattern.trim().toLowerCase(Locale.ROOT);
+                if (value.isEmpty()) return false;
+                return set.allowValues().remove(value) || set.denyValues().remove(value);
+            }
+            default -> {
+            }
         }
 
         return false;
     }
 
-    private static boolean applyMembership(RegionMembership membership, SubjectRef subject, Flag flag, String rawPattern, boolean allow, boolean remove) {
+    private static boolean applyMembership(RegionMembership membership, SubjectRef subject, Flag flag, String rawPattern, boolean allow) {
         if (membership == null || subject == null || flag == null) return false;
         String value = rawPattern == null ? "" : rawPattern.trim().toLowerCase(Locale.ROOT);
         if (value.isEmpty()) return false;
 
-        boolean changed;
         if (flag == Flags.ROLE) {
             if (!(subject instanceof PlayerSubject p)) return false;
             RegionMembership.PlayerEntry entry = membership.player(p.uuid());
-            if (remove) {
-                changed = allow ? entry.roles().removeAllow(value) : entry.roles().removeDeny(value);
-            } else {
-                if (allow) entry.roles().allow(value);
-                else entry.roles().deny(value);
-                changed = true;
-            }
+            if (allow) entry.roles().allow(value);
+            else entry.roles().deny(value);
             cleanupEmptyMembership(membership, p.uuid());
-            return changed;
+            return true;
         }
 
         if (flag == Flags.GROUP) {
             if (subject instanceof PlayerSubject p) {
                 RegionMembership.PlayerEntry entry = membership.player(p.uuid());
-                if (remove) {
-                    changed = allow ? entry.groups().removeAllow(value) : entry.groups().removeDeny(value);
-                } else {
-                    if (allow) entry.groups().allow(value);
-                    else entry.groups().deny(value);
-                    changed = true;
-                }
+                if (allow) entry.groups().allow(value);
+                else entry.groups().deny(value);
                 cleanupEmptyMembership(membership, p.uuid());
-                return changed;
+                return true;
             }
             if (subject instanceof GroupSubject g) {
                 RegionMembership.GroupEntry entry = membership.group(g.name());
-                if (remove) {
-                    changed = allow ? entry.includes().removeAllow(value) : entry.includes().removeDeny(value);
-                } else {
-                    if (allow) entry.includes().allow(value);
-                    else entry.includes().deny(value);
-                    changed = true;
-                }
+                if (allow) entry.includes().allow(value);
+                else entry.includes().deny(value);
                 cleanupEmptyGroupDefinition(membership, g.name());
-                return changed;
+                return true;
             }
             return false;
         }
@@ -524,8 +513,7 @@ public class PermCommand {
 
         if ("+universal".equalsIgnoreCase(raw)
                 || "@all".equalsIgnoreCase(raw)
-                || "@*".equalsIgnoreCase(raw)
-                || "+universal".equalsIgnoreCase(raw)) {
+                || "@*".equalsIgnoreCase(raw)) {
             return Subjects.universal();
         }
 
@@ -539,16 +527,13 @@ public class PermCommand {
 
             if (source != null) {
                 var server = source.getServer();
-                if (server != null) {
-                    var online = server.getPlayerList().getPlayerByName(nameOrUuid);
-                    if (online != null) return new PlayerSubject(online.getUUID());
-                    try {
-                        GameProfile profile = server.getProfileCache() != null
-                                ? server.getProfileCache().get(nameOrUuid).orElse(null)
-                                : null;
-                        if (profile != null) return new PlayerSubject(profile.getId());
-                    } catch (Exception ignored) {
-                    }
+                var online = server.getPlayerList().getPlayerByName(nameOrUuid);
+                if (online != null) return new PlayerSubject(online.getUUID());
+                try {
+                    ProfileResolver resolver = server.services().profileResolver();
+                    GameProfile profile = resolver.fetchByName(raw).orElse(null);
+                    if (profile != null) return new PlayerSubject(profile.id());
+                } catch (Exception ignored) {
                 }
             }
             return null;
@@ -571,16 +556,13 @@ public class PermCommand {
 
         if (source != null) {
             var server = source.getServer();
-            if (server != null) {
-                var online = server.getPlayerList().getPlayerByName(raw);
-                if (online != null) return new PlayerSubject(online.getUUID());
-                try {
-                    GameProfile profile = server.getProfileCache() != null
-                            ? server.getProfileCache().get(raw).orElse(null)
-                            : null;
-                    if (profile != null) return new PlayerSubject(profile.getId());
-                } catch (Exception ignored) {
-                }
+            var online = server.getPlayerList().getPlayerByName(raw);
+            if (online != null) return new PlayerSubject(online.getUUID());
+            try {
+                ProfileResolver resolver = server.services().profileResolver();
+                GameProfile profile = resolver.fetchByName(raw).orElse(null);
+                if (profile != null) return new PlayerSubject(profile.id());
+            } catch (Exception ignored) {
             }
         }
 

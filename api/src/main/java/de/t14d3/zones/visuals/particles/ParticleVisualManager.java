@@ -31,15 +31,10 @@ public final class ParticleVisualManager {
     public ParticleVisualManager(Zones zones) {
         this.zones = zones;
         this.platform = zones.getPlatform();
-    }
-
-    public void start() {
-        if (started) return;
-        started = true;
 
         long periodMs = zones.getConfig().getLong("visuals.particles.period-ms", 200);
         Duration period = Duration.ofMillis(Math.max(50, periodMs));
-        Rapunzel.context().scheduler().runRepeatingAsync(period, period, this::tickSafely);
+        Rapunzel.context().scheduler().runRepeatingAsync(Duration.ofSeconds(1), period, this::tickSafely);
     }
 
     private void tickSafely() {

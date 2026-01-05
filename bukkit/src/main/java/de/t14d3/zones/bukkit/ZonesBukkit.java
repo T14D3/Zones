@@ -18,7 +18,6 @@ import de.t14d3.zones.rapunzellib.ZonesRapunzelHooks;
 import de.t14d3.zones.utils.DebugLoggerManager;
 import de.t14d3.zones.utils.Types;
 import de.t14d3.zones.utils.Utils;
-import de.t14d3.zones.visuals.ParticleHandler;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPIPaperConfig;
 import org.bukkit.permissions.Permission;
@@ -85,10 +84,6 @@ public final class ZonesBukkit extends JavaPlugin {
         this.regionManager.loadRegions();
 
         this.saveDefaultConfig();
-
-        // Create particle handler/scheduler
-        var particleHandler = new ParticleHandler(zones);
-        particleHandler.particleScheduler();
 
         // Register mode permissions
         for (Utils.SelectionMode mode : Utils.SelectionMode.values()) {

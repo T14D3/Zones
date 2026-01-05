@@ -12,7 +12,7 @@ annotations = "23.0.0"
 
 adventure = "4.19.0"
 adventure-platform-bukkit = "4.3.4"
-adventure-platform-fabric = "6.2.0"
+adventure-platform-fabric = "6.7.0"
 
 # Zones: api
 log4j-core = "2.25.3"
@@ -31,9 +31,10 @@ commandapi-paper-shade = "11.0.1-SNAPSHOT"
 rapunzellib = "0.1.9-SNAPSHOT"
 
 # Zones: fabric
-minecraft = "1.21.4"
+minecraft = "1.21.10"
+yarn-mappings = "1.21.10+build.3"
 fabric-loader = "0.16.10"
-fabric-api = "0.117.0+1.21.4"
+fabric-api = "0.138.4+1.21.10"
 fabric-resource-loader-v1 = "1.0.4+14959b836f"
 
 [plugins]
@@ -66,6 +67,7 @@ commandapi-paper-shade = { module = "dev.jorel:commandapi-paper-shade", version.
 
 rapunzellib-api = { module = "de.t14d3.rapunzellib:api", version.ref = "rapunzellib" }
 rapunzellib-events = { module = "de.t14d3.rapunzellib:events", version.ref = "rapunzellib" }
+rapunzellib-platform-paper = { module = "de.t14d3.rapunzellib:platform-paper", version.ref = "rapunzellib" }
 rapunzellib-events-paper = { module = "de.t14d3.rapunzellib:events-paper", version.ref = "rapunzellib" }
 rapunzellib-platform-fabric = { module = "de.t14d3.rapunzellib:platform-fabric", version.ref = "rapunzellib" }
 rapunzellib-events-fabric = { module = "de.t14d3.rapunzellib:events-fabric", version.ref = "rapunzellib" }

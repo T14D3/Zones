@@ -171,6 +171,23 @@ region the player is standing in. It currently supports the following placeholde
   responsive.
 * **Caching:** The plugin uses a caching system to improve performance when checking permissions.
 
+## Developers
+
+Zones exposes a lot of internals for plugin developers to use (e.g. for custom flags, integrations, etc.).
+Artifacts are available at https://maven.t14d3.de/#/snapshots/de/t14d3/zones/
+
+Example:
+
+```kotlin
+repositories {
+    maven("https://maven.t14d3.de/snapshots")
+}
+
+dependencies {
+    compileOnly("de.t14d3.zones:api:<version>")
+}
+
+```
 ## Contributing
 
 Contributions to the plugin are welcome! If you have any ideas for new features, bug fixes, or improvements, please feel
