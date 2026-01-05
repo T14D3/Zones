@@ -55,7 +55,7 @@ jobs:
           title: Development Build
           automatic_release_tag: latest-dev
           prerelease: true
-          files: build/libs/Zones*.jar
+          files: build/libs/zones*.jar
           repo_token: ${{ secrets.GITHUB_TOKEN }}
 
     # NOTE: The Gradle Wrapper is the default and recommended way to run Gradle (https://docs.gradle.org/current/userguide/gradle_wrapper.html).
