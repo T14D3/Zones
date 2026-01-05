@@ -26,7 +26,6 @@ public final class ParticleVisualManager {
     private final Zones zones;
     private final ZonesPlatform platform;
     private final ConcurrentHashMap<UUID, ConcurrentHashMap<String, Overlay>> overlays = new ConcurrentHashMap<>();
-    private volatile boolean started;
 
     public ParticleVisualManager(Zones zones) {
         this.zones = zones;
