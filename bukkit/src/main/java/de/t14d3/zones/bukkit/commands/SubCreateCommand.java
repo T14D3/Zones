@@ -173,14 +173,18 @@ public class SubCreateCommand {
                     return;
                 }
 
-                regionManager.createSubRegion(
-                        finalParentRegion.getName() + "_subb",
+                Region created = regionManager.createSubRegion(
+                        finalParentRegion.getName() + "_sub",
                         selection.getMin(),
                         selection.getMax(),
                         selectionWorld,
                         player.getUniqueId(),
                         finalParentRegion
                 );
+                if (created == null) {
+                    player.sendMessage(messages.component("commands.create.overlap"));
+                    return;
+                }
 
                 plugin.getPlatform().removeBeacon(rPlayer, selectionWorld, selection.getMin());
                 plugin.getPlatform().removeBeacon(rPlayer, selectionWorld, selection.getMax());

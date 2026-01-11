@@ -15,17 +15,14 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Objects;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
-@SuppressWarnings("ThisEscapedInObjectConstruction")
 /**
  * Core Zones service container.
  *
  * <p>This class wires up managers (regions, permissions, config, visuals) and exposes
  * them to the platform implementations (Bukkit/Fabric) and integrations.</p>
  */
+@SuppressWarnings("ThisEscapedInObjectConstruction")
 public class Zones {
     private static Zones instance;
 
@@ -35,7 +32,6 @@ public class Zones {
     private final DebugLoggerManager debugLogger;
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final YamlConfig config;
-    private final ThreadPoolExecutor executor;
     private final FindBossbar findBossbar;
     private final ParticleVisualManager particleVisualManager;
 
@@ -63,13 +59,6 @@ public class Zones {
         this.regionManager = new RegionManager(this);
         this.permissionManager = platform.createPermissionManager(this);
         this.particleVisualManager = new ParticleVisualManager(this);
-        this.executor = new ThreadPoolExecutor(
-                0,
-                config.getInt("advanced.thread-pool.max-size", Runtime.getRuntime().availableProcessors() * 2),
-                config.getInt("advanced.thread-pool.keepalive", 60),
-                TimeUnit.SECONDS,
-                new SynchronousQueue<>()
-        );
 
         this.findBossbar = new FindBossbar(this);
     }
@@ -135,13 +124,6 @@ public class Zones {
      */
     public File getDataFolder() {
         return platform.getDataFolder();
-    }
-
-    /**
-     * Returns the thread pool used for asynchronous/auxiliary work.
-     */
-    public ThreadPoolExecutor getThreadPool() {
-        return executor;
     }
 
     /**

@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 public class YamlDataSource extends AbstractDataSource {
     private final YamlConfig regionsFile;
@@ -231,9 +230,9 @@ public class YamlDataSource extends AbstractDataSource {
      */
     @Override
     public void saveRegions(List<Region> regions) {
-        CompletableFuture.runAsync(() -> {
+        Rapunzel.context().scheduler().runAsync(() -> {
             try {
-                regionsFile.set("regions", null); // Clear existing regions     
+                regionsFile.set("regions", null); // Clear existing regions
 
                 for (Region region : regions) {
                     saveRegion(region.getKey().toString(), region);

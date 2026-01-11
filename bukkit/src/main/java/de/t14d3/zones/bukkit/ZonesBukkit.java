@@ -101,15 +101,6 @@ public final class ZonesBukkit extends JavaPlugin {
         });
 
 
-        // Register saving task
-        if (getSavingMode() == Utils.SavingModes.PERIODIC) {
-            getServer().getScheduler().runTaskTimerAsynchronously(this, () -> {
-                regionManager.saveRegions();
-                getLogger().info("Zones have been saved.");
-            }, 20L, getConfig().getInt("zone-saving.period", 60) * 20L);
-        }
-
-
         // PlaceholderAPI integration
         if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
             new PlaceholderAPI(this).register();

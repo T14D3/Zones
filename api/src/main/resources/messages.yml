@@ -22,6 +22,7 @@ commands:
     direction: "<gray>Direction to expand"
     success: "<green>Region <gold>'<region>'<green> expanded successfully!"
     fail: "<red>Error: Region <gold>'<region>'<green> could not be expanded."
+    outside-parent: "<red>Error: Expansion would leave the parent region."
     invalid-usage: "<red>Invalid usage. Usage: /zone expand <region> <amount> [overlap]"
   save: "<green>Saved <count> regions to file"
   select:

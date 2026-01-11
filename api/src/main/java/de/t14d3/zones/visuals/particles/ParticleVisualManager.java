@@ -31,8 +31,13 @@ public final class ParticleVisualManager {
         this.zones = zones;
         this.platform = zones.getPlatform();
 
-        long periodMs = zones.getConfig().getLong("visuals.particles.period-ms", 200);
-        Duration period = Duration.ofMillis(Math.max(50, periodMs));
+        Duration period = zones.getConfig().getDuration("visuals.particles.period", null);
+        if (period == null) {
+            long periodMs = zones.getConfig().getLong("visuals.particles.period-ms", 200);
+            period = Duration.ofMillis(Math.max(50, periodMs));
+        } else if (period.toMillis() < 50) {
+            period = Duration.ofMillis(50);
+        }
         Rapunzel.context().scheduler().runRepeatingAsync(Duration.ofSeconds(1), period, this::tickSafely);
     }
 

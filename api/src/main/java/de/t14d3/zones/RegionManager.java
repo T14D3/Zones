@@ -190,7 +190,19 @@ public class RegionManager {
      * @param playerUUID       The UUID of the player who will own the new region.
      * @param parentRegion     The parent region of the new region.
      */
-    public Region createSubRegion(String name, RBlockPos min, RBlockPos max, RWorldRef world, UUID playerUUID, Region parentRegion) {
+    public @Nullable Region createSubRegion(String name, RBlockPos min, RBlockPos max, RWorldRef world, UUID playerUUID, Region parentRegion) {
+        if (parentRegion == null || min == null || max == null || world == null) return null;
+        if (!sameWorld(world, parentRegion.getWorld())) return null;
+
+        WorldRegionManager manager = getOrCreateWorldManager(world);
+        boolean insideParent = manager.withReadLock(() -> parentRegion.contains(min) && parentRegion.contains(max));
+        if (!insideParent) return null;
+
+        boolean overlaps = manager.withReadLock(() ->
+                manager.overlapsExistingRegionLocked(min, max, world, other -> isLineageRelated(parentRegion, other))
+        );
+        if (overlaps) return null;
+
         RegionKey regionKey = RegionKey.generate();
 
         RegionPermissions permissions = new RegionPermissions();
@@ -315,7 +327,18 @@ public class RegionManager {
                 case DOWN -> newMin = new RBlockPos(newMin.x(), newMin.y() - amount, newMin.z());
             }
 
-            if (!allowOverlap && manager.overlapsExistingRegionLocked(newMin, newMax, world, region.getKey())) {
+            if (newMin.x() > newMax.x() || newMin.y() > newMax.y() || newMin.z() > newMax.z()) {
+                return false;
+            }
+
+            Region parent = region.getParentRegion(this);
+            if (parent != null) {
+                if (!parent.contains(newMin) || !parent.contains(newMax)) {
+                    return false;
+                }
+            }
+
+            if (!allowOverlap && overlapsOutsideLineageInternal(region, newMin, newMax)) {
                 return false;
             }
 
@@ -331,6 +354,20 @@ public class RegionManager {
 
     public void expandBounds(Region region, Direction direction, int amount) {
         expandBounds(region, direction, amount, true);
+    }
+
+    private boolean overlapsOutsideLineageInternal(@Nullable Region region, RBlockPos min, RBlockPos max) {
+        if (region == null) return false;
+        RWorldRef world = region.getWorld();
+        if (world == null) return false;
+        WorldRegionManager manager = getOrCreateWorldManager(world);
+        return manager.withReadLock(() ->
+                manager.overlapsExistingRegionLocked(min, max, world, other -> isLineageRelated(region, other))
+        );
+    }
+
+    public boolean overlapsOutsideLineage(@Nullable Region region, RBlockPos min, RBlockPos max) {
+        return overlapsOutsideLineageInternal(region, min, max);
     }
 
     /**
@@ -383,9 +420,35 @@ public class RegionManager {
         });
     }
 
+    private boolean isLineageRelated(@Nullable Region a, @Nullable Region b) {
+        if (a == null || b == null) return false;
+        if (!sameWorld(a.getWorld(), b.getWorld())) return false;
+        if (a.getKey().equals(b.getKey())) return true;
+        return isAncestorOf(a, b) || isAncestorOf(b, a);
+    }
+
+    private boolean isAncestorOf(@Nullable Region candidate, @Nullable Region possibleDescendant) {
+        if (candidate == null || possibleDescendant == null) return false;
+        if (!sameWorld(candidate.getWorld(), possibleDescendant.getWorld())) return false;
+
+        Set<Integer> visited = null;
+        Region current = possibleDescendant.getParentRegion(this);
+        while (current != null) {
+            if (current.getKey().equals(candidate.getKey())) return true;
+            if (visited == null) visited = new HashSet<>();
+            if (!visited.add(current.getKey().getValue())) break;
+            current = current.getParentRegion(this);
+        }
+        return false;
+    }
+
+    private static boolean sameWorld(@Nullable RWorldRef a, @Nullable RWorldRef b) {
+        if (a == null || b == null) return false;
+        return Objects.equals(a.identifier(), b.identifier());
+    }
+
     private WorldRegionManager getOrCreateWorldManager(RWorldRef world) {
         String worldId = world == null ? "" : world.identifier();
-        if (worldId == null) worldId = "";
 
         WorldRegionManager existing = worldManagers.get(worldId);
         if (existing != null) return existing;

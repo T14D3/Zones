@@ -93,6 +93,27 @@ public class ExpandCommand {
                 return 1;
             }
         }
+        Box preview = computeExpandedPreview(region, direction, amount);
+        if (preview == null || preview.getMin() == null || preview.getMax() == null) {
+            context.getSource().sendMessage(messages.component("commands.expand.fail",
+                    Placeholders.builder().string("region", region.getKey().toString()).build()));
+            return 1;
+        }
+
+        Region parent = region.getParentRegion(regionManager);
+        if (parent != null) {
+            boolean insideParent = regionManager.withWorldReadLock(parent.getWorld(),
+                    () -> parent.contains(preview.getMin()) && parent.contains(preview.getMax()));
+            if (!insideParent) {
+                context.getSource().sendMessage(messages.component("commands.expand.outside-parent"));
+                return 1;
+            }
+        }
+
+        if (!allowOverlap && regionManager.overlapsOutsideLineage(region, preview.getMin(), preview.getMax())) {
+            context.getSource().sendMessage(messages.component("commands.create.overlap"));
+            return 1;
+        }
         if (regionManager.expandBounds(region, direction, amount, allowOverlap)) {
             context.getSource().sendMessage(messages.component("commands.expand.success",
                     Placeholders.builder().string("region", region.getKey().toString()).build()));
@@ -140,7 +161,7 @@ public class ExpandCommand {
             parsedAmount = tryParseInt(builder.getRemaining());
         }
 
-        if (parsedAmount == null || parsedAmount <= 0) {
+        if (parsedAmount == null || parsedAmount == 0) {
             mod.getZones().getParticleVisualManager().removeOverlay(player.getUUID(), PREVIEW_ID);
             return;
         }
@@ -250,6 +271,10 @@ public class ExpandCommand {
             case EAST -> newMax = new RBlockPos(newMax.x() + amount, newMax.y(), newMax.z());
             case DOWN -> newMin = new RBlockPos(newMin.x(), newMin.y() - amount, newMin.z());
             case UP -> newMax = new RBlockPos(newMax.x(), newMax.y() + amount, newMax.z());
+        }
+
+        if (newMin.x() > newMax.x() || newMin.y() > newMax.y() || newMin.z() > newMax.z()) {
+            return null;
         }
 
         return new Box(newMin, newMax, world, true);

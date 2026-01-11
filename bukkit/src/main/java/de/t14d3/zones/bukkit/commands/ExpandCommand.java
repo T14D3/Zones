@@ -104,6 +104,29 @@ public class ExpandCommand {
                             int amount = args.getByClassOrDefault("amount", Integer.class, 0);
                             boolean overlapArg = args.getByClassOrDefault("overlap", Boolean.class, false);
                             boolean allowOverlap = overlapArg && sender.hasPermission("zones.expand.overlap");
+                    Box preview = computeExpandedPreview(region, direction, amount);
+                    if (preview == null || preview.getMin() == null || preview.getMax() == null) {
+                        sender.sendMessage(messages.component("commands.expand.fail",
+                                Placeholders.builder().string("region", regionKey.toString()).build()));
+                        return;
+                    }
+
+                    Region parent = region.getParentRegion(regionManager);
+                    if (parent != null) {
+                        boolean insideParent = regionManager.withWorldReadLock(parent.getWorld(),
+                                () -> parent.contains(preview.getMin()) && parent.contains(preview.getMax()));
+                        if (!insideParent) {
+                            sender.sendMessage(messages.component("commands.expand.outside-parent"));
+                            return;
+                        }
+                    }
+
+                    if (!allowOverlap && regionManager.overlapsOutsideLineage(region, preview.getMin(),
+                            preview.getMax())) {
+                        sender.sendMessage(messages.component("commands.create.overlap"));
+                        return;
+                    }
+
                             if (regionManager.expandBounds(region, direction, amount, allowOverlap)) {
                                 sender.sendMessage(
                                         messages.component("commands.expand.success",
@@ -141,7 +164,7 @@ public class ExpandCommand {
 
         String rawAmount = stage == PreviewStage.AMOUNT ? info.currentArg() : prev.getRaw("amount");
         Integer amount = tryParseInt(rawAmount);
-        if (amount == null || amount <= 0) {
+        if (amount == null || amount == 0) {
             plugin.getZones().getParticleVisualManager().removeOverlay(player.getUniqueId(), PREVIEW_ID);
             return;
         }
@@ -241,6 +264,10 @@ public class ExpandCommand {
             case DOWN ->
                     newMin = new de.t14d3.rapunzellib.objects.RBlockPos(newMin.x(), newMin.y() - amount, newMin.z());
             case UP -> newMax = new de.t14d3.rapunzellib.objects.RBlockPos(newMax.x(), newMax.y() + amount, newMax.z());
+        }
+
+        if (newMin.x() > newMax.x() || newMin.y() > newMax.y() || newMin.z() > newMax.z()) {
+            return null;
         }
 
         return new Box(newMin, newMax, world, true);

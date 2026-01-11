@@ -13,6 +13,7 @@ import de.t14d3.zones.utils.Types;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -80,16 +81,16 @@ public class ZonesFabric implements DedicatedServerModInitializer {
         String secondaryType = zones.getConfig().getString("visuals.particles.secondary", "WAX_ON").toLowerCase();
         String previewType = zones.getConfig().getString("visuals.particles.preview", "COMPOSTER").toLowerCase();
         ParticleType<?> primary = BuiltInRegistries.PARTICLE_TYPE
-                .get(ResourceLocation.withDefaultNamespace(primaryType))        
-                .map(ref -> ref.value())
+                .get(ResourceLocation.withDefaultNamespace(primaryType))
+                .map(Holder.Reference::value)
                 .orElseThrow();
         ParticleType<?> secondary = BuiltInRegistries.PARTICLE_TYPE
                 .get(ResourceLocation.withDefaultNamespace(secondaryType))
-                .map(ref -> ref.value())
+                .map(Holder.Reference::value)
                 .orElseThrow();
         ParticleType<?> preview = BuiltInRegistries.PARTICLE_TYPE
                 .get(ResourceLocation.withDefaultNamespace(previewType))
-                .map(ref -> ref.value())
+                .map(Holder.Reference::value)
                 .orElseThrow();
         ((FabricPlatform) platform).primary = (SimpleParticleType) primary;
         ((FabricPlatform) platform).secondary = (SimpleParticleType) secondary;

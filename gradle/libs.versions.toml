@@ -28,7 +28,7 @@ intellectualsites-bom = "1.52"
 commandapi-paper-shade = "11.0.1-SNAPSHOT"
 
 # Zones: shared
-rapunzellib = "0.1.9-SNAPSHOT"
+rapunzellib = "0.2.0-SNAPSHOT"
 
 # Zones: fabric
 minecraft = "1.21.10"

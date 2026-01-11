@@ -7,10 +7,10 @@ import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
 
 public class FindBossbar {
     private final Zones zones;
@@ -27,8 +27,8 @@ public class FindBossbar {
         this.textColor = NamedTextColor.NAMES.value(zones.getConfig().getString("visuals.bossbar.text-color", "WHITE"));
         this.progress = zones.getConfig().getFloat("visuals.bossbar.progress", 1.0f);
 
-        Executors.newSingleThreadScheduledExecutor()
-                .scheduleAtFixedRate(new FindBossbarRunnable(), 0, 1, java.util.concurrent.TimeUnit.SECONDS);
+        Rapunzel.context().scheduler()
+                .runRepeatingAsync(Duration.ZERO, Duration.ofSeconds(1), new FindBossbarRunnable());
     }
 
     private class FindBossbarRunnable implements Runnable {

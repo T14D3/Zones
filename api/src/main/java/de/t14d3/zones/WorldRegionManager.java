@@ -131,10 +131,26 @@ final class WorldRegionManager {
         addRegionToChunksLocked(region, min, max);
     }
 
-    boolean overlapsExistingRegionLocked(RBlockPos min, RBlockPos max, RWorldRef world, @Nullable RegionKey keyToIgnore) {
+    boolean overlapsExistingRegionLocked(
+            RBlockPos min,
+            RBlockPos max,
+            RWorldRef world,
+            @Nullable RegionKey keyToIgnore
+    ) {
+        return overlapsExistingRegionLocked(min, max, world,
+                region -> region != null && region.getKey().equals(keyToIgnore));
+    }
+
+    boolean overlapsExistingRegionLocked(
+            RBlockPos min,
+            RBlockPos max,
+            RWorldRef world,
+            @Nullable java.util.function.Predicate<Region> ignore
+    ) {
         if (min == null || max == null || world == null) return false;
         for (Region region : regions.values()) {
-            if (region.intersects(min, max, world) && !region.getKey().equals(keyToIgnore)) {
+            if (region.intersects(min, max, world)) {
+                if (ignore != null && ignore.test(region)) continue;
                 return true;
             }
         }

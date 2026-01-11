@@ -84,7 +84,7 @@ public class SubCreateCommand {
             return 1;
         }
 
-        regionManager.createSubRegion(
+        Region created = regionManager.createSubRegion(
                 finalParentRegion.getName() + "_sub",
                 selection.getMin(),
                 selection.getMax(),
@@ -92,6 +92,10 @@ public class SubCreateCommand {
                 player.uuid(),
                 finalParentRegion
         );
+        if (created == null) {
+            player.sendMessage(messages.component("commands.create.overlap"));
+            return 1;
+        }
 
         mod.getPlatform().removeBeacon(player, selectionWorld, selection.getMin());
         mod.getPlatform().removeBeacon(player, selectionWorld, selection.getMax());
@@ -102,4 +106,3 @@ public class SubCreateCommand {
         return 1;
     }
 }
-

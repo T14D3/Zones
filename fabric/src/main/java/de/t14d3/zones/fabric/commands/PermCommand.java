@@ -102,7 +102,7 @@ public class PermCommand {
                                 .then(Commands.argument("flag", StringArgumentType.string())
                                         .suggests(this::suggestFlags)
                                         .then(Commands.argument("pattern", StringArgumentType.string())
-                                                .suggests(this::suggestPatterns)
+                                                .suggests(PermCommand::suggestPatterns)
                                                 .executes(context -> executePattern(context, allow, remove))))));
     }
 
@@ -136,7 +136,7 @@ public class PermCommand {
         return builder.buildFuture();
     }
 
-    CompletableFuture<Suggestions> suggestPatterns(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
+    static CompletableFuture<Suggestions> suggestPatterns(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
         builder.suggest("*");
         builder.suggest("all");
 
@@ -254,7 +254,7 @@ public class PermCommand {
         return 1;
     }
 
-    boolean applyAdd(RegionPermissions perms, SubjectRef subject, Flag flag, String rawPattern, boolean allow) {
+    static boolean applyAdd(RegionPermissions perms, SubjectRef subject, Flag flag, String rawPattern, boolean allow) {
         FlagValueKind kind = flag.valueKind();
         if (kind == FlagValueKind.TARGET_DECISION) {
             String pattern = normalizeTargetDecisionValue(rawPattern);
@@ -283,7 +283,7 @@ public class PermCommand {
         return false;
     }
 
-    boolean applyUnset(RegionPermissions perms, SubjectRef subject, Flag flag, String rawPattern) {
+    static boolean applyUnset(RegionPermissions perms, SubjectRef subject, Flag flag, String rawPattern) {
         RegionPermissions.SubjectPermissions subjectPerms = perms.subjects().get(subject);
         if (subjectPerms == null) return false;
         RegionPermissions.PermissionValue pv = subjectPerms.get(flag.id());

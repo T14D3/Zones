@@ -45,8 +45,9 @@ visuals:
     # Defaults to 15
     # Don't set this too high, can easily cause players to time out
     range: 15
-    # How often particle visuals are rendered (in ms)
-    # Defaults to 200
+    # How often particle visuals are rendered
+    # Accepts duration strings (e.g. 200ms, 1s). Legacy milliseconds key is kept for compatibility.
+    period: 200ms
     period-ms: 200
     # Maximum unique particle points per player per tick (hard cap)
     # Defaults to 2500
@@ -77,7 +78,8 @@ zone-saving:
   # MODIFIED: Saves the regions.yml file when the plugin is disabled or when a region is modified
   # PERIODIC: Saves the regions.yml file periodically
   mode: MODIFIED
-  period: 60 # Default: 60, only used when mode is PERIODIC
+  # Duration between periodic saves (only used when mode is PERIODIC)
+  period: 60s
 
 
 # Controls whether the plugin should listen for specific events
