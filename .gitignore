@@ -124,3 +124,5 @@ runs/
 
 # Include Project icon
 !.idea/icon.svg
+
+**/.profileconfig.json

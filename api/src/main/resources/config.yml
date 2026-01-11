@@ -38,10 +38,38 @@ visuals:
     # Defines the particle type used for the corners of the selection
     # Defaults to WAX_ON
     secondary: WAX_ON
+    # Defines the particle type used for previews (e.g. expand preview)
+    # Defaults to COMPOSTER
+    preview: COMPOSTER
     # Maximum distance from the player to spawn particles
     # Defaults to 15
     # Don't set this too high, can easily cause players to time out
     range: 15
+    # How often particle visuals are rendered
+    # Accepts duration strings (e.g. 200ms, 1s). Legacy milliseconds key is kept for compatibility.
+    period: 200ms
+    period-ms: 200
+    # Maximum unique particle points per player per tick (hard cap)
+    # Defaults to 2500
+    budget-per-player: 2500
+
+    selection:
+      # Render mode for the player's current selection
+      # Valid values are: FACES, WIRE_EDGES, PERIMETER_AT_VIEWER_Y
+      # Defaults to FACES
+      mode: FACES
+      # Sampling step (1 = every block)
+      step: 1
+
+    nearby:
+      # Shows the boundaries of all nearby regions
+      # Render mode for nearby region boundaries
+      # Valid values are: PERIMETER_AT_VIEWER_Y, WIRE_EDGES, FACES
+      mode: PERIMETER_AT_VIEWER_Y
+      # Sampling step for nearby region boundaries
+      step: 1
+      # Highlights the effective region at the player's current position
+      highlight-effective: true
 
 zone-saving:
   # Valid values are SHUTDOWN, MODIFIED, PERIODIC
@@ -50,7 +78,8 @@ zone-saving:
   # MODIFIED: Saves the regions.yml file when the plugin is disabled or when a region is modified
   # PERIODIC: Saves the regions.yml file periodically
   mode: MODIFIED
-  period: 60 # Default: 60, only used when mode is PERIODIC
+  # Duration between periodic saves (only used when mode is PERIODIC)
+  period: 60s
 
 
 # Controls whether the plugin should listen for specific events
@@ -87,20 +116,16 @@ events:
     limit-exceeded-action: CANCEL
 
 cache:
-  # For how long should Cache entries be stored for?
-  # Time is in seconds, defaults to 300
-  # Has an inaccuracy of ~0.024s/second due to
-  # using bitwise shifting to convert to seconds
-  # e.g. 300 is actually 307.2 seconds
+  # Permission lookup caches (per-region + per-subject + per-flag + per-type).
+  # TTL time is in seconds, defaults to 300.
   ttl: 300
-  # How often should the cache be checked for expired entries?
-  # Time in minutes, defaults to 10
-  check-interval: 10
   # Should there be a limit on the number of cached entries?
   # Set to 0 to disable, defaults to 0
   # Higher values may improve performance, but also increase memory usage
   # For reference, 10.000 cache entries will use ~0.8-1.0MB of memory
   limit: 0
+
+
 
 storage:
   # Controls how the plugin should store regions

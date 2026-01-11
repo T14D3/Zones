@@ -1,6 +1,7 @@
 package de.t14d3.zones.utils;
 
-import de.t14d3.zones.objects.Player;
+import de.t14d3.rapunzellib.objects.RPlayer;
+import de.t14d3.zones.rapunzellib.ZonesExtraKeys;
 
 /**
  * Utility methods for the plugin.
@@ -33,10 +34,11 @@ public class Utils {
             this.name = name;
         }
 
-        public static SelectionMode getPlayerMode(Player player) {
+        public static SelectionMode getPlayerMode(RPlayer player) {
             SelectionMode mode;
             try {
-                mode = SelectionMode.valueOf(player.getMetadata("mode").toUpperCase());
+                String raw = player.extras().get(ZonesExtraKeys.SELECTION_MODE).orElse("CUBOID_2D");
+                mode = SelectionMode.valueOf(raw.toUpperCase());
             } catch (IllegalArgumentException | NullPointerException e) {
                 mode = SelectionMode.CUBOID_2D;
             }

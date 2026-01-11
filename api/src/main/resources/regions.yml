@@ -11,12 +11,39 @@ regions:
       x: 100
       y: 319
       z: 100
-    members:
-      +group-members:
-        break: 'true'
-        container: 'true'
-        damage: 'true'
-        entity: 'true'
-        interact: 'true'
-        place: 'true'
-        redstone: 'true'
+    acl:
+      universal: { }
+      players: { }
+      groups:
+        members:
+          break:
+            type: targets
+            allow: [ "*" ]
+            deny: [ ]
+          container:
+            type: targets
+            allow: [ "*" ]
+            deny: [ ]
+          damage:
+            type: targets
+            allow: [ "*" ]
+            deny: [ ]
+          entity:
+            type: targets
+            allow: [ "*" ]
+            deny: [ ]
+          interact:
+            type: targets
+            allow: [ "*" ]
+            deny: [ ]
+          place:
+            type: targets
+            allow: [ "*" ]
+            deny: [ ]
+          redstone:
+            type: targets
+            allow: [ "*" ]
+            deny: [ ]
+    membership:
+      players: { }
+      groups: { }

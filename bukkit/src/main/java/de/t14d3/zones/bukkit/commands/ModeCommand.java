@@ -1,18 +1,20 @@
 package de.t14d3.zones.bukkit.commands;
 
+import de.t14d3.rapunzellib.message.Placeholders;
+import de.t14d3.rapunzellib.objects.RPlayer;
 import de.t14d3.zones.bukkit.ZonesBukkit;
+import de.t14d3.zones.rapunzellib.ZonesExtraKeys;
+import de.t14d3.zones.utils.Utils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.StringTooltip;
 import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import dev.jorel.commandapi.arguments.StringArgument;
 import org.bukkit.entity.Player;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
 
 import java.util.concurrent.CompletableFuture;
 
 public class ModeCommand {
-    private final ZonesBukkit plugin;
+    private ZonesBukkit plugin;
 
     public ModeCommand(ZonesBukkit plugin) {
         this.plugin = plugin;
@@ -32,13 +34,16 @@ public class ModeCommand {
                             })))
             .executes((sender, args) -> {
                 if (sender instanceof Player player) {
-                    PersistentDataContainer pdc = player.getPersistentDataContainer();
+                    RPlayer rPlayer = RPlayer.wrap(player).orElse(null);
+                    if (rPlayer == null) return;
                     if (args.getRaw("mode").equalsIgnoreCase("2D")) {
-                        pdc.set(new org.bukkit.NamespacedKey("zones", "mode"), PersistentDataType.STRING, "2D");
-                        sender.sendMessage("2D Selection Mode Enabled");
+                        rPlayer.extras().put(ZonesExtraKeys.SELECTION_MODE, Utils.SelectionMode.CUBOID_2D.name());
+                        sender.sendMessage(plugin.getMessages().component("commands.mode.set",
+                                Placeholders.builder().string("mode", "2D").build()));
                     } else if (args.getRaw("mode").equalsIgnoreCase("3D")) {
-                        pdc.set(new org.bukkit.NamespacedKey("zones", "mode"), PersistentDataType.STRING, "3D");
-                        sender.sendMessage("3D Selection Mode Enabled");
+                        rPlayer.extras().put(ZonesExtraKeys.SELECTION_MODE, Utils.SelectionMode.CUBOID_3D.name());
+                        sender.sendMessage(plugin.getMessages().component("commands.mode.set",
+                                Placeholders.builder().string("mode", "3D").build()));
                     }
                 }
             });

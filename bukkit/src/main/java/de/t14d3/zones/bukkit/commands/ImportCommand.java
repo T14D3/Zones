@@ -1,24 +1,20 @@
 package de.t14d3.zones.bukkit.commands;
 
+import de.t14d3.rapunzellib.message.MessageFormatService;
+import de.t14d3.rapunzellib.message.Placeholders;
 import de.t14d3.zones.bukkit.ZonesBukkit;
-import de.t14d3.zones.integrations.WorldGuardImporter;
-import de.t14d3.zones.utils.Messages;
+import de.t14d3.zones.bukkit.integrations.WorldGuardImporter;
 import dev.jorel.commandapi.BukkitTooltip;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.StringTooltip;
 import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import dev.jorel.commandapi.arguments.StringArgument;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 
 import java.util.concurrent.CompletableFuture;
 
-import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
-
 public class ImportCommand {
     private ZonesBukkit plugin;
-    private Messages messages;
-    private final MiniMessage mm = MiniMessage.miniMessage();
+    private MessageFormatService messages;
 
     public ImportCommand(ZonesBukkit plugin) {
         this.plugin = plugin;
@@ -35,20 +31,20 @@ public class ImportCommand {
                                     StringTooltip[] suggestions = new StringTooltip[1];
                                     suggestions[0] = StringTooltip.ofMessage("worldguard",
                                             BukkitTooltip.messageFromAdventureComponent(
-                                                    Component.text("Imports regions from WorldGuard")));
+                                                    messages.component("commands.import.worldguard-tooltip")));
                                     return suggestions;
                                 });
                             })))
             .executes((sender, args) -> {
                         if (args.getRaw("source").equalsIgnoreCase("worldguard")) {
                             if (plugin.getServer().getPluginManager().getPlugin("WorldGuard") == null) {
-                                sender.sendMessage(mm.deserialize(messages.get("commands.import.not-loaded"),
-                                        parsed("plugin", "WorldGuard")));
+                                sender.sendMessage(messages.component("commands.import.not-loaded",
+                                        Placeholders.builder().string("plugin", "WorldGuard").build()));
                                 return;
                             }
                             WorldGuardImporter worldGuardImporter = new WorldGuardImporter(plugin);
                             worldGuardImporter.importRegions();
-                            sender.sendMessage(mm.deserialize(messages.get("commands.import.success")));
+                            sender.sendMessage(messages.component("commands.import.success"));
                         }
                     }
             );

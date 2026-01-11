@@ -1,66 +1,66 @@
 package de.t14d3.zones.fabric.commands;
 
+
 import com.mojang.brigadier.context.CommandContext;
+import de.t14d3.rapunzellib.message.MessageFormatService;
+import de.t14d3.rapunzellib.message.Placeholders;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionManager;
-import de.t14d3.zones.fabric.FabricPlatform;
 import de.t14d3.zones.fabric.ZonesFabric;
-import de.t14d3.zones.objects.Player;
 import de.t14d3.zones.utils.Messages;
-import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.minecraft.commands.CommandSourceStack;
 
 import java.util.List;
-
-import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
+import java.util.UUID;
 
 public class ListCommand {
-    private final MiniMessage mm = MiniMessage.miniMessage();
     private final RegionManager regionManager;
-    private final Messages messages;
-    private final FabricPlatform platform;
+    private final MessageFormatService messages;
 
     public ListCommand(ZonesFabric mod) {
         this.regionManager = mod.getRegionManager();
         this.messages = mod.getMessages();
-        this.platform = mod.getPlatform();
     }
 
     int execute(CommandContext<CommandSourceStack> context, int page) {
-        boolean perm = Permissions.check(context.getSource(), "zones.info.other");
-        if (page < 1) {
-            page = 1;
-        }
-        Player player = context.getSource().getPlayer() != null ? platform.getPlayer(
-                context.getSource().getPlayer().getUUID()) : null;
-        List<Region> regions = regionManager.regions().values().parallelStream()
-                .filter(region -> perm || (player != null && region.isMember(player.getUniqueId())))
+        boolean perm = CommandPermissions.check(context.getSource(), "zones.info.other");
+        if (page < 1) page = 1;
+
+        UUID uuid = context.getSource().getPlayer() != null ? context.getSource().getPlayer().getUUID() : null;
+        List<Region> regions = regionManager.regions().values().stream()
+                .filter(region -> perm || (uuid != null && regionManager.withWorldReadLock(region.getWorld(),
+                        () -> region.isMember(uuid))))
                 .toList();
+
         if (regions.isEmpty()) {
-            context.getSource().sendMessage(messages.getCmp("region.none-found"));
+            context.getSource().sendMessage(messages.component("region.none-found"));
             return 1;
         }
-        regions = regions.subList((page - 1) * 10, Math.min(regions.size(), page * 10));
+
+        int from = (page - 1) * 10;
+        if (from >= regions.size()) from = 0;
+        regions = regions.subList(from, Math.min(regions.size(), from + 10));
+
         Component[] msgs = new Component[regions.size()];
-        int i = 0;
-        for (Region region : regions) {
+        for (int i = 0; i < regions.size(); i++) {
+            Region region = regions.get(i);
+            Component hoverText = regionManager.withWorldReadLock(region.getWorld(), () -> {
+                boolean canSeeAdminInfo = perm || (uuid != null && region.isAdmin(uuid));
+                return Messages.regionInfo(region, canSeeAdminInfo);
+            });
             msgs[i] = Component.newline()
-                    .append(mm.deserialize(messages.get("region.info.name"),
-                                    parsed("name", region.getName()),
-                                    parsed("key", region.getKey().toString()))
-                            .hoverEvent(HoverEvent.showText(Messages.regionInfo(region,
-                                    (perm || region.isAdmin(player.getUniqueId())))))
+                    .append(messages.component("region.info.name",
+                                    Placeholders.builder().string("name", region.getName()).build())
+                            .hoverEvent(HoverEvent.showText(hoverText))
                             .clickEvent(ClickEvent.runCommand("/zone info " + region.getKey()))
                     );
-            i++;
         }
-        Component msg = Component.textOfChildren(msgs);
-        context.getSource().sendMessage(msg);
 
+        context.getSource().sendMessage(Component.textOfChildren(msgs));
         return 1;
     }
 }
+

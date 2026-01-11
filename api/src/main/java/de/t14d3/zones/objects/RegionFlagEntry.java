@@ -82,7 +82,7 @@ public class RegionFlagEntry {
         @Override
         public String toString() {
             return "FlagValue{" +
-                    "value='" + value + '\'' +
+                    "name='" + value + '\'' +
                     ", inverted=" + inverted +
                     '}';
         }

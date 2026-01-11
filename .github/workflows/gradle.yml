@@ -1,8 +1,18 @@
 name: Java CI with Gradle
 
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - master
+      - develop
+  pull_request:
+    branches:
+      - master
+      - develop
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -36,7 +46,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Package
-          path: build/libs/Zones*.jar
+          path: build/libs/zones*.jar
 
       - name: Release dev build
         uses: marvinpinto/action-automatic-releases@master
@@ -45,7 +55,7 @@ jobs:
           title: Development Build
           automatic_release_tag: latest-dev
           prerelease: true
-          files: build/libs/Zones*.jar
+          files: build/libs/zones*.jar
           repo_token: ${{ secrets.GITHUB_TOKEN }}
 
     # NOTE: The Gradle Wrapper is the default and recommended way to run Gradle (https://docs.gradle.org/current/userguide/gradle_wrapper.html).

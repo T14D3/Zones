@@ -1,8 +1,9 @@
 plugins {
     id("java")
-    id("xyz.jpenilla.run-paper") version "2.3.1"
+    alias(libs.plugins.run.paper)
+    alias(libs.plugins.paperweight.userdev)
+    alias(libs.plugins.shadow)
 }
-
 
 repositories {
     mavenCentral()
@@ -18,20 +19,34 @@ repositories {
         name = "CodeMC"
         url = uri("https://repo.codemc.io/repository/maven-public/")
     }
+    maven {
+        name = "Central Portal Snapshots"
+        url = uri("https://central.sonatype.com/repository/maven-snapshots/")
+        // Only search this repository for the specific dependency
+        content {
+            includeModule("dev.jorel", "commandapi")
+        }
+    }
 }
 
 dependencies {
     implementation(project(":api"))
 
-    compileOnly("me.clip:placeholderapi:2.11.6")
-    compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.3.10")
-    compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.13")
-    implementation(platform("com.intellectualsites.bom:bom-newest:1.52"))
-    compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Core")
-    compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit")
-    implementation("dev.jorel:commandapi-bukkit-shade-mojang-mapped:9.7.0")
+    compileOnly(rootProject.libs.placeholderapi)
+    compileOnly(rootProject.libs.worldedit.bukkit)
+    compileOnly(rootProject.libs.worldguard.bukkit)
+    compileOnly(platform(rootProject.libs.intellectualsites.bom))
+    compileOnly(rootProject.libs.fawe.core)
+    compileOnly(rootProject.libs.fawe.bukkit)
+    implementation(rootProject.libs.commandapi.paper.shade)
 
-    implementation("net.kyori:adventure-platform-bukkit:4.3.4")
+    compileOnly(rootProject.libs.adventure.platform.bukkit)
+
+    implementation(rootProject.libs.rapunzellib.api)
+    implementation(rootProject.libs.rapunzellib.platform.paper)
+    implementation(rootProject.libs.rapunzellib.events.paper)
+
+    paperweight.paperDevBundle(rootProject.libs.versions.paper.dev.bundle.get())
 }
 
 tasks.processResources {
@@ -43,16 +58,42 @@ tasks.processResources {
     }
 }
 runPaper.disablePluginJarDetection()
+
+val zonesActiveProcessors: Int? = providers.gradleProperty("zones.activeProcessors")
+    .orNull
+    ?.toIntOrNull()
+
 tasks.runServer {
-    minecraftVersion("1.21.4")
-    pluginJars(rootProject.tasks.named("shadowJar").get().outputs.files)
+    minecraftVersion("1.21.10")
+    pluginJars(rootProject.tasks.named("shadowJar").get().outputs.files)        
     javaLauncher = javaToolchains.launcherFor {
         vendor.set(JvmVendorSpec.JETBRAINS)
         languageVersion.set(JavaLanguageVersion.of(21))
     }
     jvmArgs("-XX:+AllowEnhancedClassRedefinition")
+    if (zonesActiveProcessors != null && zonesActiveProcessors > 0) {
+        jvmArgs("-XX:ActiveProcessorCount=$zonesActiveProcessors")
+    }
 }
 
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks {
+    jar {
+        archiveClassifier.set("dev")
+    }
+
+    shadowJar {
+        archiveClassifier.set("")
+        mergeServiceFiles()
+
+        exclude("LICENSE*")
+        exclude("net/kyori/**")
+    }
+
+    build {
+        dependsOn(shadowJar)
+    }
 }

@@ -1,22 +1,22 @@
 package de.t14d3.zones.fabric.commands;
 
+
 import com.mojang.brigadier.context.CommandContext;
+import de.t14d3.rapunzellib.message.Placeholders;
+import de.t14d3.rapunzellib.objects.RBlockPos;
+import de.t14d3.rapunzellib.objects.RPlayer;
+import de.t14d3.rapunzellib.objects.RWorldRef;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.fabric.ZonesFabric;
-import de.t14d3.zones.objects.BlockLocation;
-import de.t14d3.zones.objects.PlayerRepository;
-import net.kyori.adventure.text.minimessage.MiniMessage;
+import de.t14d3.zones.objects.Box;
+import de.t14d3.zones.rapunzellib.ZonesExtraKeys;
 import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.server.level.ServerPlayer;
-
-import static net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed;
 
 public class SelectCommand {
     private final ZonesFabric mod;
     private final RegionManager regionManager;
-    private final MiniMessage mm = MiniMessage.miniMessage();
 
     public SelectCommand(ZonesFabric mod) {
         this.mod = mod;
@@ -27,34 +27,42 @@ public class SelectCommand {
         if (context.getSource().getPlayer() == null) {
             return 0;
         }
-        ServerPlayer player = context.getSource().getPlayer();
-        de.t14d3.zones.objects.Player zplayer = PlayerRepository.get(player.getUUID());
-        if (zplayer.isSelectionCreating()) {
-            mod.getPlatform().removeBeacon(zplayer, zplayer.getSelection().getWorld(),
-                    zplayer.getSelection().getMin());
-            mod.getPlatform().removeBeacon(zplayer, zplayer.getSelection().getWorld(),
-                    zplayer.getSelection().getMax());
-            zplayer.setSelectionCreating(false);
+
+        RPlayer player = RPlayer.wrap(context.getSource().getPlayer()).orElse(null);
+        if (player == null) return 0;
+
+        Box selection = player.extras().get(ZonesExtraKeys.SELECTION).orElse(null);
+        boolean selecting = player.extras().get(ZonesExtraKeys.SELECTION_CREATING).orElse(false);
+        if (selecting && selection != null) {
+            RWorldRef selectionWorld = selection.getWorld() != null ? selection.getWorld() : player.worldOrThrow()
+                    .ref();
+            mod.getPlatform().removeBeacon(player, selectionWorld, selection.getMin());
+            mod.getPlatform().removeBeacon(player, selectionWorld, selection.getMax());
+            player.extras().put(ZonesExtraKeys.SELECTION_CREATING, false);
         }
+
         Region region = null;
         try {
-            region = regionManager.regions()
-                    .get(RegionKey.fromString(context.getArgument("key", String.class)).getValue());
+            String key = context.getArgument("key", String.class);
+            region = regionManager.regions().get(RegionKey.fromString(key).getValue());
         } catch (Exception ignored) {
         }
+
+        RBlockPos pos = player.locationOrThrow().blockPos();
+        RWorldRef world = player.worldOrThrow().ref();
         if (region == null) {
-            region = regionManager.getEffectiveRegionAt(
-                    BlockLocation.of(player.getBlockX(), player.getBlockY(), player.getBlockZ()),
-                    mod.getPlatform().getWorld(zplayer));
+            region = regionManager.getEffectiveRegionAt(pos, world);
         }
-        if (region == null || region.getBounds().equals(zplayer.getSelection())) {
-            zplayer.setSelection(null);
-            player.sendMessage(mm.deserialize(mod.getMessages().get("commands.select.deselected")));
+
+        if (region == null || (selection != null && region.getBounds().equals(selection))) {
+            player.extras().remove(ZonesExtraKeys.SELECTION);
+            player.sendMessage(mod.getMessages().component("commands.select.deselected"));
         } else {
-            zplayer.setSelection(region.getBounds());
-            player.sendMessage(mm.deserialize(mod.getMessages().get("commands.select.selected"),
-                    parsed("region", region.getName())));
+            player.extras().put(ZonesExtraKeys.SELECTION, region.getBounds());
+            player.sendMessage(mod.getMessages().component("commands.select.selected",
+                    Placeholders.builder().string("region", region.getName()).build()));
         }
         return 1;
     }
 }
+

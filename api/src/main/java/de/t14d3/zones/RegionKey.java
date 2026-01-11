@@ -29,7 +29,7 @@ public final class RegionKey {
         this.value = RegionKey.generate().getValue();
     }
 
-    // Retrieve the integer value
+    // Retrieve the integer name
     public int getValue() {
         return value;
     }
@@ -40,7 +40,7 @@ public final class RegionKey {
         return String.format("%08x", value);
     }
 
-    // Equality and hash code based on the stored value
+    // Equality and hash code based on the stored name
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;

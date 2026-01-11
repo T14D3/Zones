@@ -1,12 +1,8 @@
 package de.t14d3.zones.permissions.flags;
 
-import de.t14d3.zones.Region;
 import de.t14d3.zones.objects.Flag;
-import de.t14d3.zones.objects.Result;
 import de.t14d3.zones.utils.Types;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 @SuppressWarnings("ClassWithTooManyFields")
@@ -22,6 +18,7 @@ public class Flags {
     public static Flag ENTITY;
     public static Flag IGNITE;
     public static Flag DAMAGE;
+    public static Flag ROLE;
     public static Flag GROUP;
     public static Flag SPAWN;
     public static Flag EXPLOSION;
@@ -33,56 +30,53 @@ public class Flags {
     public static Flag PHYSICS;
     public static Flag HURT;
 
-    private static List<Flag> flags;
-
     public Flags() {
-        flags = new ArrayList<>();
+        FALLBACK = FlagRegistry.registerFlag("fallback", "Fallback description");
 
-        FALLBACK = registerFlag(new Flag("fallback", "Fallback description"));
+        ROLE = FlagRegistry.registerFlag("role", "Defines a member role",
+                new DefaultFlagHandler(false, List.of("owner", "admin")),
+                null, FlagValueKind.STRING_SET);
 
-        BREAK = registerFlag(
-                new Flag("break", "Allows breaking blocks", new DefaultFlagHandler(false, Types.blocks())));
-        PLACE = registerFlag(
-                new Flag("place", "Allows placing blocks", new DefaultFlagHandler(false, Types.blocks())));
-        INTERACT = registerFlag(
-                new Flag("interact", "Allows interacting", new DefaultFlagHandler(false, Types.all())));
-        CONTAINER = registerFlag(
-                new Flag("container", "Allows opening containers",
-                        new DefaultFlagHandler(false, Types.containers())));
-        REDSTONE = registerFlag(new Flag("redstone", "Allows interacting with redstone",
-                new DefaultFlagHandler(false, Types.redstone())));
-        ENTITY = registerFlag(new Flag("entity", "Allows interacting with entities",
-                new DefaultFlagHandler(false, Types.entities())));
-        IGNITE = registerFlag(
-                new Flag("ignite", "Allows igniting tnt", new IgnitionFlagHandler(false, Types.blocks())));
-        DAMAGE = registerFlag(
-                new Flag("damage", "Allows damaging entities", new DefaultFlagHandler(false, Types.entities())));
+        BREAK = FlagRegistry.registerFlag("break", "Allows breaking blocks",
+                new DefaultFlagHandler(false, Types.blocks()));
+        PLACE = FlagRegistry.registerFlag("place", "Allows placing blocks",
+                new DefaultFlagHandler(false, Types.blocks()));
+        INTERACT = FlagRegistry.registerFlag("interact", "Allows interacting",
+                new DefaultFlagHandler(false, Types.all()));
+        CONTAINER = FlagRegistry.registerFlag("container", "Allows opening containers",
+                new DefaultFlagHandler(false, Types.containers()));
+        REDSTONE = FlagRegistry.registerFlag("redstone", "Allows interacting with redstone",
+                new DefaultFlagHandler(false, Types.redstone()));
+        ENTITY = FlagRegistry.registerFlag("entity", "Allows interacting with entities",
+                new DefaultFlagHandler(false, Types.entities()));
+        IGNITE = FlagRegistry.registerFlag("ignite", "Allows igniting tnt",
+                new IgnitionFlagHandler(false, Types.blocks()));
+        DAMAGE = FlagRegistry.registerFlag("damage", "Allows damaging entities",
+                new DefaultFlagHandler(false, Types.entities()));
 
-        GROUP = registerFlag(new Flag("group", "Add a group to the player"));
+        GROUP = FlagRegistry.registerFlag("group", "Add a group to the player",
+                new DefaultFlagHandler(false, List.of()),
+                null, FlagValueKind.STRING_SET);
 
-        SPAWN = registerFlag(new Flag("spawn", "Controls the spawning of entities",
-                new DefaultFlagHandler(true, Types.entities())));
-        EXPLOSION = registerFlag(new Flag("explosion", "Controls the explosion of entities",
-                new DefaultFlagHandler(true, Types.entities())));
-        CREATE = registerFlag(
-                new Flag("create", "Controls the creation of blocks through world events",
-                        new DefaultFlagHandler(true, Types.blocks())));
-        DESTROY = registerFlag(
-                new Flag("destroy", "Controls the removal of blocks through world events",
-                        new DefaultFlagHandler(true, Types.blocks())));
-        TRANSFORM = registerFlag(
-                new Flag("transform", "Controls the transformation of blocks into other blocks",
-                        new DefaultFlagHandler(true, Types.blocks())));
-        SPREAD = registerFlag(
-                new Flag("spread", "Controls the spread of blocks through world events",
-                        new DefaultFlagHandler(true, Types.blocks())));
-        RELOCATE = registerFlag(new Flag("relocate", "Controls the ability for blocks to change their location",
-                new DefaultFlagHandler(true, Types.blocks())));
-        HURT = registerFlag(new Flag("hurt", "Controls the ability for entities to be hurt",
-                new DefaultFlagHandler(true, Types.entities())));
+        SPAWN = FlagRegistry.registerFlag("spawn", "Controls the spawning of entities",
+                new DefaultFlagHandler(true, Types.entities()));
+        EXPLOSION = FlagRegistry.registerFlag("explosion", "Controls the explosion of entities",
+                new DefaultFlagHandler(true, Types.entities()));
+        CREATE = FlagRegistry.registerFlag("create", "Controls the creation of blocks through world events",
+                new DefaultFlagHandler(true, Types.blocks()));
+        DESTROY = FlagRegistry.registerFlag("destroy", "Controls the removal of blocks through world events",
+                new DefaultFlagHandler(true, Types.blocks()));
+        TRANSFORM = FlagRegistry.registerFlag("transform", "Controls the transformation of blocks into other blocks",
+                new DefaultFlagHandler(true, Types.blocks()));
+        SPREAD = FlagRegistry.registerFlag("spread", "Controls the spread of blocks through world events",
+                new DefaultFlagHandler(true, Types.blocks()));
+        RELOCATE = FlagRegistry.registerFlag("relocate", "Controls the ability for blocks to change their location",
+                new DefaultFlagHandler(true, Types.blocks()));
+        HURT = FlagRegistry.registerFlag("hurt", "Controls the ability for entities to be hurt",
+                new DefaultFlagHandler(true, Types.entities()));
 
-        PHYSICS = registerFlag(new Flag("physics", "Controls the physics of blocks",
-                new DefaultFlagHandler(true, Types.blocks())));
+        PHYSICS = FlagRegistry.registerFlag("physics", "Controls the physics of blocks",
+                new DefaultFlagHandler(true, Types.blocks()));
     }
 
     private static final class IgnitionFlagHandler extends DefaultFlagHandler {
@@ -92,17 +86,9 @@ public class Flags {
         }
 
         @Override
-        public Result evaluate(Region region, String who, String permission, String type, Object... optionals) {
-            return super.evaluate(region, who, permission, type, optionals);
-        }
-
-        @Override
-        public boolean getDefaultValue(Object... optional) {
-            if (optional.length > 0 && optional[0] instanceof Boolean) {
-                return (boolean) optional[0];
-            } else {
-                return super.getDefaultValue();
-            }
+        public boolean getDefaultValue(FlagContext context) {
+            if (context != null && context.defaultDecisionOverride() != null) return context.defaultDecisionOverride();
+            return super.getDefaultValue(FlagContext.none());
         }
     }
 
@@ -112,7 +98,6 @@ public class Flags {
      * @param name Flag to register
      * @param desc Fallback description
      * @return {@code true} if it was registered, {@code false} if it already exists
-     * @see #registerFlag(String, String, boolean)
      */
     public static boolean registerFlag(String name, String desc) {
         return registerFlag(name, desc, false);
@@ -125,13 +110,12 @@ public class Flags {
      * @param desc      Fallback description
      * @param overwrite Whether to overwrite an existing flag
      * @return {@code true} if it was registered, {@code false} if it already exists and {@code overwrite} is {@code false}
-     * @see #registerFlag(String, String)
      */
     public static boolean registerFlag(String name, String desc, boolean overwrite) {
-        if (flags.stream().anyMatch(f -> f.name().equals(name)) && !overwrite) {
+        if (FlagRegistry.getFlags().stream().anyMatch(f -> f.name().equals(name)) && !overwrite) {
             return false;
         } else {
-            flags.add(new Flag(name, desc));
+            FlagRegistry.registerFlag(name, desc);
             return true;
         }
     }
@@ -141,15 +125,14 @@ public class Flags {
     }
 
     public static Flag registerFlag(Flag flag, boolean overwrite) {
-        if (flags.stream().anyMatch(f -> f.name().equals(flag.name()))) {
+        if (FlagRegistry.getFlags().stream().anyMatch(f -> f.name().equals(flag.name()))) {
             if (overwrite) {
-                flags.removeIf(f -> f.name().equals(flag.name()));
-                flags.add(flag);
+                FlagRegistry.registerFlag(flag);
                 return flag;
             }
             return null;
         } else {
-            flags.add(flag);
+            FlagRegistry.registerFlag(flag);
             return flag;
         }
     }
@@ -160,10 +143,10 @@ public class Flags {
      * @return List of {@link Flag} objects
      */
     public static List<Flag> getFlags() {
-        return Collections.unmodifiableList(flags);
+        return FlagRegistry.getFlags();
     }
 
     public static Flag getFlag(String name) {
-        return flags.stream().filter(f -> f.name().equals(name)).findFirst().orElse(FALLBACK);
+        return FlagRegistry.getFlag(name);
     }
 }

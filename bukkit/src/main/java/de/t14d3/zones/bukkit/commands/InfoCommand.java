@@ -1,11 +1,13 @@
 package de.t14d3.zones.bukkit.commands;
 
+import de.t14d3.rapunzellib.message.MessageFormatService;
+import de.t14d3.rapunzellib.objects.RBlockPos;
+import de.t14d3.rapunzellib.objects.RPlayer;
+import de.t14d3.rapunzellib.objects.RWorldRef;
 import de.t14d3.zones.Region;
-import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.RegionManager;
 import de.t14d3.zones.bukkit.ZonesBukkit;
-import de.t14d3.zones.objects.BlockLocation;
-import de.t14d3.zones.objects.World;
+import de.t14d3.zones.bukkit.commands.utils.CustomArgument;
 import de.t14d3.zones.utils.Messages;
 import dev.jorel.commandapi.CommandAPICommand;
 import org.bukkit.entity.Player;
@@ -14,7 +16,7 @@ import java.util.List;
 
 public class InfoCommand {
     private RegionManager regionManager;
-    private Messages messages;
+    private MessageFormatService messages;
 
     public InfoCommand(ZonesBukkit plugin) {
         this.regionManager = plugin.getRegionManager();
@@ -25,36 +27,36 @@ public class InfoCommand {
             .withOptionalArguments(CustomArgument.region("key", "zones.info.other", CustomArgument.MemberType.MEMBER))
             .executes((sender, args) -> {
                 List<Region> regions;
-                Player player = null;
-                if (sender instanceof Player temp) {
-                    player = temp;
-                }
-                if (args.get("key") == null) {
+                Player player = sender instanceof Player ? (Player) sender : null;
+                Region region = (Region) args.get("key");
+                if (region == null) {
                     if (player != null) {
-                        regions = regionManager.getRegionsAt(BlockLocation.of(player.getLocation()),
-                                World.of(player.getWorld()));
+                        RPlayer rPlayer = RPlayer.wrap(player).orElse(null);
+                        if (rPlayer == null) return;
+                        RBlockPos pos = rPlayer.locationOrThrow().blockPos();
+                        RWorldRef world = rPlayer.worldOrThrow().ref();
+                        regions = regionManager.getRegionsAt(pos, world);
+                        if (regions.isEmpty()) {
+                            sender.sendMessage(messages.component("region.none-found"));
+                            return;
+                        }
                     } else {
-                        sender.sendMessage(messages.getCmp("commands.invalid-region"));
+                        sender.sendMessage(messages.component("commands.invalid-region"));
                         return;
                     }
                 } else {
-                    try {
-                        regions = List.of(RegionManager.getRegion(RegionKey.fromString((String) args.get("key"))));
-                    } catch (Exception e) {
-                        sender.sendMessage(messages.getCmp("commands.invalid-region"));
-                        return;
-                    }
+                    regions = List.of(region);
                 }
-
-                if (regions.isEmpty()) {
-                    sender.sendMessage(messages.getCmp("commands.invalid-region"));
-                    return;
-                }
-                for (Region region : regions) {
+                for (Region region_ : regions) {
                     if (sender.hasPermission("zones.info.other")) {
-                        sender.sendMessage(Messages.regionInfo(region, true));
-                    } else if (player != null && region.isMember(player.getUniqueId())) {
-                        sender.sendMessage(Messages.regionInfo(region, region.isAdmin(player.getUniqueId())));
+                        sender.sendMessage(regionManager.withWorldReadLock(region_.getWorld(),
+                                () -> Messages.regionInfo(region_, true)));
+                    } else if (player != null) {
+                        var msg = regionManager.withWorldReadLock(region_.getWorld(), () -> {
+                            if (!region_.isMember(player.getUniqueId())) return null;
+                            return Messages.regionInfo(region_, region_.isAdmin(player.getUniqueId()));
+                        });
+                        if (msg != null) sender.sendMessage(msg);
                     }
                 }
             });

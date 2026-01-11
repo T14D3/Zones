@@ -1,42 +1,49 @@
 package de.t14d3.zones.datasource;
 
+import de.t14d3.rapunzellib.Rapunzel;
+import de.t14d3.rapunzellib.config.ConfigurationSection;
+import de.t14d3.rapunzellib.config.YamlConfig;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.RegionKey;
 import de.t14d3.zones.Zones;
-import de.t14d3.zones.objects.BlockLocation;
-import de.t14d3.zones.objects.RegionFlagEntry;
-import de.t14d3.zones.objects.World;
-import org.simpleyaml.configuration.ConfigurationSection;
-import org.simpleyaml.configuration.file.YamlFile;
+import de.t14d3.zones.objects.shapes.CuboidShape;
+import de.t14d3.zones.objects.shapes.GlobalShape;
+import de.t14d3.zones.objects.shapes.ShapeProvider;
+import de.t14d3.zones.permissions.PermissionKeyRegistry;
+import de.t14d3.zones.permissions.RegionMembership;
+import de.t14d3.zones.permissions.RegionPermissions;
+import de.t14d3.zones.permissions.flags.FlagValueKind;
+import de.t14d3.zones.permissions.subjects.Subjects;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
+import java.util.UUID;
 
 public class YamlDataSource extends AbstractDataSource {
-    private final YamlFile regionsFile;
+    private final YamlConfig regionsFile;
     private final Zones zones;
 
+    /**
+     * Creates a YAML data source rooted at the given data folder.
+     *
+     * <p>This loads (or creates) {@code regions.yml} immediately. Any initialization errors are logged.</p>
+     *
+     * @param dataFolder plugin/mod data directory
+     * @param zones      owning plugin instance
+     */
     public YamlDataSource(File dataFolder, Zones zones) {
         super(zones);
         this.zones = zones;
-        this.regionsFile = new YamlFile(new File(dataFolder, "regions.yml"));
-
-        try {
-            if (!regionsFile.exists()) {
-                regionsFile.createOrLoadWithComments();
-                regionsFile.save();
-            }
-            regionsFile.loadWithComments();
-        } catch (IOException e) {
-            zones.getLogger().error("Failed to initialize regions file", e);
-        }
+        this.regionsFile = Rapunzel.context().configs().load(new File(dataFolder, "regions.yml").toPath());
     }
 
+    /**
+     * Loads all regions found under the {@code regions} root node.
+     *
+     * @return list of loaded regions
+     */
     @Override
     public List<Region> loadRegions() {
         List<Region> regions = new ArrayList<>();
@@ -46,7 +53,6 @@ public class YamlDataSource extends AbstractDataSource {
             for (String regionKey : regionsSection.getKeys(false)) {
                 Region region = loadRegion(regionKey);
                 if (region != null) {
-                    zones.getRegionManager().addRegion(region);
                     regions.add(region);
                 }
             }
@@ -54,6 +60,12 @@ public class YamlDataSource extends AbstractDataSource {
         return regions;
     }
 
+    /**
+     * Loads a single region by key.
+     *
+     * @param key region key string
+     * @return the loaded region, or {@code null} if it does not exist
+     */
     @Override
     public Region loadRegion(String key) {
         final String pathPrefix = "regions." + key + ".";
@@ -62,74 +74,163 @@ public class YamlDataSource extends AbstractDataSource {
         final String name = regionsFile.getString(pathPrefix + "name");
         final int priority = regionsFile.getInt(pathPrefix + "priority", 0);
 
-        // World data
-        final String worldName = regionsFile.getString(pathPrefix + "world");
-        World world = zones.getPlatform().getWorld(worldName);
-        if (world == null) {
-            zones.getLogger().warn("World {} for region {} not found, using default", worldName, key);
-            world = zones.getPlatform().getWorlds().get(0);
+        // Shape data
+        ShapeProvider shape;
+        ConfigurationSection shapeSection = regionsFile.getConfigurationSection(pathPrefix + "shape");
+        if (shapeSection == null) {
+            zones.getLogger().error("Region {} is missing required shape data; skipping", key);
+            return null;
         }
 
-        // Location data
-        final BlockLocation min = new BlockLocation(
-                regionsFile.getInt(pathPrefix + "min.x"),
-                regionsFile.getInt(pathPrefix + "min.y"),
-                regionsFile.getInt(pathPrefix + "min.z")
-        );
+        String type = shapeSection.getString("type");
+        String data = shapeSection.getString("data");
+        if (type == null || type.isBlank() || data == null || data.isBlank()) {
+            zones.getLogger().error("Region {} has invalid shape data; skipping", key);
+            return null;
+        }
 
-        final BlockLocation max = new BlockLocation(
-                regionsFile.getInt(pathPrefix + "max.x"),
-                regionsFile.getInt(pathPrefix + "max.y"),
-                regionsFile.getInt(pathPrefix + "max.z")
-        );
+        try {
+            switch (type) {
+                case "global" -> shape = GlobalShape.fromJson(data);
+                case "cuboid" -> shape = CuboidShape.fromJson(data);
+                default -> {
+                    zones.getLogger().error("Unknown shape type {} for region {}; skipping", type, key);
+                    return null;
+                }
+            }
+        } catch (Exception e) {
+            zones.getLogger().error("Failed to parse shape for region {}; skipping", key, e);
+            return null;
+        }
 
         // Parent relationship
         final String parentKey = regionsFile.getString(pathPrefix + "parent");
         final RegionKey parent = parentKey != null ? RegionKey.fromString(parentKey) : null;
 
-        // Member permissions
-        final Map<String, List<RegionFlagEntry>> members = parseMembers(
-                regionsFile.getConfigurationSection(pathPrefix + "members")
-        );
+        RegionPermissions permissions = new RegionPermissions();
+        RegionMembership membership = new RegionMembership();
 
-        return new Region(name, min, max, world, members, RegionKey.fromString(key), parent, priority);
-    }
+        // ACL rules
+        ConfigurationSection aclSection = regionsFile.getConfigurationSection(pathPrefix + "acl");
+        if (aclSection != null) {
+            ConfigurationSection universalSection = aclSection.getConfigurationSection("universal");
+            if (universalSection != null) {
+                readSubjectPermissions(universalSection, permissions.subject(Subjects.universal()));
+            }
 
-    private Map<String, List<RegionFlagEntry>> parseMembers(ConfigurationSection membersSection) {
-        final Map<String, List<RegionFlagEntry>> members = new HashMap<>();
-
-        if (membersSection != null) {
-            for (String who : membersSection.getKeys(false)) {
-                final ConfigurationSection flagsSection = membersSection.getConfigurationSection(who);
-                final List<RegionFlagEntry> flags = new ArrayList<>();
-
-                if (flagsSection != null) {
-                    for (String flagName : flagsSection.getKeys(false)) {
-                        final String valuesStr = flagsSection.getString(flagName);
-                        final List<RegionFlagEntry.FlagValue> values = new ArrayList<>();
-
-                        for (String value : valuesStr.split(" ")) {
-                            boolean inverted = value.startsWith("!");
-                            String cleanValue = inverted ? value.substring(1) : value;
-                            values.add(new RegionFlagEntry.FlagValue(cleanValue.toLowerCase(), inverted));
-                        }
-
-                        flags.add(new RegionFlagEntry(
-                                flagName.toLowerCase().replaceFirst("!", ""),
-                                values
-                        ));
+            ConfigurationSection playersSection = aclSection.getConfigurationSection("players");
+            if (playersSection != null) {
+                for (String playerKey : playersSection.getKeys(false)) {
+                    ConfigurationSection subjectSection = playersSection.getConfigurationSection(playerKey);
+                    if (subjectSection == null) continue;
+                    try {
+                        UUID uuid = UUID.fromString(playerKey);
+                        readSubjectPermissions(subjectSection, permissions.subject(Subjects.player(uuid)));
+                    } catch (IllegalArgumentException ignored) {
                     }
                 }
+            }
 
-                members.put(who, flags);
+            ConfigurationSection groupsSection = aclSection.getConfigurationSection("groups");
+            if (groupsSection != null) {
+                for (String groupName : groupsSection.getKeys(false)) {
+                    ConfigurationSection subjectSection = groupsSection.getConfigurationSection(groupName);
+                    if (subjectSection == null) continue;
+                    String normalized = Subjects.normalizeGroupName(groupName);
+                    if (normalized == null) continue;
+                    readSubjectPermissions(subjectSection, permissions.subject(Subjects.group(normalized)));
+                }
             }
         }
-        return members;
+
+        // Membership
+        ConfigurationSection membershipSection = regionsFile.getConfigurationSection(pathPrefix + "membership");
+        if (membershipSection != null) {
+            readMembership(membershipSection, membership);
+        }
+
+        return new Region(name, shape, permissions, membership, RegionKey.fromString(key), parent, priority);
     }
 
+    private static void readSubjectPermissions(ConfigurationSection subjectSection, RegionPermissions.SubjectPermissions subject) {
+        for (String permName : subjectSection.getKeys(false)) {
+            ConfigurationSection permSection = subjectSection.getConfigurationSection(permName);
+            if (permSection == null) continue;
+
+            String kind = permSection.getString("type", "targets");
+            int permId = PermissionKeyRegistry.instance().getOrCreateId(permName);
+
+            if ("set".equalsIgnoreCase(kind)) {
+                RegionPermissions.StringSetValue set = (RegionPermissions.StringSetValue) subject.getOrCreate(permId,
+                        FlagValueKind.STRING_SET);
+                permSection.getStringList("allow").forEach(set::allow);
+                permSection.getStringList("deny").forEach(set::deny);
+            } else {
+                RegionPermissions.TargetDecisionValue targeted = (RegionPermissions.TargetDecisionValue) subject.getOrCreate(
+                        permId, FlagValueKind.TARGET_DECISION);
+                permSection.getStringList("allow").forEach(targeted::allow);
+                permSection.getStringList("deny").forEach(targeted::deny);
+            }
+        }
+    }
+
+    private static void readMembership(ConfigurationSection membershipSection, RegionMembership membership) {
+        ConfigurationSection players = membershipSection.getConfigurationSection("players");
+        if (players != null) {
+            for (String playerKey : players.getKeys(false)) {
+                ConfigurationSection playerSection = players.getConfigurationSection(playerKey);
+                if (playerSection == null) continue;
+                UUID uuid;
+                try {
+                    uuid = UUID.fromString(playerKey);
+                } catch (IllegalArgumentException ignored) {
+                    continue;
+                }
+
+                RegionMembership.PlayerEntry entry = membership.player(uuid);
+
+                ConfigurationSection rolesSection = playerSection.getConfigurationSection("roles");
+                if (rolesSection != null) {
+                    rolesSection.getStringList("allow").forEach(entry.roles()::allow);
+                    rolesSection.getStringList("deny").forEach(entry.roles()::deny);
+                }
+
+                ConfigurationSection groupsSection = playerSection.getConfigurationSection("groups");
+                if (groupsSection != null) {
+                    groupsSection.getStringList("allow").forEach(entry.groups()::allow);
+                    groupsSection.getStringList("deny").forEach(entry.groups()::deny);
+                }
+            }
+        }
+
+        ConfigurationSection groups = membershipSection.getConfigurationSection("groups");
+        if (groups != null) {
+            for (String groupName : groups.getKeys(false)) {
+                ConfigurationSection groupSection = groups.getConfigurationSection(groupName);
+                if (groupSection == null) continue;
+                String normalized = Subjects.normalizeGroupName(groupName);
+                if (normalized == null) continue;
+
+                RegionMembership.GroupEntry entry = membership.group(normalized);
+                ConfigurationSection includesSection = groupSection.getConfigurationSection("includes");
+                if (includesSection != null) {
+                    includesSection.getStringList("allow").forEach(entry.includes()::allow);
+                    includesSection.getStringList("deny").forEach(entry.includes()::deny);
+                }
+            }
+        }
+    }
+
+    /**
+     * Saves the full region list asynchronously, replacing the entire {@code regions} section.
+     *
+     * <p>This performs the actual disk write by calling {@link YamlConfig#save()}.</p>
+     *
+     * @param regions regions to persist
+     */
     @Override
     public void saveRegions(List<Region> regions) {
-        CompletableFuture.runAsync(() -> {
+        Rapunzel.context().scheduler().runAsync(() -> {
             try {
                 regionsFile.set("regions", null); // Clear existing regions
 
@@ -137,14 +238,23 @@ public class YamlDataSource extends AbstractDataSource {
                     saveRegion(region.getKey().toString(), region);
                 }
 
-                regionsFile.setComment("regions", "All registered regions");
+                regionsFile.setComment("regions", "All registered regions");    
                 regionsFile.save();
-            } catch (IOException e) {
+            } catch (Exception e) {
                 zones.getLogger().error("Failed to save regions", e);
             }
         });
     }
 
+    /**
+     * Writes a single region into the in-memory YAML representation.
+     *
+     * <p>This method does not call {@link YamlConfig#save()}; flushing is handled by {@link #saveRegions(List)} and the
+     * region manager's save mode.</p>
+     *
+     * @param key region key string
+     * @param region region to persist
+     */
     @Override
     public void saveRegion(String key, Region region) {
         final String pathPrefix = "regions." + key + ".";
@@ -156,19 +266,20 @@ public class YamlDataSource extends AbstractDataSource {
         regionsFile.set(pathPrefix + "priority", region.getPriority());
         regionsFile.setComment(pathPrefix + "priority", "Region priority (higher = stronger)");
 
-        regionsFile.set(pathPrefix + "world", region.getWorld().getName());
+        regionsFile.set(pathPrefix + "world", region.getWorld().identifier());
         regionsFile.setComment(pathPrefix + "world", "World where the region exists");
 
-        // Location data
-        regionsFile.set(pathPrefix + "min.x", region.getMin().getX());
-        regionsFile.set(pathPrefix + "min.y", region.getMin().getY());
-        regionsFile.set(pathPrefix + "min.z", region.getMin().getZ());
-        regionsFile.setComment(pathPrefix + "min", "Minimum bounding box coordinates");
+        // Shape data
+        ConfigurationSection shapeSection = regionsFile.createSection(pathPrefix + "shape");
+        ShapeProvider shape = region.getShape();
+        shapeSection.set("type", shape.getShapeType());
+        shapeSection.set("data", shape.toJson());
+        regionsFile.setComment(pathPrefix + "shape", "Region shape specification");
 
-        regionsFile.set(pathPrefix + "max.x", region.getMax().getX());
-        regionsFile.set(pathPrefix + "max.y", region.getMax().getY());
-        regionsFile.set(pathPrefix + "max.z", region.getMax().getZ());
-        regionsFile.setComment(pathPrefix + "max", "Maximum bounding box coordinates");
+        // Remove legacy min/max fields if they exist.
+        regionsFile.set(pathPrefix + "min", null);
+        regionsFile.set(pathPrefix + "max", null);
+
 
         // Parent relationship
         if (region.getParent() != null) {
@@ -176,26 +287,96 @@ public class YamlDataSource extends AbstractDataSource {
             regionsFile.setComment(pathPrefix + "parent", "Parent region key");
         }
 
-        // Member permissions
-        final ConfigurationSection membersSection = regionsFile.createSection(pathPrefix + "members");
-        serializeMembers(membersSection, region.getMembers());
-        regionsFile.setComment(pathPrefix + "members", "Region members and their permissions");
+        // ACL
+        regionsFile.set(pathPrefix + "acl", null);
+        final ConfigurationSection aclSection = regionsFile.createSection(pathPrefix + "acl");
+        RegionPermissions permissions = region.getPermissions();
+        if (permissions != null) {
+            writeAcl(aclSection, permissions);
+        }
+        regionsFile.setComment(pathPrefix + "acl", "Region ACL rules");
+
+        // Membership
+        regionsFile.set(pathPrefix + "membership", null);
+        final ConfigurationSection membershipSection = regionsFile.createSection(pathPrefix + "membership");
+        RegionMembership membership = region.getMembership();
+        if (membership != null) {
+            writeMembership(membershipSection, membership);
+        }
+        regionsFile.setComment(pathPrefix + "membership", "Region membership (roles/groups and group inheritance)");
     }
 
-    private void serializeMembers(ConfigurationSection membersSection, Map<String, List<RegionFlagEntry>> members) {
-        for (Map.Entry<String, List<RegionFlagEntry>> entry : members.entrySet()) {
-            final ConfigurationSection flagSection = membersSection.createSection(entry.getKey());
+    private static void writeAcl(ConfigurationSection aclSection, RegionPermissions permissions) {
+        ConfigurationSection universal = aclSection.createSection("universal");
+        ConfigurationSection players = aclSection.createSection("players");
+        ConfigurationSection groups = aclSection.createSection("groups");
 
-            for (RegionFlagEntry flag : entry.getValue()) {
-                final StringBuilder values = new StringBuilder();
-                for (RegionFlagEntry.FlagValue value : flag.getValues()) {
-                    values.append(value.isInverted() ? "!" : "")
-                            .append(value.getValue())
-                            .append(" ");
-                }
+        for (Map.Entry<de.t14d3.zones.permissions.subjects.SubjectRef, RegionPermissions.SubjectPermissions> subjectEntry : permissions.subjects()
+                .entrySet()) {
+            de.t14d3.zones.permissions.subjects.SubjectRef subject = subjectEntry.getKey();
+            RegionPermissions.SubjectPermissions subjectPermissions = subjectEntry.getValue();
+            if (subject == null || subjectPermissions == null) continue;
 
-                flagSection.set(flag.getFlagValue(), values.toString().trim());
+            ConfigurationSection subjectSection;
+            if (subject instanceof de.t14d3.zones.permissions.subjects.UniversalSubject) {
+                subjectSection = universal;
+            } else if (subject instanceof de.t14d3.zones.permissions.subjects.PlayerSubject p) {
+                subjectSection = players.createSection(p.uuid().toString());
+            } else if (subject instanceof de.t14d3.zones.permissions.subjects.GroupSubject g) {
+                subjectSection = groups.createSection(g.name());
+            } else {
+                continue;
             }
+
+            for (var permEntry : subjectPermissions.values().int2ObjectEntrySet()) {
+                int permId = permEntry.getIntKey();
+                String permName = PermissionKeyRegistry.instance().getName(permId);
+                if (permName == null) continue;
+
+                RegionPermissions.PermissionValue pv = permEntry.getValue();
+                if (pv instanceof RegionPermissions.TargetDecisionValue targeted) {
+                    ConfigurationSection permSection = subjectSection.createSection(permName);
+                    permSection.set("type", "targets");
+                    permSection.set("allow", new ArrayList<>(targeted.allowTargets()));
+                    permSection.set("deny", new ArrayList<>(targeted.denyTargets()));
+                } else if (pv instanceof RegionPermissions.StringSetValue set) {
+                    ConfigurationSection permSection = subjectSection.createSection(permName);
+                    permSection.set("type", "set");
+                    permSection.set("allow", new ArrayList<>(set.allowValues()));
+                    permSection.set("deny", new ArrayList<>(set.denyValues()));
+                }
+            }
+        }
+    }
+
+    private static void writeMembership(ConfigurationSection membershipSection, RegionMembership membership) {
+        ConfigurationSection players = membershipSection.createSection("players");
+        for (Map.Entry<UUID, RegionMembership.PlayerEntry> e : membership.players().entrySet()) {
+            UUID uuid = e.getKey();
+            RegionMembership.PlayerEntry entry = e.getValue();
+            if (uuid == null || entry == null) continue;
+
+            ConfigurationSection playerSection = players.createSection(uuid.toString());
+
+            ConfigurationSection roles = playerSection.createSection("roles");
+            roles.set("allow", new ArrayList<>(entry.roles().allowValues()));
+            roles.set("deny", new ArrayList<>(entry.roles().denyValues()));
+
+            ConfigurationSection groups = playerSection.createSection("groups");
+            groups.set("allow", new ArrayList<>(entry.groups().allowValues()));
+            groups.set("deny", new ArrayList<>(entry.groups().denyValues()));
+        }
+
+        ConfigurationSection groups = membershipSection.createSection("groups");
+        for (Map.Entry<String, RegionMembership.GroupEntry> e : membership.groups().entrySet()) {
+            String name = e.getKey();
+            RegionMembership.GroupEntry entry = e.getValue();
+            if (name == null || entry == null) continue;
+
+            ConfigurationSection groupSection = groups.createSection(name);
+            ConfigurationSection includes = groupSection.createSection("includes");
+            includes.set("allow", new ArrayList<>(entry.includes().allowValues()));
+            includes.set("deny", new ArrayList<>(entry.includes().denyValues()));
         }
     }
 }

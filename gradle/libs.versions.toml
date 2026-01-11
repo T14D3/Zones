@@ -1,0 +1,78 @@
+[versions]
+# Plugins
+shadow = "9.0.0-beta8"
+fabric-loom = "1.11.7"
+run-paper = "2.3.1"
+paperweight-userdev = "2.0.0-beta.19"
+
+# Common
+paper-api = "1.21.4-R0.1-SNAPSHOT"
+paper-dev-bundle = "1.21.10-R0.1-SNAPSHOT"
+annotations = "23.0.0"
+
+adventure = "4.19.0"
+adventure-platform-bukkit = "4.3.4"
+adventure-platform-fabric = "6.7.0"
+
+# Zones: api
+log4j-core = "2.25.3"
+fastutil = "8.5.8"
+h2 = "2.3.232"
+postgresql = "42.7.2"
+
+# Zones: bukkit
+placeholderapi = "2.11.6"
+worldedit = "7.3.10"
+worldguard = "7.0.13"
+intellectualsites-bom = "1.52"
+commandapi-paper-shade = "11.0.1-SNAPSHOT"
+
+# Zones: shared
+rapunzellib = "0.2.0-SNAPSHOT"
+
+# Zones: fabric
+minecraft = "1.21.10"
+yarn-mappings = "1.21.10+build.3"
+fabric-loader = "0.16.10"
+fabric-api = "0.138.4+1.21.10"
+fabric-resource-loader-v1 = "1.0.4+14959b836f"
+
+[plugins]
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
+fabric-loom = { id = "fabric-loom", version.ref = "fabric-loom" }
+run-paper = { id = "xyz.jpenilla.run-paper", version.ref = "run-paper" }
+paperweight-userdev = { id = "io.papermc.paperweight.userdev", version.ref = "paperweight-userdev" }
+
+[libraries]
+paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper-api" }
+annotations = { module = "org.jetbrains:annotations", version.ref = "annotations" }
+
+adventure-api = { module = "net.kyori:adventure-api", version.ref = "adventure" }
+adventure-minimessage = { module = "net.kyori:adventure-text-minimessage", version.ref = "adventure" }
+adventure-platform-bukkit = { module = "net.kyori:adventure-platform-bukkit", version.ref = "adventure-platform-bukkit" }
+adventure-platform-fabric = { module = "net.kyori:adventure-platform-fabric", version.ref = "adventure-platform-fabric" }
+
+log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "log4j-core" }
+fastutil = { module = "it.unimi.dsi:fastutil", version.ref = "fastutil" }
+h2 = { module = "com.h2database:h2", version.ref = "h2" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+
+placeholderapi = { module = "me.clip:placeholderapi", version.ref = "placeholderapi" }
+worldedit-bukkit = { module = "com.sk89q.worldedit:worldedit-bukkit", version.ref = "worldedit" }
+worldguard-bukkit = { module = "com.sk89q.worldguard:worldguard-bukkit", version.ref = "worldguard" }
+intellectualsites-bom = { module = "com.intellectualsites.bom:bom-newest", version.ref = "intellectualsites-bom" }
+fawe-core = { module = "com.fastasyncworldedit:FastAsyncWorldEdit-Core" }
+fawe-bukkit = { module = "com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit" }
+commandapi-paper-shade = { module = "dev.jorel:commandapi-paper-shade", version.ref = "commandapi-paper-shade" }
+
+rapunzellib-api = { module = "de.t14d3.rapunzellib:api", version.ref = "rapunzellib" }
+rapunzellib-events = { module = "de.t14d3.rapunzellib:events", version.ref = "rapunzellib" }
+rapunzellib-platform-paper = { module = "de.t14d3.rapunzellib:platform-paper", version.ref = "rapunzellib" }
+rapunzellib-events-paper = { module = "de.t14d3.rapunzellib:events-paper", version.ref = "rapunzellib" }
+rapunzellib-platform-fabric = { module = "de.t14d3.rapunzellib:platform-fabric", version.ref = "rapunzellib" }
+rapunzellib-events-fabric = { module = "de.t14d3.rapunzellib:events-fabric", version.ref = "rapunzellib" }
+
+minecraft = { module = "com.mojang:minecraft", version.ref = "minecraft" }
+fabric-loader = { module = "net.fabricmc:fabric-loader", version.ref = "fabric-loader" }
+fabric-api = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api" }
+fabric-resource-loader-v1 = { module = "net.fabricmc.fabric-api:fabric-resource-loader-v1", version.ref = "fabric-resource-loader-v1" }

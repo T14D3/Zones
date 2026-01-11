@@ -13,7 +13,7 @@ public class DefaultFlagHandler implements IFlagHandler {
     }
 
     @Override
-    public boolean getDefaultValue(Object... optional) {
+    public boolean getDefaultValue(FlagContext context) {
         return this.defaultValue;
     }
 

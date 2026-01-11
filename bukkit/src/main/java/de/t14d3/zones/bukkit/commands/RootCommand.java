@@ -15,7 +15,7 @@ public class RootCommand {
                 .withSubcommand(new CreateCommand(plugin).create)
                 .withSubcommand(new SubCreateCommand(plugin).subcreate)
                 .withSubcommand(new CancelCommand(plugin).cancel)
-                .withSubcommand(new SetCommand(plugin).set)
+                .withSubcommand(new PermCommand(plugin).perm)
                 .withSubcommand(new ExpandCommand(plugin).expand)
                 .withSubcommand(new SelectCommand(plugin).select)
                 .withSubcommand(new RenameCommand(plugin).rename)

@@ -1,7 +1,6 @@
 package de.t14d3.zones.bukkit.listeners;
 
 import de.t14d3.zones.Zones;
-import de.t14d3.zones.objects.World;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.WorldLoadEvent;
@@ -16,6 +15,6 @@ public class WorldEventListener implements Listener {
 
     @EventHandler
     public void onWorldLoad(WorldLoadEvent event) {
-        plugin.getRegionManager().loadRegions(World.of(event.getWorld()));
+        plugin.getRegionManager().loadRegions();
     }
 }
