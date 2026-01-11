@@ -1,5 +1,6 @@
 package de.t14d3.zones.visuals;
 
+import de.t14d3.rapunzellib.Rapunzel;
 import de.t14d3.rapunzellib.objects.RPlayer;
 import de.t14d3.zones.Region;
 import de.t14d3.zones.Zones;
